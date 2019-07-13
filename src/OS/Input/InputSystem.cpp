@@ -32,6 +32,7 @@
 #include <climits>
 #endif
 
+
 #ifdef METAL
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
@@ -43,6 +44,7 @@
 #import <Cocoa/Cocoa.h>
 #endif
 #endif
+
 
 #include "../Interfaces/IMemory.h"
 

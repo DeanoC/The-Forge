@@ -51,7 +51,7 @@ void _PrintUnicodeLine(const eastl::string& str, bool error = false);
 #define no_alias
 #endif
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 #define IFASSERT(x) x
 
 #if defined(_XBOX)
@@ -60,13 +60,17 @@ void _PrintUnicodeLine(const eastl::string& str, bool error = false);
 // there is a large amount of stuff included via header files ...
 #define ASSERT(cond) SCE_GNM_ASSERT(cond)
 #else
+#ifndef ASSERT
 #define ASSERT(b) \
 	if (b) {}     \
 	else          \
 		_FailedAssert(__FILE__, __LINE__, #b)
 #endif
+#endif
 #else
+#ifndef ASSERT
 #define ASSERT(b) assume(b)
+#endif
 #if _MSC_VER >= 1400
 #define IFASSERT(x) x
 #else

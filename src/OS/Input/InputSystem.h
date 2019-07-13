@@ -30,6 +30,7 @@
 #include "../../ThirdParty/OpenSource/EASTL/vector.h"
 
 #include "../../ThirdParty/OpenSource/gainput/lib/include/gainput/gainput.h"
+
 #ifdef METAL
 #ifdef TARGET_IOS
 #include "../../ThirdParty/OpenSource/gainput/lib/include/gainput/GainputIos.h"
@@ -37,6 +38,7 @@
 #include "../../ThirdParty/OpenSource/gainput/lib/include/gainput/GainputMac.h"
 #endif
 #endif
+
 
 #define MAX_GAIN_MULTI_TOUCHES 7
 #define MAX_GAIN_GAMEPADS 10
