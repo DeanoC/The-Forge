@@ -28,7 +28,6 @@
 #include "../Math/MathTypes.h"
 
 struct ButtonData;
-class VirtualJoystickUI;
 
 struct CameraMotionParameters
 {
@@ -50,7 +49,9 @@ class ICameraController
 	virtual mat4 getViewMatrix() const = 0;
 	virtual vec3 getViewPosition() const = 0;
 	virtual vec2 getRotationXY() const = 0;
+/* Deano relys on higher level library, replace with callback
 	virtual void setVirtualJoystick(VirtualJoystickUI* virtualJoystick = NULL) = 0;
+ */
 	virtual void moveTo(const vec3& location) = 0;
 	virtual void lookAt(const vec3& lookAt) = 0;
 };

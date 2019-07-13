@@ -33,7 +33,9 @@
 
 #include "../Input/InputSystem.h"
 #include "../Input/InputMappings.h"
+/* DEANO lower level libray should include higher level
 #include "../../../Middleware_3/UI/AppUI.h"
+*/
 
 // Include this file as last include in all cpp files allocating memory
 #include "../Interfaces/ILog.h"
@@ -42,37 +44,38 @@
 
 static const float k_scrollSpeed = -5.0f;
 #if !defined(METAL) && !defined(__ANDROID__)
-static const float k_xRotLimit = (float)(M_PI_2 - 0.1);
+static const float k_xRotLimit = (float) (M_PI_2 - 0.1);
 #endif
 
-class FpsCameraController: public ICameraController
-{
-	public:
-	FpsCameraController():
-		viewRotation{ 0 },
-		viewPosition{ 0 },
-		currentVelocity{ 0 },
-		acceleration{ 100.0f },
-		deceleration{ 100.0f },
-		maxSpeed{ 100.0f },
-		pVirtualJoystick{ NULL }
-	{
-	}
-	void setMotionParameters(const CameraMotionParameters&) override;
-	void setVirtualJoystick(VirtualJoystickUI* virtualJoystick = NULL) override;
-
+class FpsCameraController : public ICameraController {
+public:
+	FpsCameraController() :
+			viewRotation{0},
+			viewPosition{0},
+			currentVelocity{0},
+			acceleration{100.0f},
+			deceleration{100.0f},
+			maxSpeed{100.0f}
+	/* Deano relys on higher level library, replace with callback
+			,pVirtualJoystick{ NULL }
+			*/
+	{}
+	void setMotionParameters(const CameraMotionParameters &) override;
+	/* Deano relys on higher level library, replace with callback
+			void setVirtualJoystick(VirtualJoystickUI* virtualJoystick = NULL) override;
+	*/
 	mat4 getViewMatrix() const override;
 	vec3 getViewPosition() const override;
 	vec2 getRotationXY() const override { return viewRotation; }
 
-	void moveTo(const vec3& location) override;
-	void lookAt(const vec3& lookAt) override;
+	void moveTo(const vec3 &location) override;
+	void lookAt(const vec3 &lookAt) override;
 
-	private:
-	bool onInputEvent(const ButtonData* pData) override;
+private:
+	bool onInputEvent(const ButtonData *pData) override;
 	void update(float deltaTime) override;
 
-	private:
+private:
 	vec2 viewRotation;
 	vec3 viewPosition;
 	vec3 currentVelocity;
@@ -80,58 +83,54 @@ class FpsCameraController: public ICameraController
 	float acceleration;
 	float deceleration;
 	float maxSpeed;
-
-	VirtualJoystickUI* pVirtualJoystick;
+	/* Deano relys on higher level library, replace with callback
+			VirtualJoystickUI* pVirtualJoystick;
+			*/
 };
 
-ICameraController* createFpsCameraController(vec3 startPosition, vec3 startLookAt)
-{
-	FpsCameraController* cc = conf_placement_new<FpsCameraController>(conf_calloc(1, sizeof(FpsCameraController)));
+ICameraController *createFpsCameraController(vec3 startPosition, vec3 startLookAt) {
+	FpsCameraController *cc = conf_placement_new<FpsCameraController>(conf_calloc(1, sizeof(FpsCameraController)));
 	cc->moveTo(startPosition);
 	cc->lookAt(startLookAt);
 	return cc;
 }
 
 // TODO: Move to common file
-void destroyCameraController(ICameraController* pCamera)
-{
+void destroyCameraController(ICameraController *pCamera) {
 	pCamera->~ICameraController();
 	conf_free(pCamera);
 }
 
-void FpsCameraController::setMotionParameters(const CameraMotionParameters& cmp)
-{
+void FpsCameraController::setMotionParameters(const CameraMotionParameters &cmp) {
 	acceleration = cmp.acceleration;
 	deceleration = cmp.braking;
 	maxSpeed = cmp.maxSpeed;
 }
 
-void FpsCameraController::setVirtualJoystick(VirtualJoystickUI* virtualJoystick) { pVirtualJoystick = virtualJoystick; }
-
-static vec3 moveVec{ 0 };
-bool        FpsCameraController::onInputEvent(const ButtonData* pData)
-{
+/* Deano relys on higher level library, replace with callback
+		void FpsCameraController::setVirtualJoystick(VirtualJoystickUI* virtualJoystick) { pVirtualJoystick = virtualJoystick; }
+*/
+static vec3 moveVec{0};
+bool FpsCameraController::onInputEvent(const ButtonData *pData) {
 	// If mouse is not captured or the input event was consumed
 	// Do nothing
 	if (!InputSystem::IsMouseCaptured() || pData->mEventConsumed)
 		return false;
-
-	// update joystick if available and consume event
-	if (pVirtualJoystick && pVirtualJoystick->OnInputEvent(pData))
-		return true;
-
-	if (pData->mUserId == KEY_MOUSE_WHEEL)
-	{
-		mat4        m{ mat4::rotationYX(viewRotation.getY(), viewRotation.getX()) };
-		const vec3& v{ m.getCol2().getXYZ() };
-		viewPosition -= v * ((float)pData->mValue[0] * k_scrollSpeed);
+	/* Deano relys on higher level library, replace with callback
+		// update joystick if available and consume event
+		if (pVirtualJoystick && pVirtualJoystick->OnInputEvent(pData))
+			return true;
+	*/
+	if (pData->mUserId == KEY_MOUSE_WHEEL) {
+		mat4 m{mat4::rotationYX(viewRotation.getY(), viewRotation.getX())};
+		const vec3 &v{m.getCol2().getXYZ()};
+		viewPosition -= v * ((float) pData->mValue[0] * k_scrollSpeed);
 	}
 
 	return true;
 }
 
-void FpsCameraController::update(float deltaTime)
-{
+void FpsCameraController::update(float deltaTime) {
 	//when frame time is too small (01 in releaseVK) the float comparison with zero is imprecise.
 	//It returns when it shouldn't causing stutters
 	//We should use doubles for frame time instead of just do this for now.
@@ -141,24 +140,27 @@ void FpsCameraController::update(float deltaTime)
 	if (!InputSystem::IsMouseCaptured())
 		return;
 
-	if (pVirtualJoystick)
-	{
-		pVirtualJoystick->Update(deltaTime);
-
-		vec2 leftStickDir = pVirtualJoystick->GetLeftStickDir();
-		if (leftStickDir.getX() + leftStickDir.getY() != 0.0f)
+	/*  Deano relys on higher level library, replace with callback
+	 *
+		if (pVirtualJoystick)
 		{
-			moveVec += vec3(leftStickDir.getX(), 0, -leftStickDir.getY());
-		}
-		vec2 rightStickDir = pVirtualJoystick->GetRightStickDir();
-		if (rightStickDir.getX() + rightStickDir.getY() != 0.0f)
-		{
-			vec2 joystickValue = vec2(rightStickDir.getY(), rightStickDir.getX());
+					pVirtualJoystick->Update(deltaTime);
 
-			viewRotation += joystickValue * k_mouseRotationSpeed * 10.f;
-		}
-	}
-	else
+					vec2 leftStickDir = pVirtualJoystick->GetLeftStickDir();
+					if (leftStickDir.getX() + leftStickDir.getY() != 0.0f)
+					{
+						moveVec += vec3(leftStickDir.getX(), 0, -leftStickDir.getY());
+					}
+					vec2 rightStickDir = pVirtualJoystick->GetRightStickDir();
+					if (rightStickDir.getX() + rightStickDir.getY() != 0.0f)
+					{
+						vec2 joystickValue = vec2(rightStickDir.getY(), rightStickDir.getX());
+
+						viewRotation += joystickValue * k_mouseRotationSpeed * 10.f;
+					}
+				}
+				else
+	*/
 	{
 		//We want to keep checking instead of on doing it on events
 		//Events get triggered on press or release (except for mouse)
@@ -174,8 +176,7 @@ void FpsCameraController::update(float deltaTime)
 		//will need to handle iOS differently for now
 		float drx = InputSystem::GetFloatInput(CAMERA_INPUT_ROTATE, 0);
 		float dry = InputSystem::GetFloatInput(CAMERA_INPUT_ROTATE, 1);
-		if (abs(drx) + abs(dry) > 0.0f)
-		{
+		if (abs(drx) + abs(dry) > 0.0f) {
 			//Windows Fall Creators Update breaks this camera controller
 			//  So only use this controller if we are running on macOS or before Fall Creators Update
 			float rx = viewRotation.getX();
@@ -186,7 +187,7 @@ void FpsCameraController::update(float deltaTime)
 			float newRy = ry + dry * interpolant;
 
 			//set new target view to interpolate to
-			viewRotation = { newRx, newRy };
+			viewRotation = {newRx, newRy};
 		}
 	}
 
@@ -198,7 +199,7 @@ void FpsCameraController::update(float deltaTime)
 		moveVec /= sqrtf(lenS);
 
 	//create rotation matrix
-	mat4 rot{ mat4::rotationYX(viewRotation.getY(), viewRotation.getX()) };
+	mat4 rot{mat4::rotationYX(viewRotation.getY(), viewRotation.getX())};
 
 	vec3 accelVec = (rot * moveVec).getXYZ();
 	//divide by length to normalize if necessary
@@ -213,22 +214,18 @@ void FpsCameraController::update(float deltaTime)
 	if (currentInAccelDir < 0)
 		currentInAccelDir = 0;
 
-	vec3  braking = (accelVec * currentInAccelDir) - currentVelocity;
+	vec3 braking = (accelVec * currentInAccelDir) - currentVelocity;
 	float brakingLen = length(braking);
-	if (brakingLen > (deceleration * deltaTime))
-	{
+	if (brakingLen > (deceleration * deltaTime)) {
 		braking *= deceleration / brakingLen;
-	}
-	else
-	{
+	} else {
 		braking /= deltaTime;
 	}
 
 	accelVec = (accelVec * acceleration) + braking;
-	vec3  newVelocity = currentVelocity + (accelVec * deltaTime);
+	vec3 newVelocity = currentVelocity + (accelVec * deltaTime);
 	float nvLen = lengthSqr(newVelocity);
-	if (nvLen > (maxSpeed * maxSpeed))
-	{
+	if (nvLen > (maxSpeed * maxSpeed)) {
 		nvLen = sqrtf(nvLen);
 		newVelocity *= (maxSpeed / nvLen);
 	}
@@ -237,11 +234,10 @@ void FpsCameraController::update(float deltaTime)
 	viewPosition += moveVec;
 	currentVelocity = newVelocity;
 
-	moveVec = { 0, 0, 0 };
+	moveVec = {0, 0, 0};
 }
 
-mat4 FpsCameraController::getViewMatrix() const
-{
+mat4 FpsCameraController::getViewMatrix() const {
 	mat4 r = mat4::rotationXY(-viewRotation.getX(), -viewRotation.getY());
 	vec4 t = r * vec4(-viewPosition, 1.0f);
 	r.setTranslation(t.getXYZ());
@@ -250,14 +246,12 @@ mat4 FpsCameraController::getViewMatrix() const
 
 vec3 FpsCameraController::getViewPosition() const { return viewPosition; }
 
-void FpsCameraController::moveTo(const vec3& location)
-{
+void FpsCameraController::moveTo(const vec3 &location) {
 	viewPosition = location;
 	currentVelocity = vec3(0);
 }
 
-void FpsCameraController::lookAt(const vec3& lookAt)
-{
+void FpsCameraController::lookAt(const vec3 &lookAt) {
 	vec3 lookDir = normalize(lookAt - viewPosition);
 
 	float y = lookDir.getY();
@@ -266,8 +260,7 @@ void FpsCameraController::lookAt(const vec3& lookAt)
 	float x = lookDir.getX();
 	float z = lookDir.getZ();
 	float n = sqrtf((x * x) + (z * z));
-	if (n > 0.01f)
-	{
+	if (n > 0.01f) {
 		// don't change the Y rotation if we're too close to vertical
 		x /= n;
 		z /= n;

@@ -26,8 +26,9 @@
 #include "../Interfaces/ICameraController.h"
 #include "../Input/InputSystem.h"
 #include "../Input/InputMappings.h"
+/* DEANO lower level libray should include higher level
 #include "../../../Middleware_3/UI/AppUI.h"
-
+*/
 // Include this file as last include in all cpp files allocating memory
 #include "../Interfaces/IMemory.h"
 
@@ -41,10 +42,15 @@ static const vec2 k_vRightJoystickCenter = vec2(0.80f, 0.75f);
 class GuiCameraController: public ICameraController
 {
 	public:
-	GuiCameraController(): viewRotation{ 0 }, viewPosition{ 0 }, velocity{ 0 }, maxSpeed{ 1.0f }, pVirtualJoystickUI{ NULL } {}
+	GuiCameraController(): viewRotation{ 0 }, viewPosition{ 0 }, velocity{ 0 }, maxSpeed{ 1.0f }
+/* Deano relys on higher level library, replace with callback
+				,pVirtualJoystickUI{ NULL }
+*/
+	{}
 	void setMotionParameters(const CameraMotionParameters&) override;
-	void setVirtualJoystick(VirtualJoystickUI* virtualJoystick = NULL) override;
-
+	/* Deano relys on higher level library, replace with callback
+		void setVirtualJoystick(VirtualJoystickUI* virtualJoystick = NULL) override;
+	*/
 	mat4 getViewMatrix() const override;
 	vec3 getViewPosition() const override;
 	vec2 getRotationXY() const override { return viewRotation; }
@@ -63,7 +69,9 @@ class GuiCameraController: public ICameraController
 	vec3               viewPosition;
 	vec3               velocity;
 	float              maxSpeed;
+/* Deano relys on higher level library, replace with callback
 	VirtualJoystickUI* pVirtualJoystickUI;
+ */
 };
 
 ICameraController* createGuiCameraController(vec3 startPosition, vec3 startLookAt)
@@ -80,8 +88,9 @@ void destroyGuiCameraController(ICameraController* pCamera)
 	conf_free(pCamera);
 }
 
+/* Deano relys on higher level library, replace with callback
 void GuiCameraController::setVirtualJoystick(VirtualJoystickUI* virtualJoystick) {}
-
+*/
 void GuiCameraController::setMotionParameters(const CameraMotionParameters& cmp) { maxSpeed = cmp.maxSpeed; }
 
 bool GuiCameraController::onInputEvent(const ButtonData* pData)
