@@ -1,7 +1,0 @@
-os: osx
-osx_image: xcode10
-language: objective-c
-python:
-  - 3.6
-script:
-- travis_wait 40 python PyBuild.py --skipioscodesigning --forceprebuild --skipreleasebuild 
