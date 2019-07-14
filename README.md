@@ -30,5 +30,5 @@ The Forge proper has a discord channel, I hang out there so if you have question
 
 * Discord: we offer now also support through a discord channel. Sign up here: 
 <a href="https://discord.gg/hJS54bz" target="_blank"><img src="Screenshots/Discord.png" 
-alt="Twitter" width="20" height="20" border="0" /> Join the Discord c
+ width="20" height="20" border="0" /> The Forge Discord Channel
 
