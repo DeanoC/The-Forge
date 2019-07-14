@@ -20,10 +20,12 @@ project(${LibName})
 
 set(Interface
 		theforge.h
+		al2o3_helpers.h
 		)
 
 set(Src
 		theforge.cpp
+		al2o3_helpers.cpp
 
 		OS/Camera/FpsCameraController.cpp
 		OS/Camera/GuiCameraController.cpp
@@ -109,7 +111,7 @@ endif ()
 set(Deps
 		al2o3_platform
 		al2o3_memory
-		al2o3_vfile
+		gfx_imageformat
 		)
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
 if (APPLE)
