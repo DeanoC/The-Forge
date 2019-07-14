@@ -26,6 +26,8 @@ typedef struct TheForge_Texture *TheForge_TextureHandle;
 typedef struct TheForge_AcclerationStructure *TheForge_AcclerationStructureHandle;
 typedef struct TheForge_QueryHeap *TheForge_QueryHeapHandle;
 typedef struct TheForge_CommandSignature *TheForge_CommandSignatureHandle;
+typedef struct TheForge_SwapChain *TheForge_SwapChainHandle;
+
 
 typedef struct TheForge_ClearValue
 {
@@ -404,5 +406,83 @@ typedef struct TheForge_CommandSignatureDesc
 	TheForge_IndirectArgumentDescriptor* 			pArgDescs;
 } TheForge_CommandSignatureDesc;
 
+
+typedef void* TheForge_IconHandle;
+
+// for windows this should be HWND
+// for OSX this shoulbe NSWindow*
+typedef void* TheForge_WindowHandle;
+
+typedef struct TheForge_RectDesc
+{
+	int left;
+	int top;
+	int right;
+	int bottom;
+} TheForge_RectDesc;
+
+// I don't like the defines in the structure but for now will leave until
+// I tackle linux build
+typedef struct TheForge_WindowsDesc
+{
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+	Display* display;
+	Window   xlib_window;
+	Atom     xlib_wm_delete_window;
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+	Display*                 display;
+	xcb_connection_t*        connection;
+	xcb_screen_t*            screen;
+	xcb_window_t             xcb_window;
+	xcb_intern_atom_reply_t* atom_wm_delete_window;
+#else
+	TheForge_WindowHandle handle = NULL;    //hWnd
+#endif
+	TheForge_RectDesc   windowedRect;
+	TheForge_RectDesc   fullscreenRect;
+	TheForge_RectDesc   clientRect;
+	bool       fullScreen = false;
+	unsigned   windowsFlags = 0;
+	TheForge_IconHandle bigIcon = NULL;
+	TheForge_IconHandle smallIcon = NULL;
+
+	bool cursorTracked = false;
+	bool iconified = false;
+	bool maximized = false;
+	bool minimized = false;
+	bool visible = true;
+
+	// maybe that should go to the input system?
+	// The last received cursor position, regardless of source
+	int lastCursorPosX, lastCursorPosY;
+} TheForge_WindowsDesc;
+
+typedef struct TheForge_SwapChainDesc
+{
+	/// Window handle
+	TheForge_WindowsDesc* pWindow;
+	/// Queues which should be allowed to present
+	TheForge_QueueHandle* pPresentQueues;
+	/// Number of present queues
+	uint32_t presentQueueCount;
+	/// Number of backbuffers in this swapchain
+	uint32_t imageCount;
+	/// Width of the swapchain
+	uint32_t width;
+	/// Height of the swapchain
+	uint32_t height;
+	/// Sample count
+	TheForge_SampleCount sampleCount;
+	/// Sample quality (DirectX12 only)
+	uint32_t sampleQuality;
+	/// Color format of the swapchain
+	TheForge_ImageFormat colorFormat;
+	/// Clear value
+	TheForge_ClearValue colorClearValue;
+	/// Set whether this swapchain using srgb color space
+	bool srgb;
+	/// Set whether swap chain will be presented using vsync
+	bool enableVsync;
+} TheForge_SwapChainDesc;
 
 #endif

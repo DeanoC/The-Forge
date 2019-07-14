@@ -214,4 +214,23 @@ AL2O3_EXTERN_C void TheForge_SetTextureName(TheForge_RendererHandle handle,
 																						TheForge_TextureHandle texture,
 																						const char *pName);
 
+AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle, const TheForge_SwapChainDesc* pDesc, TheForge_SwapChainHandle* pSwapChain);
+AL2O3_EXTERN_C void TheForge_RemoveSwapChain(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain);
+AL2O3_EXTERN_C void TheForge_ToggleVSync(TheForge_RendererHandle handle, TheForge_SwapChainHandle* pSwapchain);
+AL2O3_EXTERN_C bool TheForge_IsImageFormatSupported(TheForge_ImageFormat format);
+AL2O3_EXTERN_C TheForge_ImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR);
+AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain, TheForge_SemaphoreHandle signalSemaphore, TheForge_FenceHandle fence, uint32_t* pImageIndex);
+AL2O3_EXTERN_C void TheForge_QueuePresent(TheForge_QueueHandle queue, TheForge_SwapChainHandle swapChain, uint32_t swapChainImageIndex, uint32_t waitSemaphoreCount, TheForge_SemaphoreHandle* pWaitSemaphores);
+
+
+// accessors TheForge C API has opaque handles, this is largely okay as its mostly a push API
+// however a few things do need passing back (mostly for rendertarget and swapchain)
+// these calls implment the required accessors.
+AL2O3_EXTERN_C TheForge_RenderTargetHandle TheForge_SwapChainGetRenderTarget(TheForge_SwapChainHandle swapChain, int index);
+
+AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_RenderTargetHandle renderTarget);
+
+AL2O3_EXTERN_C TheForge_RenderTargetDesc const* TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget);
+
+
 #endif // end

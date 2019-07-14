@@ -732,6 +732,69 @@ AL2O3_EXTERN_C void TheForge_SetTextureName(TheForge_RendererHandle handle,
 	setTextureName(renderer, (Texture*)texture, pName);
 #endif
 }
+AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle, const TheForge_SwapChainDesc* pDesc, TheForge_SwapChainHandle* pSwapChain) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addSwapChain(renderer, (SwapChainDesc*)pDesc, (SwapChain**)pSwapChain);
+}
+
+
+AL2O3_EXTERN_C void TheForge_RemoveSwapChain(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	removeSwapChain(renderer, (SwapChain*)swapChain);
+}
+
+AL2O3_EXTERN_C void TheForge_ToggleVSync(TheForge_RendererHandle handle, TheForge_SwapChainHandle* pSwapchain) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	toggleVSync(renderer, (SwapChain**)pSwapchain);
+}
+
+AL2O3_EXTERN_C bool TheForge_IsImageFormatSupported(TheForge_ImageFormat format) {
+	return isImageFormatSupported((ImageFormat::Enum)format);
+}
+
+AL2O3_EXTERN_C TheForge_ImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR) {
+	return (TheForge_ImageFormat) getRecommendedSwapchainFormat(hintHDR);
+}
+AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle,
+		TheForge_SwapChainHandle swapChain,
+		TheForge_SemaphoreHandle signalSemaphore,
+		TheForge_FenceHandle fence,
+		uint32_t* pImageIndex) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	acquireNextImage(renderer, (SwapChain*) swapChain, (Semaphore*)signalSemaphore, (Fence*)fence, pImageIndex);
+}
+AL2O3_EXTERN_C void TheForge_QueuePresent(TheForge_QueueHandle queue,
+		TheForge_SwapChainHandle swapChain,
+		uint32_t swapChainImageIndex,
+		uint32_t waitSemaphoreCount,
+		TheForge_SemaphoreHandle* pWaitSemaphores) {
+
+	queuePresent((Queue*)queue, (SwapChain*)swapChain, swapChainImageIndex, waitSemaphoreCount, (Semaphore**)pWaitSemaphores);
+}
+
+AL2O3_EXTERN_C TheForge_RenderTargetHandle TheForge_SwapChainGetRenderTarget(TheForge_SwapChainHandle swapChain, int index) {
+	return (TheForge_RenderTargetHandle) ((SwapChain*)swapChain)->ppSwapchainRenderTargets[index];
+}
+
+AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_RenderTargetHandle renderTarget) {
+	return (TheForge_TextureHandle) ((RenderTarget*)renderTarget)->pTexture;
+}
+
+AL2O3_EXTERN_C TheForge_RenderTargetDesc const* TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget) {
+	return (TheForge_RenderTargetDesc const*) &((RenderTarget*)renderTarget)->mDesc;
+}
+
 
 static void API_CHECK() {
 	static_assert(sizeof(TheForge_ComputePipelineDesc) == sizeof(ComputePipelineDesc));
@@ -923,5 +986,43 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_CommandSignatureDesc, rootSignature) == offsetof(CommandSignatureDesc, pRootSignature));
 	static_assert(offsetof(TheForge_CommandSignatureDesc, indirectArgCount) == offsetof(CommandSignatureDesc, mIndirectArgCount));
 	static_assert(offsetof(TheForge_CommandSignatureDesc, pArgDescs) == offsetof(CommandSignatureDesc, pArgDescs));
+
+
+	static_assert(sizeof(TheForge_RectDesc) == sizeof(RectDesc));
+	static_assert(offsetof(TheForge_RectDesc, left) == offsetof(RectDesc, left));
+	static_assert(offsetof(TheForge_RectDesc, top) == offsetof(RectDesc, top));
+	static_assert(offsetof(TheForge_RectDesc, right) == offsetof(RectDesc, right));
+	static_assert(offsetof(TheForge_RectDesc, bottom) == offsetof(RectDesc, bottom));
+
+	static_assert(sizeof(TheForge_WindowsDesc) == sizeof(WindowsDesc));
+	static_assert(offsetof(TheForge_WindowsDesc, handle) == offsetof(WindowsDesc, handle));
+	static_assert(offsetof(TheForge_WindowsDesc, windowedRect) == offsetof(WindowsDesc, windowedRect));
+	static_assert(offsetof(TheForge_WindowsDesc, fullscreenRect) == offsetof(WindowsDesc, fullscreenRect));
+	static_assert(offsetof(TheForge_WindowsDesc, clientRect) == offsetof(WindowsDesc, clientRect));
+	static_assert(offsetof(TheForge_WindowsDesc, fullScreen) == offsetof(WindowsDesc, fullScreen));
+	static_assert(offsetof(TheForge_WindowsDesc, windowsFlags) == offsetof(WindowsDesc, windowsFlags));
+	static_assert(offsetof(TheForge_WindowsDesc, bigIcon) == offsetof(WindowsDesc, bigIcon));
+	static_assert(offsetof(TheForge_WindowsDesc, smallIcon) == offsetof(WindowsDesc, smallIcon));
+	static_assert(offsetof(TheForge_WindowsDesc, cursorTracked) == offsetof(WindowsDesc, cursorTracked));
+	static_assert(offsetof(TheForge_WindowsDesc, iconified) == offsetof(WindowsDesc, iconified));
+	static_assert(offsetof(TheForge_WindowsDesc, maximized) == offsetof(WindowsDesc, maximized));
+	static_assert(offsetof(TheForge_WindowsDesc, minimized) == offsetof(WindowsDesc, minimized));
+	static_assert(offsetof(TheForge_WindowsDesc, visible) == offsetof(WindowsDesc, visible));
+	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosX) == offsetof(WindowsDesc, lastCursorPosX));
+	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosY) == offsetof(WindowsDesc, lastCursorPosY));
+
+	static_assert(sizeof(TheForge_SwapChainDesc) == sizeof(SwapChainDesc));
+	static_assert(offsetof(TheForge_SwapChainDesc, pWindow) == offsetof(SwapChainDesc, pWindow));
+	static_assert(offsetof(TheForge_SwapChainDesc, pPresentQueues) == offsetof(SwapChainDesc, ppPresentQueues));
+	static_assert(offsetof(TheForge_SwapChainDesc, presentQueueCount) == offsetof(SwapChainDesc, mPresentQueueCount));
+	static_assert(offsetof(TheForge_SwapChainDesc, imageCount) == offsetof(SwapChainDesc, mImageCount));
+	static_assert(offsetof(TheForge_SwapChainDesc, width) == offsetof(SwapChainDesc, mWidth));
+	static_assert(offsetof(TheForge_SwapChainDesc, height) == offsetof(SwapChainDesc, mHeight));
+	static_assert(offsetof(TheForge_SwapChainDesc, sampleCount) == offsetof(SwapChainDesc, mSampleCount));
+	static_assert(offsetof(TheForge_SwapChainDesc, sampleQuality) == offsetof(SwapChainDesc, mSampleQuality));
+	static_assert(offsetof(TheForge_SwapChainDesc, colorFormat) == offsetof(SwapChainDesc, mColorFormat));
+	static_assert(offsetof(TheForge_SwapChainDesc, colorClearValue) == offsetof(SwapChainDesc, mColorClearValue));
+	static_assert(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
+	static_assert(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
 
 }
