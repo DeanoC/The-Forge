@@ -26,9 +26,6 @@ set(Interface
 set(Src
 		theforge.cpp
 		al2o3_helpers.cpp
-
-		OS/Camera/FpsCameraController.cpp
-		OS/Camera/GuiCameraController.cpp
 		OS/Core/Atomics.h
 		OS/Core/Compiler.h
 		OS/Core/DLL.h
@@ -43,7 +40,6 @@ set(Src
 		OS/Image/Image.h
 		OS/Image/ImageEnums.h
 		OS/Input/InputMappings.h
-		OS/Input/InputSystem.cpp
 		OS/Input/InputSystem.h
 		OS/Interfaces/IApp.h
 		OS/Interfaces/ICameraController.h
