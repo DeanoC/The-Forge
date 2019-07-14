@@ -24,6 +24,10 @@ Particularly, the graphics layer of The Forge supports cross-platform
 - Shader reflection
 - Multi-threaded command buffer generation
 
+Basic Usage:
+Clone https://github.com/DeanoC/The-Forge-AL2O3-Simple.git and load the CMakeLists.txt file into CLion or VS2019 (or use any other CMake system) and build. First build will take a while as it downloads and compiles everthing.
+
+
 Please find a link and credits for all open-source packages used at the https://github.com/ConfettiFX/The-Forge/README.md.
 
 The Forge proper has a discord channel, I hang out there so if you have questions about this fork, check for DeanoC at
