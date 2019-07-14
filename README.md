@@ -2,7 +2,7 @@
 
 This is a derivative of ConfettiFX The Forge, this version has a pure C interface and just the renderer portion and uses CMake and my own al2o3 framework for some parts (TODO reduce dependency).
 
-# This version is currently based on upstream Forge Release 1.31
+## This version is currently based on upstream Forge Release 1.31
 
 The Forge is a cross-platform rendering framework supporting
 - PC 
@@ -24,9 +24,22 @@ Particularly, the graphics layer of The Forge supports cross-platform
 - Shader reflection
 - Multi-threaded command buffer generation
 
-Basic Usage:
+### Basic Usage
 Clone https://github.com/DeanoC/The-Forge-AL2O3-Simple.git and load the CMakeLists.txt file into CLion or VS2019 (or use any other CMake system) and build. First build will take a while as it downloads and compiles everthing.
 
+### Resources
+Currently the CAPI is configured to look in the following directory for various resources. This isn't ideal and would like to make it configurable.
+"binshaders/",                                // FSR_BinShaders
+"srcshaders/",                                // FSR_SrcShaders
+"textures/",                                  // FSR_Textures
+"meshes/",                                    // FSR_Meshes
+"fonts/",                                      // FSR_Builtin_Fonts
+"gpuconfigs/",                                // FSR_GpuConfig
+"anims/",                                     // FSR_Animation
+"audio",                                      // FSR_Audio
+"misc/",                                      // FSR_OtherFiles
+
+### Info
 
 Please find a link and credits for all open-source packages used at the https://github.com/ConfettiFX/The-Forge/README.md.
 
