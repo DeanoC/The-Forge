@@ -1,6 +1,6 @@
 #pragma once
-#ifndef GFX_THEFORGE_DESCS_H_
-#define GFX_THEFORGE_DESCS_H_
+#ifndef GFX_THEFORGE_STRUCTS_H_
+#define GFX_THEFORGE_STRUCTS_H_
 
 #include "gfx_theforge/enums.h"
 
@@ -352,6 +352,48 @@ typedef struct TheForge_TextureBarrier
 	bool            split;
 } TheForge_TextureBarrier;
 
+typedef struct TheForge_BufferDesc
+{
+	uint64_t mSize;
+	TheForge_ResourceMemoryUsage mMemoryUsage;
+	TheForge_BufferCreationFlags mFlags;
+	TheForge_ResourceState mStartState;
+	TheForge_IndexType mIndexType;
+	uint32_t mVertexStride;
+	uint64_t mFirstElement;
+	uint64_t mElementCount;
+	uint64_t mStructStride;
+	TheForge_BufferHandle counterBuffer;
+	TheForge_ImageFormat mFormat;
+	TheForge_DescriptorType mDescriptors;
+	const char* pDebugName;
+	uint32_t*      pSharedNodeIndices;
+	uint32_t       mNodeIndex;
+	uint32_t       mSharedNodeIndexCount;
+} TheForge_BufferDesc;
+
+typedef struct TheForge_TextureDesc
+{
+	TheForge_TextureCreationFlags mFlags;
+	uint32_t mWidth;
+	uint32_t mHeight;
+	uint32_t mDepth;
+	uint32_t mArraySize;
+	uint32_t mMipLevels;
+	TheForge_SampleCount mSampleCount;
+	uint32_t mSampleQuality;
+	TheForge_ImageFormat mFormat;
+	TheForge_ClearValue mClearValue;
+	TheForge_ResourceState mStartState;
+	TheForge_DescriptorType mDescriptors;
+	const void* pNativeHandle;
+	const char* pDebugName;
+	uint32_t* pSharedNodeIndices;
+	uint32_t mSharedNodeIndexCount;
+	uint32_t mNodeIndex;
+	bool mSrgb;
+	bool mHostVisible;
+} heForge_TextureDesc;
 
 typedef struct TheForge_QueryHeapDesc
 {

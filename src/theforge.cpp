@@ -1,6 +1,7 @@
 #include "al2o3_platform/platform.h"
 #include "gfx_theforge/theforge.h"
 #include "Renderer/IRenderer.h"
+#include "Renderer/ResourceLoader.h"
 
 // I don't like this at all but for now just grin an bare it!
 const char *pszBases[FSR_Count] = {
@@ -795,6 +796,82 @@ AL2O3_EXTERN_C TheForge_RenderTargetDesc const* TheForge_RenderTargetGetDesc(The
 	return (TheForge_RenderTargetDesc const*) &((RenderTarget*)renderTarget)->mDesc;
 }
 
+AL2O3_EXTERN_C void TheForge_InitResourceLoaderInterface(TheForge_RendererHandle handle, TheForge_ResourceLoaderDesc* pDesc) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	initResourceLoaderInterface(renderer, (ResourceLoaderDesc*)pDesc);
+}
+AL2O3_EXTERN_C void TheForge_RemoveResourceLoaderInterface(TheForge_RendererHandle handle) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	removeResourceLoaderInterface(renderer);
+}
+AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle, const TheForge_ShaderLoadDesc* pDesc, TheForge_ShaderHandle* pShader) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addShader(renderer, (ShaderLoadDesc*)pDesc, (Shader**)pShader);
+}
+
+AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_BufferLoadDesc* pBufferLoadDesc, bool batch) {
+	addResource((BufferLoadDesc*)pBufferLoadDesc, batch);
+}
+AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_TextureLoadDesc* pTextureLoadDesc, bool batch) {
+	addResource((TextureLoadDesc*)pTextureLoadDesc, batch);
+}
+AL2O3_EXTERN_C void TheForge_AddBufferWithToken(TheForge_BufferLoadDesc* pBufferLoadDesc, TheForge_SyncToken* token) {
+	addResource((BufferLoadDesc*)pBufferLoadDesc, (SyncToken*)token);
+}
+AL2O3_EXTERN_C void TheForge_AddTextureWithToken(TheForge_TextureLoadDesc* pTextureLoadDesc, TheForge_SyncToken* token) {
+	addResource((TextureLoadDesc*)pTextureLoadDesc, (SyncToken*)token);
+}
+AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc* pBuffer, bool batch) {
+	updateResource((BufferUpdateDesc*)pBuffer, batch);
+}
+AL2O3_EXTERN_C void TheForge_UpdateTexture(TheForge_TextureUpdateDesc* pTexture, bool batch) {
+	updateResource((TextureUpdateDesc*)pTexture, batch);
+}
+AL2O3_EXTERN_C void TheForge_UpdateResources(uint32_t resourceCount, TheForge_ResourceUpdateDesc* pResources) {
+	updateResources(resourceCount, (ResourceUpdateDesc*)pResources);
+}
+AL2O3_EXTERN_C void TheForge_UpdateBufferWithToken(TheForge_BufferUpdateDesc* pBuffer, TheForge_SyncToken* token) {
+	updateResource((BufferUpdateDesc*)pBuffer, (SyncToken*)token);
+}
+AL2O3_EXTERN_C void TheForge_UpdateTextureWithToken(TheForge_TextureUpdateDesc* pTexture, TheForge_SyncToken* token) {
+	updateResource((TextureUpdateDesc*)pTexture, (SyncToken*)token);
+}
+AL2O3_EXTERN_C void TheForge_UpdateResourcesWithToken(uint32_t resourceCount, TheForge_ResourceUpdateDesc* pResources, TheForge_SyncToken* token) {
+	updateResources(resourceCount, (ResourceUpdateDesc*)pResources, (SyncToken*)token);
+}
+AL2O3_EXTERN_C bool TheForge_IsBatchCompleted() {
+	return isBatchCompleted();
+}
+AL2O3_EXTERN_C void TheForge_WaitBatchCompleted() {
+	waitBatchCompleted();
+}
+AL2O3_EXTERN_C bool TheForge_IsTokenCompleted(TheForge_SyncToken token) {
+	return isTokenCompleted(token);
+}
+AL2O3_EXTERN_C void TheForge_WaitTokenCompleted(TheForge_SyncToken token) {
+	waitTokenCompleted(token);
+}
+AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_BufferHandle buffer) {
+	removeResource((Buffer*)buffer);
+}
+AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_TextureHandle texture) {
+	removeResource((Texture*)texture);
+}
+AL2O3_EXTERN_C void TheForge_FlushResourceUpdates() {
+	flushResourceUpdates();
+}
+AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
+	finishResourceLoading();
+}
+
 
 static void API_CHECK() {
 	static_assert(sizeof(TheForge_ComputePipelineDesc) == sizeof(ComputePipelineDesc));
@@ -1024,5 +1101,6 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_SwapChainDesc, colorClearValue) == offsetof(SwapChainDesc, mColorClearValue));
 	static_assert(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
 	static_assert(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
+
 
 }

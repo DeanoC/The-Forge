@@ -5,6 +5,7 @@
 #include "al2o3_platform/platform.h"
 #include "gfx_theforge/enums.h"
 #include "gfx_theforge/structs.h"
+#include "gfx_theforge/resourceloader.h"
 
 AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(char const *appName,
 																															 TheForge_RendererDesc const *settings);

@@ -185,6 +185,15 @@ typedef enum TheForge_CmdPoolType
 	TheForge_CP_COMPUTE,
 } TheForge_CmdPoolType;
 
+typedef enum TheForge_BufferCreationFlags
+{
+	TheForge_BCF_NONE = 0x01,
+	TheForge_BCF_OWN_MEMORY_BIT = 0x02,
+	TheForge_BCF_PERSISTENT_MAP_BIT = 0x04,
+	TheForge_BCF_ESRAM = 0x08,
+	TheForge_BCF_NO_DESCRIPTOR_VIEW_CREATION = 0x10,
+} TheForge_BufferCreationFlags;
+
 typedef enum TheForge_TextureCreationFlags
 {
 	TheForge_TCF_NONE = 0,
@@ -292,6 +301,7 @@ typedef enum TheForge_ShaderStage
 	TheForge_SS_FRAG = 0X00000010,
 	TheForge_SS_COMP = 0X00000020,
 	TheForge_SS_RAYTRACING  = 0X00000040,
+	TheForge_SS_COUNT = 7,
 } TheForge_ShaderStage;
 
 typedef enum TheForge_BlendStateTargets
@@ -393,6 +403,12 @@ typedef enum TheForge_ShaderSemantic
 	TheForge_SS_TEXCOORD9,
 } TheForge_ShaderSemantic;
 
+typedef enum TheForge_IndexType
+{
+	TheForge_IT_UINT32 = 0,
+	TheForge_IT_UINT16,
+} TheForge_IndexType;
+
 typedef enum TheForge_PrimitiveTopology
 {
 	TheForge_PT_POINT_LIST = 0,
@@ -430,6 +446,15 @@ typedef enum TheForge_ResourceState
 	TheForge_RS_COMMON = 0x8000,
 } TheForge_TheForge_ResourceState;
 
+typedef enum TheForge_ResourceMemoryUsage
+{
+	TheForge_RMU_UNKNOWN = 0,
+	TheForge_RMU_GPU_ONLY = 1,
+	TheForge_RMU_CPU_ONLY = 2,
+	TheForge_RMU_CPU_TO_GPU = 3,
+	TheForge_RMU_GPU_TO_CPU = 4,
+} TheForge_ResourceMemoryUsage;
+
 typedef enum TheForge_FenceStatus
 {
 	TheForge_FS_COMPLETE = 0,
@@ -459,5 +484,24 @@ typedef enum TheForge_QueryType
 	TheForge_QT_OCCLUSION,
 	TheForge_QT_COUNT,
 } TheForge_QueryType;
+
+typedef enum TheForge_ResourceFolders
+{
+	TheForge_FSR_BinShaders = 0,
+	TheForge_FSR_SrcShaders,
+	TheForge_FSR_Textures,
+	TheForge_FSR_Meshes,
+	TheForge_FSR_Builtin_Fonts,
+	TheForge_FSR_GpuConfig,
+	TheForge_FSR_Animation,    // NOT USED
+	TheForge_FSR_Audio,				// NOT USED
+	TheForge_FSR_OtherFiles,
+} TheForge_ResourceFolders;
+
+typedef enum TheForge_ResourceType
+{
+	TheForge_RESOURCE_TYPE_BUFFER = 0,
+	TheForge_RESOURCE_TYPE_TEXTURE,
+} TheForge_ResourceType;
 
 #endif
