@@ -75,17 +75,17 @@ typedef struct TheForge_ResourceUpdateDesc
 
 typedef struct TheForge_ShaderStageLoadDesc
 {
-	const char* 							mFileName;
+	const char* 							fileName;
 	TheForge_ShaderMacro*    pMacros;
-	uint32_t        					mMacroCount;
-	TheForge_ResourceFolders          					mRoot;
-	const char*     					mEntryPointName;
+	uint32_t        					macroCount;
+	TheForge_ResourceFolders          					root;
+	const char*     					entryPointName;
 } TheForge_ShaderStageLoadDesc;
 
 typedef struct TheForge_ShaderLoadDesc
 {
-	TheForge_ShaderStageLoadDesc mStages[TheForge_SS_COUNT];
-	TheForge_ShaderTarget        mTarget;
+	TheForge_ShaderStageLoadDesc stages[TheForge_SS_COUNT];
+	TheForge_ShaderTarget        target;
 } TheForge_ShaderLoadDesc;
 
 // access atomically!

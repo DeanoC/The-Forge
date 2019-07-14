@@ -3,6 +3,23 @@
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
 
+#ifdef METAL
+// account for app directory
+// I don't like this at all but for now just grin an bare it!
+const char *pszBases[FSR_Count] = {
+		"../binshaders/",                                // FSR_BinShaders
+		"../srcshaders/",                                // FSR_SrcShaders
+		"../textures/",                                  // FSR_Textures
+		"../meshes/",                                    // FSR_Meshes
+		"../fonts/",                                      // FSR_Builtin_Fonts
+		"../gpuconfigs/",                                // FSR_GpuConfig
+		"../anims/",                                     // FSR_Animation
+		"../audio",                                      // FSR_Audio
+		"../misc/",                                      // FSR_OtherFiles
+		"",          // FSR_MIDDLEWARE_TEXT
+		"",          // FSR_MIDDLEWARE_UI
+};
+#else
 // I don't like this at all but for now just grin an bare it!
 const char *pszBases[FSR_Count] = {
 		"binshaders/",                                // FSR_BinShaders
@@ -18,6 +35,7 @@ const char *pszBases[FSR_Count] = {
 		"",          // FSR_MIDDLEWARE_UI
 };
 
+#endif
 static void LogFunc(LogType type, const char *m0, const char *m1) {
 	switch (type) {
 	case LogType::LOG_TYPE_INFO: LOGINFOF("%s %s", m0, m1);
@@ -79,8 +97,8 @@ static void TheForge_ShaderStageToShaderStage(TheForge_ShaderStageDesc const *sr
 	dst->mName = src->name;
 	dst->mCode = src->code;
 	dst->mEntryPoint = src->entryPoint;
-	dst->mMacros.resize(src->macrosCount);
-	for (uint32_t i = 0u; i < src->macrosCount; ++i) {
+	dst->mMacros.resize(src->macroCount);
+	for (uint32_t i = 0u; i < src->macroCount; ++i) {
 		dst->mMacros[i].definition = src->macros[i].definition;
 		dst->mMacros[i].value = src->macros[i].value;
 	}
@@ -92,6 +110,36 @@ static void TheForge_BinaryShaderStageToBinaryShaderStage(TheForge_BinaryShaderS
 	dst->mByteCodeSize = src->byteCodeSize;
 	dst->mEntryPoint = src->entryPoint;
 	dst->mSource = src->source;
+}
+
+static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc const *src, ShaderLoadDesc *dst) {
+
+	dst->mTarget = (ShaderTarget) src->target;
+	for(int i = 0;i < SHADER_STAGE_COUNT;++i) {
+		TheForge_ShaderStageLoadDesc const *srcStage;
+		ShaderStageLoadDesc *dstStage = &dst->mStages[i];
+
+#ifdef METAL
+		switch(i) {
+		case 0: srcStage = &src->stages[0]; break;
+		case 1: srcStage = &src->stages[1]; break;
+		case 2: srcStage = &src->stages[5]; break;
+		default:
+			LOGERRORF("Shader stage is not supported on Metal backend");
+			return;
+		}
+#else
+		srcStage = &src->stages[i];
+#endif
+		dstStage->mFileName = srcStage->fileName;
+		dstStage->mEntryPointName = srcStage->entryPointName;
+		dstStage->mMacroCount = srcStage->macroCount;
+		dstStage->mRoot = (FSRoot) srcStage->root;
+		for (uint32_t i = 0u; i < srcStage->macroCount; ++i) {
+			dstStage->pMacros[i].definition = srcStage->pMacros[i].definition;
+			dstStage->pMacros[i].value = srcStage->pMacros[i].value;
+		}
+	}
 }
 
 AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(
@@ -288,8 +336,8 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 		return;
 
 	ShaderDesc desc{};
-	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages),
-			TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
+	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
+	TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
 	TheForge_ShaderStageToShaderStage(&pDesc->frag, &desc.mFrag);
 	TheForge_ShaderStageToShaderStage(&pDesc->geom, &desc.mGeom);
 	TheForge_ShaderStageToShaderStage(&pDesc->hull, &desc.mHull);
@@ -307,8 +355,8 @@ AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
 		return;
 
 	BinaryShaderDesc desc{};
-	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages),
-			TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
+	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
+	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
 	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->frag, &desc.mFrag);
 	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->geom, &desc.mGeom);
 	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->hull, &desc.mHull);
@@ -813,8 +861,9 @@ AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle, const Th
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return;
-
-	addShader(renderer, (ShaderLoadDesc*)pDesc, (Shader**)pShader);
+	ShaderLoadDesc desc;
+	TheForge_ShaderLoadStageToShaderLoadStage(pDesc, &desc);
+	addShader(renderer, &desc, (Shader**)pShader);
 }
 
 AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_BufferLoadDesc* pBufferLoadDesc, bool batch) {

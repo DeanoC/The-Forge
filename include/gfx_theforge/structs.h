@@ -113,7 +113,7 @@ typedef struct TheForge_ShaderStageDesc
 	char const*             	code;
 	char const*             	entryPoint;
 	TheForge_ShaderMacro* 		macros;
-	uint32_t     							macrosCount;
+	uint32_t     							macroCount;
 } TheForge_ShaderStageDesc;
 
 typedef struct TheForge_ShaderDesc
