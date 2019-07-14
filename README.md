@@ -29,15 +29,13 @@ Clone https://github.com/DeanoC/The-Forge-AL2O3-Simple.git and load the CMakeLis
 
 ### Resources
 Currently the CAPI is configured to look in the following directory for various resources. This isn't ideal and would like to make it configurable.
-"binshaders/",                                // FSR_BinShaders
-"srcshaders/",                                // FSR_SrcShaders
-"textures/",                                  // FSR_Textures
-"meshes/",                                    // FSR_Meshes
-"fonts/",                                      // FSR_Builtin_Fonts
-"gpuconfigs/",                                // FSR_GpuConfig
-"anims/",                                     // FSR_Animation
-"audio",                                      // FSR_Audio
-"misc/",                                      // FSR_OtherFiles
+* binshaders/                                FSR_BinShaders
+* srcshaders/                                FSR_SrcShaders
+* textures/                                  FSR_Textures
+* meshes/                                    FSR_Meshes
+* fonts/                                     FSR_Builtin_Fonts
+* gpuconfigs/                                FSR_GpuConfig
+* misc/                                      FSR_OtherFiles
 
 ### Info
 
@@ -45,7 +43,7 @@ Please find a link and credits for all open-source packages used at the https://
 
 The Forge proper has a discord channel, I hang out there so if you have questions about this fork, check for DeanoC at
 
-* Discord: we offer now also support through a discord channel. Sign up here: 
+Discord: TheForge now offer support through a discord channel. Sign up here: 
 <a href="https://discord.gg/hJS54bz" target="_blank"><img src="Screenshots/Discord.png" 
  width="20" height="20" border="0" /> The Forge Discord Channel
 
