@@ -39,9 +39,6 @@ set(Src
 		OS/Image/Image.cpp
 		OS/Image/Image.h
 		OS/Image/ImageEnums.h
-		OS/Input/InputMappings.h
-		OS/Input/InputSystem.cpp
-		OS/Input/InputSystem.h
 		OS/Interfaces/IApp.h
 		OS/Interfaces/ICameraController.h
 		OS/Interfaces/IFileSystem.h
@@ -75,89 +72,6 @@ set(Src
 		ThirdParty/OpenSource/EASTL/string.cpp
 		ThirdParty/OpenSource/EASTL/thread_support.cpp
 		ThirdParty/OpenSource/EASTL/EAStdC/EASprintf.cpp
-
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltIn.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltInAndroid.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltInImpl.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltInIos.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltInIos.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/builtin/GainputInputDeviceBuiltInNull.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputDev.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputDev.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputDevProtocol.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputMemoryStream.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputMemoryStream.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetAddress.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetAddress.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetConnection.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetConnection.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetListener.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputNetListener.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/dev/GainputStream.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputButtonStickGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputDoubleClickGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputHoldGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputPinchGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputRotateGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputSimultaneouslyDownGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gestures/GainputTapGesture.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboard.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardAndroid.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardEvdev.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardImpl.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardIOS.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardLinux.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardMac.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardMac.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardNull.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardWin.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputInputDeviceKeyboardWinRaw.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/keyboard/GainputKeyboardKeyNames.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouse.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseEvdev.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseImpl.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseLinux.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseLinuxRaw.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseMac.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseMac.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseMacRaw.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseMacRaw.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseNull.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseWin.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputInputDeviceMouseWinRaw.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/mouse/GainputMouseInfo.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePad.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadAndroid.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadImpl.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadIos.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadIos.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadLinux.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadMac.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadMac.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadNull.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/pad/GainputInputDevicePadWin.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/recorder/GainputInputPlayer.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/recorder/GainputInputRecorder.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/recorder/GainputInputRecording.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputInputDeviceTouch.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputInputDeviceTouchAndroid.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputInputDeviceTouchImpl.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputInputDeviceTouchIos.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputInputDeviceTouchNull.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/touch/GainputTouchInfo.h
-
-		ThirdParty/OpenSource/gainput/lib/source/gainput/gainput.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputAllocator.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputHelpersEvdev.h
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputInputDeltaState.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputInputDevice.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputInputManager.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputInputMap.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputInputState.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputIos.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputMac.mm
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputMapFilters.cpp
-		ThirdParty/OpenSource/gainput/lib/source/gainput/GainputWindows.h
 		)
 if (WIN32)
 	list(APPEND Src Renderer/Direct3D12/Direct3D12.cpp)
@@ -180,8 +94,6 @@ if (APPLE)
 	list(APPEND Src Renderer/Metal/MetalRenderer.mm)
 	list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
 
-	list(APPEND Src OS/macOs/AppDelegate.h)
-	list(APPEND Src OS/macOs/AppDelegate.mm)
 	list(APPEND Src OS/macOs/macOSFileSystem.mm)
 	list(APPEND Src OS/macOs/macOSLog.cpp)
 	list(APPEND Src OS/macOs/macOSThread.cpp)
