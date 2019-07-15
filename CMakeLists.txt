@@ -213,3 +213,14 @@ if (APPLE)
 			"-framework QuartzCore"
 			)
 endif ()
+if(WIN32)
+	target_compile_definitions(${LibName} PRIVATE DIRECT3D12)
+	target_link_libraries(${LibName} PRIVATE
+			winmm
+			${CMAKE_CURRENT_SOURCE_DIR}/src/ThirdParty/OpenSource/winpixeventruntime/bin/x64/WinPixEventRuntime.lib)
+
+	configure_file(
+			${CMAKE_CURRENT_SOURCE_DIR}/src/ThirdParty/OpenSource/winpixeventruntime/bin/x64/WinPixEventRuntime.dll
+			${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/WinPixEventRuntime.dll COPYONLY)
+
+endif()

@@ -64,7 +64,7 @@ static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage)
 	case TheForge_SS_GEOM:				return SHADER_STAGE_GEOM;
 	case TheForge_SS_FRAG:				return SHADER_STAGE_FRAG;
 	case TheForge_SS_COMP:				return SHADER_STAGE_COMP;
-	case TheForge_SS_RAYTRACING:	return SHADER_SS_RAYTRACING;
+	case TheForge_SS_RAYTRACING:	return SHADER_STAGE_RAYTRACING;
 	default:
 		LOGERRORF("Shader stage is not supported on Metal backend");
 		return SHADER_STAGE_NONE;
@@ -93,6 +93,7 @@ static ShaderStage TheForge_ShaderStageFlagsToShaderStage(uint32_t flags) {
 	return (ShaderStage) stage;
 }
 
+#ifdef METAL
 static void TheForge_ShaderStageToShaderStage(TheForge_ShaderStageDesc const *src, ShaderStageDesc *dst) {
 	dst->mName = src->name;
 	dst->mCode = src->code;
@@ -103,13 +104,16 @@ static void TheForge_ShaderStageToShaderStage(TheForge_ShaderStageDesc const *sr
 		dst->mMacros[i].value = src->macros[i].value;
 	}
 }
+#endif
 
 static void TheForge_BinaryShaderStageToBinaryShaderStage(TheForge_BinaryShaderStageDesc const *src,
 																													BinaryShaderStageDesc *dst) {
 	dst->pByteCode = src->byteCode;
 	dst->mByteCodeSize = src->byteCodeSize;
 	dst->mEntryPoint = src->entryPoint;
+#ifdef METAL
 	dst->mSource = src->source;
+#endif
 }
 
 static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc const *src, ShaderLoadDesc *dst) {
@@ -334,7 +338,7 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return;
-
+#ifdef METAL
 	ShaderDesc desc{};
 	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
 	TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
@@ -345,6 +349,9 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 	TheForge_ShaderStageToShaderStage(&pDesc->comp, &desc.mComp);
 
 	addShader(renderer, &desc, (Shader **) pShader);
+#else
+	LOGERROR("AddShader is only supported on Metal backends, Use AddShaderBinary");
+#endif
 }
 
 AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
