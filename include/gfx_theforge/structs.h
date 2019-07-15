@@ -448,6 +448,42 @@ typedef struct TheForge_CommandSignatureDesc
 	TheForge_IndirectArgumentDescriptor* 			pArgDescs;
 } TheForge_CommandSignatureDesc;
 
+typedef struct TheForge_ReadRange
+{
+	uint64_t offset;
+	uint64_t aize;
+} TheForge_ReadRange;
+
+
+typedef struct TheForge_Region3D
+{
+	uint32_t xOffset;
+	uint32_t yOffset;
+	uint32_t zOffset;
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+} TheForge_Region3D;
+
+typedef struct TheForge_SubresourceDataDesc
+{
+	// Source description
+	uint64_t bufferOffset;
+	uint32_t rowPitch;
+	uint32_t alicePitch;
+	// Destination description
+	uint32_t arrayLayer;
+	uint32_t mipLevel;
+	TheForge_Region3D region;
+} TheForge_SubresourceDataDesc;
+
+typedef struct TheForge_Extent3D
+{
+	uint32_t width;
+	uint32_t geight;
+	uint32_t depth;
+} TheForge_Extent3D;
+
 
 typedef void* TheForge_IconHandle;
 
