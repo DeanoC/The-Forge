@@ -336,6 +336,7 @@ void d3d12_createShaderReflection(const uint8_t* shaderCode, uint32_t shaderSize
 #ifndef _DURANGO
 	if (!d3d12reflection)
 	{
+		gDxcDllHelper.Initialize();
 		IDxcLibrary* pLibrary = NULL;
 		gDxcDllHelper.CreateInstance(CLSID_DxcLibrary, &pLibrary);
 		IDxcBlobEncoding* pBlob = NULL;
@@ -357,6 +358,7 @@ void d3d12_createShaderReflection(const uint8_t* shaderCode, uint32_t shaderSize
 		pBlob->Release();
 		pLibrary->Release();
 		pReflection->Release();
+		gDxcDllHelper.Cleanup();
 	}
 #endif
 

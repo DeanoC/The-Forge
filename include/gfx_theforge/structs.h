@@ -135,7 +135,7 @@ typedef struct TheForge_BinaryShaderStageDesc
 	char const* entryPoint;
 
 	// Shader source is needed for reflection on Metal only
-	char const source;
+	char const* source;
 } TheForge_BinaryShaderStageDesc;
 
 typedef struct TheForge_BinaryShaderDesc
