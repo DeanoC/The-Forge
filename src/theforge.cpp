@@ -341,12 +341,12 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 #ifdef METAL
 	ShaderDesc desc{};
 	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
-	TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
-	TheForge_ShaderStageToShaderStage(&pDesc->frag, &desc.mFrag);
-	TheForge_ShaderStageToShaderStage(&pDesc->geom, &desc.mGeom);
-	TheForge_ShaderStageToShaderStage(&pDesc->hull, &desc.mHull);
-	TheForge_ShaderStageToShaderStage(&pDesc->domain, &desc.mDomain);
-	TheForge_ShaderStageToShaderStage(&pDesc->comp, &desc.mComp);
+	if(desc.mStages & SHADER_STAGE_VERT)
+		TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
+	if(desc.mStages & SHADER_STAGE_FRAG)
+		TheForge_ShaderStageToShaderStage(&pDesc->frag, &desc.mFrag);
+	if(desc.mStages & SHADER_STAGE_COMP)
+		TheForge_ShaderStageToShaderStage(&pDesc->comp, &desc.mComp);
 
 	addShader(renderer, &desc, (Shader **) pShader);
 #else
@@ -367,12 +367,14 @@ AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
 	if(desc.mStages & SHADER_STAGE_FRAG)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->frag, &desc.mFrag);
+#ifndef METAL
 	if(desc.mStages & SHADER_STAGE_GEOM)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->geom, &desc.mGeom);
 	if(desc.mStages & SHADER_STAGE_HULL)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->hull, &desc.mHull);
 	if(desc.mStages & SHADER_STAGE_DOMN)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->domain, &desc.mDomain);
+#endif
 	if(desc.mStages & SHADER_STAGE_COMP)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->comp, &desc.mComp);
 
