@@ -6,6 +6,7 @@
 #include "gfx_theforge/enums.h"
 #include "gfx_theforge/structs.h"
 #include "gfx_theforge/resourceloader.h"
+#include "gfx_theforge/shaderreflection.h"
 
 AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(char const *appName,
 																															 TheForge_RendererDesc const *settings);
@@ -69,7 +70,7 @@ AL2O3_EXTERN_C void TheForge_AddDescriptorBinder(TheForge_RendererHandle handle,
 																								 const TheForge_DescriptorBinderDesc *pDescs,
 																								 TheForge_DescriptorBinderHandle *pDescriptorBinder);
 AL2O3_EXTERN_C void TheForge_RemoveDescriptorBinder(TheForge_RendererHandle handle,
-																										TheForge_DescriptorBinderHandle *descriptorBinder);
+																										TheForge_DescriptorBinderHandle descriptorBinder);
 AL2O3_EXTERN_C void TheForge_AddBlendState(TheForge_RendererHandle handle,
 																					 const TheForge_BlendStateDesc *pDesc,
 																					 TheForge_BlendStateHandle *pBlendState);
@@ -91,6 +92,11 @@ AL2O3_EXTERN_C void TheForge_AddQueryHeap(TheForge_RendererHandle handle,
 																					TheForge_QueryHeapHandle *pQueryHeap);
 AL2O3_EXTERN_C void TheForge_RemoveQueryHeap(TheForge_RendererHandle handle, TheForge_QueryHeapHandle queryHeap);
 
+
+AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle, TheForge_BufferDesc const* pDesc, TheForge_BufferHandle* pBuffer);
+AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_RendererHandle handle, TheForge_TextureDesc const* pDesc, TheForge_TextureHandle* pTexture);
+AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer);
+AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_RendererHandle handle, TheForge_TextureHandle texture);
 
 AL2O3_EXTERN_C void TheForge_BeginCmd(TheForge_CmdHandle cmd);
 AL2O3_EXTERN_C void TheForge_EndCmd(TheForge_CmdHandle cmd);
@@ -125,7 +131,7 @@ AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge
 AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,
 																								 uint32_t bufferCount,
 																								 TheForge_BufferHandle *pBuffers,
-																								 uint64_t *pOffsets);
+																								 uint64_t const *pOffsets);
 AL2O3_EXTERN_C void TheForge_CmdDraw(TheForge_CmdHandle cmd, uint32_t vertexCount, uint32_t firstVertex);
 AL2O3_EXTERN_C void TheForge_CmdDrawInstanced(TheForge_CmdHandle cmd,
 																							uint32_t vertexCount,
@@ -214,6 +220,8 @@ AL2O3_EXTERN_C void TheForge_SetBufferName(TheForge_RendererHandle handle,
 AL2O3_EXTERN_C void TheForge_SetTextureName(TheForge_RendererHandle handle,
 																						TheForge_TextureHandle texture,
 																						const char *pName);
+AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer, TheForge_ReadRange* pRange);
+AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer);
 
 AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle, const TheForge_SwapChainDesc* pDesc, TheForge_SwapChainHandle* pSwapChain);
 AL2O3_EXTERN_C void TheForge_RemoveSwapChain(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain);
@@ -233,5 +241,7 @@ AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_R
 
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const* TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget);
 
+// do not free return owned by the shader!
+AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader);
 
 #endif // end

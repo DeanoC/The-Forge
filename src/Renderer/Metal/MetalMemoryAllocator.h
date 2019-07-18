@@ -3524,7 +3524,7 @@ long createBuffer(
 			{
 				if (pMemoryRequirements->usage == RESOURCE_MEMORY_USAGE_GPU_ONLY)
 				{
-                    LOGF(LogLevel::eWARNING,
+					LOGERRORF(
 						"Cannot map memory not visible on CPU. Use a readback buffer instead for reading the memory to a cpu visible "
 						"buffer");
 				}

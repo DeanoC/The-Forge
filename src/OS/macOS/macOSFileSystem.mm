@@ -134,7 +134,7 @@ void get_files_with_extension(const char* dir, const char* ext, eastl::vector<ea
 	DIR*            pDir = opendir(dir);
 	if (!pDir)
 	{
-        LOGF(LogLevel::eWARNING, "Could not open directory: %s", dir);
+		LOGWARNINGF("Could not open directory: %s", dir);
 		return;
 	}
 
@@ -157,7 +157,7 @@ void get_sub_directories(const char* dir, eastl::vector<eastl::string>& subDirec
 	DIR*            pDir = opendir(dir);
 	if (!pDir)
 	{
-		LOGF(LogLevel::eWARNING, "Could not open directory: %s", dir);
+		LOGWARNINGF("Could not open directory: %s", dir);
 		return;
 	}
 
@@ -187,7 +187,7 @@ bool copy_file(const char* src, const char* dst)
 													  toPath:[NSString stringWithUTF8String:dst]
 													   error:&error])
 	{
-        LOGF(LogLevel::eINFO, "Failed to copy file with error : %s", [[error localizedDescription] UTF8String]);
+    LOGINFOF("Failed to copy file with error : %s", [[error localizedDescription] UTF8String]);
 		return false;
 	}
 

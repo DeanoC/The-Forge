@@ -168,7 +168,7 @@ static void setGPUPresetLevel(Renderer* pRenderer)
 	gpuCfgFile.Open("gpu.cfg", FM_ReadBinary, FSR_GpuConfig);
 	if (!gpuCfgFile.IsOpen())
 	{
-		LOGF(LogLevel::eWARNING, "gpu.cfg could not be found, setting preset to Low as a default.");
+		LOGERRORF( "gpu.cfg could not be found, setting preset to Low as a default.");
 		return;
 	}
 

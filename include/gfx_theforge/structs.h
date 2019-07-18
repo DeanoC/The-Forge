@@ -219,11 +219,11 @@ typedef struct TheForge_GraphicsPipelineDesc
 {
 	TheForge_ShaderHandle            	shaderProgram;
 	TheForge_RootSignatureHandle     	rootSignature;
-	TheForge_VertexLayout*      			pVertexLayout;
+	TheForge_VertexLayout const*      pVertexLayout;
 	TheForge_BlendStateHandle        	blendState;
 	TheForge_DepthStateHandle        	depthState;
 	TheForge_RasterizerStateHandle   	rasterizerState;
-	TheForge_ImageFormat* 						pColorFormats;
+	TheForge_ImageFormat const* 			pColorFormats;
 	bool*															pSrgbValues;
 	uint32_t           								renderTargetCount;
 	TheForge_SampleCount        			sampleCount;
@@ -256,7 +256,7 @@ typedef struct TheForge_BlendStateDesc
 	TheForge_BlendConstant dstAlphaFactors[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendMode blendModes[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendMode blendAlphaModes[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
-	int32_t masks[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
+	uint32_t masks[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendStateTargets renderTargetMask;
 	bool alphaToCoverage;
 	bool independentBlend;
@@ -321,8 +321,8 @@ typedef struct TheForge_DescriptorData
 	{
 		struct
 		{
-			uint64_t* pOffsets;
-			uint64_t* pSizes;
+			uint64_t const* pOffsets;
+			uint64_t const* pSizes;
 		};
 		uint32_t UAVMipSlice;
 		bool bindStencilResource;
@@ -332,7 +332,7 @@ typedef struct TheForge_DescriptorData
 		TheForge_TextureHandle* pTextures;
 		TheForge_SamplerHandle* pSamplers;
 		TheForge_BufferHandle* pBuffers;
-		void* pRootConstant;
+		void const* pRootConstant;
 		TheForge_AcclerationStructureHandle* pAccelerationStructures;
 	};
 	uint32_t count;
@@ -448,6 +448,28 @@ typedef struct TheForge_CommandSignatureDesc
 	TheForge_IndirectArgumentDescriptor* 			pArgDescs;
 } TheForge_CommandSignatureDesc;
 
+typedef struct TheForge_ReadRange
+{
+	uint64_t offset;
+	uint64_t size;
+} TheForge_ReadRange;
+
+typedef struct TheForge_Region3D
+{
+	uint32_t xOffset;
+	uint32_t yOffset;
+	uint32_t zOffset;
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+} TheForge_Region3D;
+
+typedef struct TheForge_Extent3D
+{
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+} TheForge_Extent3D;
 
 typedef void* TheForge_IconHandle;
 

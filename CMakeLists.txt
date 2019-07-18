@@ -50,8 +50,6 @@ set(Src
 		OS/Interfaces/IProfiler.h
 		OS/Interfaces/IThread.h
 		OS/Interfaces/ITime.h
-		OS/Logging/Log.cpp
-		OS/Logging/Log.h
 		OS/Math/MathTypes.h
 		OS/MemoryTracking/MemoryTracking.cpp
 		OS/MemoryTracking/NoMemoryDefines.h
@@ -82,7 +80,6 @@ if (WIN32)
 	list(APPEND Src Renderer/Direct3D12/Direct3D12Raytracing.cpp)
 	list(APPEND Src Renderer/Direct3D12/Direct3D12ShaderReflection.cpp)
 	list(APPEND Src OS/Windows/WindowsFileSystem.cpp)
-	list(APPEND Src OS/Windows/WindowsLog.cpp)
 	list(APPEND Src OS/Windows/WindowsThread.cpp)
 	list(APPEND Src OS/Windows/WindowsTime.cpp)
 endif ()
@@ -94,7 +91,6 @@ if (APPLE)
 	list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
 
 	list(APPEND Src OS/macOs/macOSFileSystem.mm)
-	list(APPEND Src OS/macOs/macOSLog.cpp)
 	list(APPEND Src OS/macOs/macOSThread.cpp)
 	list(APPEND Src OS/macOs/macOSTime.cpp)
 endif ()

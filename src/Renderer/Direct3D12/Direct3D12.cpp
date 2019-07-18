@@ -805,7 +805,7 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 	else
 	{
-		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
+		LOGERRORF( "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -835,7 +835,7 @@ static void internal_log(LogType type, const char* msg, const char* component)
 		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -1505,7 +1505,7 @@ DXGI_FORMAT util_to_dx_swapchain_format(ImageFormat::Enum format)
 
 	if (result == DXGI_FORMAT_UNKNOWN)
 	{
-		LOGF(LogLevel::eERROR, "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
+		LOGERRORF( "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
 	}
 
 	return result;
@@ -1516,7 +1516,7 @@ DXGI_FORMAT util_to_dx_image_format_typeless(ImageFormat::Enum format)
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 	if (format >= sizeof(gDX12FormatTranslatorTypeless) / sizeof(DXGI_FORMAT))
 	{
-		LOGF(LogLevel::eERROR, "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
+		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
 	}
 	else
 	{
@@ -1531,7 +1531,7 @@ DXGI_FORMAT util_to_dx_image_format(ImageFormat::Enum format, bool srgb)
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 	if (format >= sizeof(gDX12FormatTranslator) / sizeof(DXGI_FORMAT))
 	{
-		LOGF(LogLevel::eERROR, "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
+		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
 	}
 	else
 	{
@@ -2091,8 +2091,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			//when initializing the forge
 			RemoveDevice(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
+			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGERRORF( "Office preset is not supported by The Forge.");
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -2136,7 +2136,7 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 						m_WaveIntrinsicsSupport.WaveOps != TRUE && !SUCCEEDED(EnableExperimentalShaderModels()))
 					{
 						RemoveDevice(pRenderer);
-						LOGF(LogLevel::eERROR, "Hardware does not support Shader Model 6.0");
+						LOGERRORF( "Hardware does not support Shader Model 6.0");
 						return;
 					}
 				}
@@ -2866,7 +2866,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	{
 		if (pBuffer->mDesc.mVertexStride == 0)
 		{
-			LOGF(LogLevel::eERROR, "Vertex Stride must be a non zero value");
+			LOGERRORF( "Vertex Stride must be a non zero value");
 			ASSERT(false);
 		}
 	}
@@ -3002,7 +3002,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
+		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -3528,16 +3528,16 @@ void addDescriptorBinder(
 							switch (dim)
 							{
 								case TEXTURE_DIM_2DMS:
-									LOGF(LogLevel::eERROR, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGERRORF( "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_2DMS_ARRAY:
-									LOGF(LogLevel::eERROR, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGERRORF( "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_CUBE:
-									LOGF(LogLevel::eERROR, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGERRORF( "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_CUBE_ARRAY:
-									LOGF(LogLevel::eERROR, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGERRORF( "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								default: break;
 							}
@@ -4750,7 +4750,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	{
 		char* pMsg = (char*)conf_calloc(error_msgs->GetBufferSize(), sizeof(char));
 		memcpy(pMsg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
-		LOGF(LogLevel::eERROR, "Failed to serialize root signature with error (%s)", pMsg);
+		LOGERRORF( "Failed to serialize root signature with error (%s)", pMsg);
 		conf_free(pMsg);
 	}
 
@@ -5650,7 +5650,7 @@ void cmdBindDescriptors(
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
+			LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
 			return;
 		}
 
@@ -5667,7 +5667,7 @@ void cmdBindDescriptors(
 		{
 			if (!pParam->pRootConstant)
 			{
-				LOGF(LogLevel::eERROR, "Root constant (%s) is NULL", pParam->pName);
+				LOGERRORF( "Root constant (%s) is NULL", pParam->pName);
 				continue;
 			}
 			if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
@@ -5686,7 +5686,7 @@ void cmdBindDescriptors(
 		{
 			if (!pParam->ppBuffers[0])
 			{
-				LOGF(LogLevel::eERROR, "Root descriptor CBV (%s) is NULL", pParam->pName);
+				LOGERRORF( "Root descriptor CBV (%s) is NULL", pParam->pName);
 				continue;
 			}
 			D3D12_GPU_VIRTUAL_ADDRESS cbv = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
@@ -5757,14 +5757,14 @@ void cmdBindDescriptors(
 				}
 				if (!pParam->ppSamplers)
 				{
-					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppSamplers[j])
 					{
-						LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pSamplerHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[j]->mSamplerId, 1, pSamplerHash[setIndex]);
@@ -5777,7 +5777,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppTextures)
 				{
-					LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
@@ -5788,7 +5788,7 @@ void cmdBindDescriptors(
 #ifdef _DEBUG
 					if (!pParam->ppTextures[j])
 					{
-						LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 #endif
@@ -5806,7 +5806,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppTextures)
 				{
-					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "RW Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
@@ -5819,7 +5819,7 @@ void cmdBindDescriptors(
 #ifdef _DEBUG
 					if (!pParam->ppTextures[j])
 					{
-						LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 #endif
@@ -5837,14 +5837,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
@@ -5868,14 +5868,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
@@ -5892,7 +5892,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 
@@ -5902,7 +5902,7 @@ void cmdBindDescriptors(
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 
@@ -5944,14 +5944,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppAccelerationStructures)
 				{
-					LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) is NULL", pParam->pName);
+					LOGERRORF( "Acceleration Structure descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppAccelerationStructures[j])
 					{
-						LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGERRORF( "Acceleration Structure descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 
@@ -6008,7 +6008,7 @@ void cmdBindDescriptors(
 					descriptorSetSlotToUse = node->mCbvSrvUavUpdateCount[frameIdx][setIndex]++;
 					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 					{
-						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
+						LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex);
 						ASSERT(0);
 						return;
 					}
@@ -6065,7 +6065,7 @@ void cmdBindDescriptors(
 					descriptorSetSlotToUse = node->mSamplerUpdateCount[frameIdx][setIndex]++;
 					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 					{
-						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
+						LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex);
 						ASSERT(0);
 						return;
 					}
@@ -6837,8 +6837,8 @@ D3D12_INDIRECT_ARGUMENT_TYPE util_to_dx_indirect_argument_type(IndirectArgumentT
 		case INDIRECT_CONSTANT_BUFFER_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW; break;
 		case INDIRECT_SHADER_RESOURCE_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW; break;
 		case INDIRECT_UNORDERED_ACCESS_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW; break;
-		case INDIRECT_DESCRIPTOR_TABLE: LOGF(LogLevel::eERROR, "Dx12 Doesn't support DescriptorTable in Indirect Command"); break;
-		case INDIRECT_PIPELINE: LOGF(LogLevel::eERROR, "Dx12 Doesn't support the Pipeline in Indirect Command"); break;
+		case INDIRECT_DESCRIPTOR_TABLE: LOGERRORF( "Dx12 Doesn't support DescriptorTable in Indirect Command"); break;
+		case INDIRECT_PIPELINE: LOGERRORF( "Dx12 Doesn't support the Pipeline in Indirect Command"); break;
 	}
 	return res;
 }
@@ -6864,7 +6864,7 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 	{
 		if (pDesc->pArgDescs[i].mType == INDIRECT_DESCRIPTOR_TABLE || pDesc->pArgDescs[i].mType == INDIRECT_PIPELINE)
 		{
-			LOGF(LogLevel::eERROR, "Dx12 Doesn't support DescriptorTable or Pipeline in Indirect Command");
+			LOGERRORF( "Dx12 Doesn't support DescriptorTable or Pipeline in Indirect Command");
 		}
 
 		argumentDescs[i].Type = util_to_dx_indirect_argument_type(pDesc->pArgDescs[i].mType);

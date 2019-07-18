@@ -3,6 +3,18 @@
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
 
+// these are hidden but we want them
+extern void addBuffer(Renderer* pRenderer, const BufferDesc* desc, Buffer** pp_buffer);
+extern void removeBuffer(Renderer* pRenderer, Buffer* p_buffer);
+extern void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** pp_texture);
+extern void removeTexture(Renderer* pRenderer, Texture* p_texture);
+
+extern void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange);
+extern void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer);
+extern void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
+extern void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
+extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer);
+
 #ifdef METAL
 // account for app directory
 // I don't like this at all but for now just grin an bare it!
@@ -324,7 +336,7 @@ AL2O3_EXTERN_C void TheForge_AddSampler(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	addSampler(renderer, (SamplerDesc *) &pDesc, (Sampler **) pSampler);
+	addSampler(renderer, (SamplerDesc *) pDesc, (Sampler **) pSampler);
 }
 AL2O3_EXTERN_C void TheForge_RemoveSampler(TheForge_RendererHandle handle, TheForge_SamplerHandle sampler) {
 	auto renderer = (Renderer *) handle;
@@ -445,7 +457,7 @@ AL2O3_EXTERN_C void TheForge_AddDescriptorBinder(TheForge_RendererHandle handle,
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveDescriptorBinder(TheForge_RendererHandle handle,
-																										TheForge_DescriptorBinderHandle *descriptorBinder) {
+																										TheForge_DescriptorBinderHandle descriptorBinder) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return;
@@ -572,8 +584,8 @@ AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge
 AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,
 																								 uint32_t bufferCount,
 																								 TheForge_BufferHandle *pBuffers,
-																								 uint64_t *pOffsets) {
-	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, pOffsets);
+																								 uint64_t const *pOffsets) {
+	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, (uint64_t*)pOffsets);
 }
 AL2O3_EXTERN_C void TheForge_CmdDraw(TheForge_CmdHandle cmd, uint32_t vertexCount, uint32_t firstVertex) {
 	cmdDraw((Cmd *) cmd, vertexCount, firstVertex);
@@ -867,6 +879,53 @@ AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_R
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const *TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget) {
 	return (TheForge_RenderTargetDesc const *) &((RenderTarget *) renderTarget)->mDesc;
 }
+AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader) {
+	return (TheForge_PipelineReflection const *) &((Shader *) shader)->mReflection;
+
+}
+
+AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle, TheForge_BufferDesc const* pDesc, TheForge_BufferHandle* pBuffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addBuffer(renderer, (BufferDesc const*)pDesc, (Buffer**)pBuffer);
+}
+AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_RendererHandle handle, TheForge_TextureDesc const* pDesc, TheForge_TextureHandle* pTexture) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addTexture(renderer, (TextureDesc const*)pDesc, (Texture**)pTexture);
+}
+AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	removeBuffer(renderer, (Buffer*)buffer);
+}
+AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_RendererHandle handle, TheForge_TextureHandle texture) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	removeTexture(renderer, (Texture*)texture);
+}
+
+AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer, TheForge_ReadRange* pRange) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	mapBuffer(renderer, (Buffer*)buffer, (ReadRange*)pRange);
+}
+
+AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	unmapBuffer(renderer, (Buffer*)buffer);
+
+}
 
 AL2O3_EXTERN_C void TheForge_InitResourceLoaderInterface(TheForge_RendererHandle handle,
 																												 TheForge_ResourceLoaderDesc *pDesc) {
@@ -893,23 +952,23 @@ AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle,
 	addShader(renderer, &desc, (Shader **) pShader);
 }
 
-AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_BufferLoadDesc *pBufferLoadDesc, bool batch) {
+AL2O3_EXTERN_C void TheForge_LoadBuffer(TheForge_BufferLoadDesc const *pBufferLoadDesc, bool batch) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, batch);
 }
-AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_TextureLoadDesc *pTextureLoadDesc, bool batch) {
+AL2O3_EXTERN_C void TheForge_LoadTexture(TheForge_TextureLoadDesc const *pTextureLoadDesc, bool batch) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, batch);
 }
-AL2O3_EXTERN_C void TheForge_AddBufferWithToken(TheForge_BufferLoadDesc *pBufferLoadDesc, TheForge_SyncToken *token) {
+AL2O3_EXTERN_C void TheForge_LoadBufferWithToken(TheForge_BufferLoadDesc const *pBufferLoadDesc, TheForge_SyncToken *token) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, (SyncToken *) token);
 }
-AL2O3_EXTERN_C void TheForge_AddTextureWithToken(TheForge_TextureLoadDesc *pTextureLoadDesc,
+AL2O3_EXTERN_C void TheForge_LoadTextureWithToken(TheForge_TextureLoadDesc const *pTextureLoadDesc,
 																								 TheForge_SyncToken *token) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, (SyncToken *) token);
 }
-AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc *pBuffer, bool batch) {
+AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc const *pBuffer, bool batch) {
 	updateResource((BufferUpdateDesc *) pBuffer, batch);
 }
-AL2O3_EXTERN_C void TheForge_UpdateTexture(TheForge_TextureUpdateDesc *pTexture, bool batch) {
+AL2O3_EXTERN_C void TheForge_UpdateTexture(TheForge_TextureUpdateDesc const *pTexture, bool batch) {
 	updateResource((TextureUpdateDesc *) pTexture, batch);
 }
 AL2O3_EXTERN_C void TheForge_UpdateResources(uint32_t resourceCount, TheForge_ResourceUpdateDesc *pResources) {
@@ -938,12 +997,7 @@ AL2O3_EXTERN_C bool TheForge_IsTokenCompleted(TheForge_SyncToken token) {
 AL2O3_EXTERN_C void TheForge_WaitTokenCompleted(TheForge_SyncToken token) {
 	waitTokenCompleted(token);
 }
-AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_BufferHandle buffer) {
-	removeResource((Buffer *) buffer);
-}
-AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_TextureHandle texture) {
-	removeResource((Texture *) texture);
-}
+
 AL2O3_EXTERN_C void TheForge_FlushResourceUpdates() {
 	flushResourceUpdates();
 }
@@ -1181,5 +1235,9 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_SwapChainDesc, colorClearValue) == offsetof(SwapChainDesc, mColorClearValue));
 	static_assert(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
 	static_assert(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
+
+	static_assert(sizeof(TheForge_PipelineReflection) == sizeof(PipelineReflection));
+	static_assert(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
+	static_assert(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
 
 }
