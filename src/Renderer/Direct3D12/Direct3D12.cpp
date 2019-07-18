@@ -832,9 +832,9 @@ static void internal_log(LogType type, const char* msg, const char* component)
 {
 	switch (type)
 	{
-		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_INFO: LOGINFOF("%s ( %s )", component, msg); break;
+		case LOG_TYPE_WARN: LOGWARNINGF("%s ( %s )", component, msg); break;
+		case LOG_TYPE_DEBUG: LOGDEBUGF("%s ( %s )", component, msg); break;
 		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
 		default: break;
 	}
@@ -1393,7 +1393,7 @@ DXGI_FORMAT util_to_dx_uav_format(DXGI_FORMAT defaultFormat)
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
 		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
-		case DXGI_FORMAT_D16_UNORM: ErrorMsg("Requested a UAV format for a depth stencil format");
+		case DXGI_FORMAT_D16_UNORM: LOGERRORF("Requested a UAV format for a depth stencil format");
 #endif
 
 		default: return defaultFormat;
@@ -1930,8 +1930,7 @@ static void AddDevice(Renderer* pRenderer)
 		DXGI_ADAPTER_DESC adapterDesc;
 		pRenderer->pDxGPUs[i]->GetDesc(&adapterDesc);
 		pRenderer->mGpuSettings[i].mMaxRootSignatureDWORDS = gRootSignatureDWORDS[util_to_internal_gpu_vendor(adapterDesc.VendorId)];
-		LOGF(
-			LogLevel::eINFO, "GPU[%i] detected. Vendor ID: %x, Revision ID: %x, GPU Name: %S", i, adapterDesc.VendorId,
+		LOGINFOF("GPU[%i] detected. Vendor ID: %x, Revision ID: %x, GPU Name: %S", i, adapterDesc.VendorId,
 			adapterDesc.Revision, adapterDesc.Description);
 
 		// Check that gpu supports at least graphics
@@ -1968,11 +1967,11 @@ static void AddDevice(Renderer* pRenderer)
 	pRenderer->pActiveGpuSettings = &pRenderer->mGpuSettings[gpuIndex];
 
 	//print selected GPU information
-	LOGF(LogLevel::eINFO, "GPU[%d] is selected as default GPU", gpuIndex);
-	LOGF(LogLevel::eINFO, "Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
-	LOGF(LogLevel::eINFO, "Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
-	LOGF(LogLevel::eINFO, "Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
-	LOGF(LogLevel::eINFO, "Revision id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mRevisionId);
+	LOGINFOF("GPU[%d] is selected as default GPU", gpuIndex);
+	LOGINFOF("Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
+	LOGINFOF("Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
+	LOGINFOF("Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
+	LOGINFOF("Revision id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mRevisionId);
 
 	// Load functions
 	{
@@ -2142,7 +2141,7 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 				}
 				else
 				{
-					WarningMsg(
+					LOGWARNINGF(
 						"\nRenderDoc does not support SM 6.0 or higher. Application might work but you won't be able to debug the SM 6.0+ "
 						"shaders or view their bytecode.");
 				}
@@ -2635,7 +2634,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 	if (pSwapChain->mDesc.mSampleCount > SAMPLE_COUNT_1)
 	{
-		LOGF(LogLevel::eWARNING, "DirectX12 does not support multi-sample swapchains. Falling back to single sample swapchain");
+		LOGWARNINGF("DirectX12 does not support multi-sample swapchains. Falling back to single sample swapchain");
 		pSwapChain->mDesc.mSampleCount = SAMPLE_COUNT_1;
 	}
 
@@ -2886,7 +2885,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		if (DESCRIPTOR_TYPE_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER_RAW))
 		{
 			if (pDesc->mFormat != ImageFormat::NONE)
-				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
+				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
 			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			srvDesc.Buffer.Flags |= D3D12_BUFFER_SRV_FLAG_RAW;
 		}
@@ -2913,7 +2912,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		if (DESCRIPTOR_TYPE_RW_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER_RAW))
 		{
 			if (pDesc->mFormat != ImageFormat::NONE)
-				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
+				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
 			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			uavDesc.Buffer.Flags |= D3D12_BUFFER_UAV_FLAG_RAW;
 		}
@@ -2926,7 +2925,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 				!(FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE))
 			{
 				// Format does not support UAV Typed Load
-				LOGF(LogLevel::eWARNING, "Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->mFormat);
+				LOGWARNINGF("Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->mFormat);
 				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 			}
 		}
@@ -3063,8 +3062,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &data, sizeof(data));
 		while (data.NumQualityLevels == 0 && data.SampleCount > 0)
 		{
-			LOGF(
-				LogLevel::eWARNING, "Sample Count (%u) not supported. Trying a lower sample count (%u)", data.SampleCount,
+			LOGWARNINGF("Sample Count (%u) not supported. Trying a lower sample count (%u)", data.SampleCount,
 				data.SampleCount / 2);
 			data.SampleCount = desc.SampleDesc.Count / 2;
 			pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &data, sizeof(data));
@@ -3830,7 +3828,7 @@ void compileShader(
 {
 	if (shaderTarget > pRenderer->mSettings.mShaderTarget)
 	{
-		ErrorMsg(
+		LOGERRORF(
 			"Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
 			(uint32_t)shaderTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
 		return;
@@ -3991,7 +3989,7 @@ void compileShader(
 			IDxcBlobEncoding* pError;
 			d3d_call(pResult->GetErrorBuffer(&pError));
 			eastl::string log = convertBlobToString(pError);
-			ErrorMsg(log.c_str());
+			LOGERRORF(log.c_str());
 			pError->Release();
 			return;
 		}
@@ -4078,7 +4076,7 @@ void compileShader(
 			ASSERT(msg);
 			memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 			eastl::string error = eastl::string(fileName) + " " + msg;
-			ErrorMsg(error.c_str());
+			LOGERRORF(error.c_str());
 			SAFE_FREE(msg);
 		}
 		ASSERT(SUCCEEDED(hres));
@@ -4282,7 +4280,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[it->second].reg != pRes->reg)
 				{
-					ErrorMsg(
+					LOGERRORF(
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching register. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4292,7 +4290,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[it->second].set != pRes->set)
 				{
-					ErrorMsg(
+					LOGERRORF(
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching space. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4355,7 +4353,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 			if (pNode != staticSamplerMap.end())
 			{
-				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
+				LOGINFOF("Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
 				// Set the index to invalid value so we can use this later for error checking if user tries to update a static sampler
 				pDesc->mIndexInParent = ~0u;
 				staticSamplers.push_back({ pDesc, pNode->second });
@@ -4431,8 +4429,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				layout.mRootConstants.erase(eastl::find(layout.mRootConstants.begin(), layout.mRootConstants.end(), *convertIt));
 				(*convertIt)->mDxType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 
-				LOGF(
-					LogLevel::eWARNING, "Converting root constant (%s) to root cbv to keep root signature size below hardware limit",
+				LOGWARNINGF("Converting root constant (%s) to root cbv to keep root signature size below hardware limit",
 					(*convertIt)->mDesc.name);
 			}
 		}
@@ -4458,8 +4455,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 					layout.mCbvSrvUavTable.push_back(*constantIt);
 					layout.mRootDescriptorParams.erase(eastl::find(layout.mRootDescriptorParams.begin(), layout.mRootDescriptorParams.end(), *constantIt));
 
-					LOGF(
-						LogLevel::eWARNING,
+					LOGWARNINGF(
 						"Placing root descriptor (%s) in descriptor table to keep root signature size below hardware limit",
 						(*constantIt)->mDesc.name);
 				}
@@ -4470,7 +4466,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	// We should never reach inside this if statement. If we do, something got messed up
 	if (pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS < calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size()))
 	{
-		LOGF(LogLevel::eWARNING, "Root Signature size greater than the specified max size");
+		LOGWARNINGF( "Root Signature size greater than the specified max size");
 		ASSERT(false);
 	}
 
@@ -4587,9 +4583,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				//Root constants - Number of 32 bit constants
 				//Descriptor tables - 1
 				//Static samplers - 0
-				LOGF(
-					LogLevel::eINFO,
-					"Root constant (%s) has (%u) 32 bit values. It is recommended to have root constant number less or equal than 13",
+				LOGINFOF("Root constant (%s) has (%u) 32 bit values. It is recommended to have root constant number less or equal than 13",
 					pDesc->mDesc.name, pDesc->mDesc.size);
 			}
 
@@ -5748,8 +5742,7 @@ void cmdBindDescriptors(
 			{
 				if (pDesc->mIndexInParent == -1)
 				{
-					LOGF(
-						LogLevel::eERROR,
+					LOGERRORF(
 						"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
 						"RootSignatureDesc::mStaticSamplers",
 						pParam->pName);

@@ -1640,7 +1640,7 @@ bool load_shader_stage_byte_code(
 			if (!save_byte_code(binaryShaderName, byteCode))
 			{
 				const char* shaderName = shaderSource.GetName().c_str();
-				LOGF(LogLevel::eWARNING, "Failed to save byte code for file %s", shaderName);
+				LOGWARNINGF("Failed to save byte code for file %s", shaderName);
 			}
 #endif
 		}

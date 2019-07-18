@@ -203,7 +203,7 @@ static GPUPresetLevel getGPUPresetLevel(const eastl::string vendorId, const east
 	gpuCfgFile.Open("gpu.cfg", FM_ReadBinary, FSR_GpuConfig);
 	if (!gpuCfgFile.IsOpen())
 	{
-		LOGF(LogLevel::eWARNING, "gpu.cfg could not be found, setting preset to Low as a default.");
+		LOGWARNINGF("gpu.cfg could not be found, setting preset to Low as a default.");
 		return GPU_PRESET_LOW;
 	}
 
