@@ -817,7 +817,16 @@ AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	addSwapChain(renderer, (SwapChainDesc *) pDesc, (SwapChain **) pSwapChain);
+	// we don't use virtually any of the the forges windows desc as we just want
+	// the swap chain to attached (WindowsDesc is if you used TheForges OS to
+	// allocate teh window)
+	WindowsDesc windowsDesc;
+	windowsDesc.handle = (WindowHandle)pDesc->pWindow->handle;
+	SwapChainDesc scDesc;
+	memcpy(&scDesc, pDesc, sizeof(TheForge_SwapChainDesc));
+	scDesc.pWindow = &windowsDesc;
+
+	addSwapChain(renderer, &scDesc, (SwapChain **) pSwapChain);
 }
 
 
@@ -1204,23 +1213,6 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_RectDesc, top) == offsetof(RectDesc, top));
 	static_assert(offsetof(TheForge_RectDesc, right) == offsetof(RectDesc, right));
 	static_assert(offsetof(TheForge_RectDesc, bottom) == offsetof(RectDesc, bottom));
-
-	static_assert(sizeof(TheForge_WindowsDesc) == sizeof(WindowsDesc));
-	static_assert(offsetof(TheForge_WindowsDesc, handle) == offsetof(WindowsDesc, handle));
-	static_assert(offsetof(TheForge_WindowsDesc, windowedRect) == offsetof(WindowsDesc, windowedRect));
-	static_assert(offsetof(TheForge_WindowsDesc, fullscreenRect) == offsetof(WindowsDesc, fullscreenRect));
-	static_assert(offsetof(TheForge_WindowsDesc, clientRect) == offsetof(WindowsDesc, clientRect));
-	static_assert(offsetof(TheForge_WindowsDesc, fullScreen) == offsetof(WindowsDesc, fullScreen));
-	static_assert(offsetof(TheForge_WindowsDesc, windowsFlags) == offsetof(WindowsDesc, windowsFlags));
-	static_assert(offsetof(TheForge_WindowsDesc, bigIcon) == offsetof(WindowsDesc, bigIcon));
-	static_assert(offsetof(TheForge_WindowsDesc, smallIcon) == offsetof(WindowsDesc, smallIcon));
-	static_assert(offsetof(TheForge_WindowsDesc, cursorTracked) == offsetof(WindowsDesc, cursorTracked));
-	static_assert(offsetof(TheForge_WindowsDesc, iconified) == offsetof(WindowsDesc, iconified));
-	static_assert(offsetof(TheForge_WindowsDesc, maximized) == offsetof(WindowsDesc, maximized));
-	static_assert(offsetof(TheForge_WindowsDesc, minimized) == offsetof(WindowsDesc, minimized));
-	static_assert(offsetof(TheForge_WindowsDesc, visible) == offsetof(WindowsDesc, visible));
-	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosX) == offsetof(WindowsDesc, lastCursorPosX));
-	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosY) == offsetof(WindowsDesc, lastCursorPosY));
 
 	static_assert(sizeof(TheForge_SwapChainDesc) == sizeof(SwapChainDesc));
 	static_assert(offsetof(TheForge_SwapChainDesc, pWindow) == offsetof(SwapChainDesc, pWindow));

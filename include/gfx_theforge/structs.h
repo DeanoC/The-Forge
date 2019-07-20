@@ -502,23 +502,6 @@ typedef struct TheForge_WindowsDesc
 #else
 	TheForge_WindowHandle handle = NULL;    //hWnd
 #endif
-	TheForge_RectDesc   windowedRect;
-	TheForge_RectDesc   fullscreenRect;
-	TheForge_RectDesc   clientRect;
-	bool       fullScreen = false;
-	unsigned   windowsFlags = 0;
-	TheForge_IconHandle bigIcon = NULL;
-	TheForge_IconHandle smallIcon = NULL;
-
-	bool cursorTracked = false;
-	bool iconified = false;
-	bool maximized = false;
-	bool minimized = false;
-	bool visible = true;
-
-	// maybe that should go to the input system?
-	// The last received cursor position, regardless of source
-	int lastCursorPosX, lastCursorPosY;
 } TheForge_WindowsDesc;
 
 typedef struct TheForge_SwapChainDesc
