@@ -329,11 +329,11 @@ typedef struct TheForge_DescriptorData
 	};
 	union
 	{
-		TheForge_TextureHandle* pTextures;
-		TheForge_SamplerHandle* pSamplers;
-		TheForge_BufferHandle* pBuffers;
+		TheForge_TextureHandle const* pTextures;
+		TheForge_SamplerHandle const* pSamplers;
+		TheForge_BufferHandle const* pBuffers;
 		void const* pRootConstant;
-		TheForge_AcclerationStructureHandle* pAccelerationStructures;
+		TheForge_AcclerationStructureHandle const* pAccelerationStructures;
 	};
 	uint32_t count;
 } TheForge_DescriptorData;

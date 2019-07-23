@@ -1228,6 +1228,8 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
 	static_assert(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
 
+	static_assert(sizeof(TheForge_RawImageData) == sizeof(RawImageData));
+
 	static_assert(sizeof(TheForge_PipelineReflection) == sizeof(PipelineReflection));
 	static_assert(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
 	static_assert(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
