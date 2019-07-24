@@ -231,13 +231,6 @@ AL2O3_EXTERN_C TheForge_ImageFormat TheForge_GetRecommendedSwapchainFormat(bool 
 AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain, TheForge_SemaphoreHandle signalSemaphore, TheForge_FenceHandle fence, uint32_t* pImageIndex);
 AL2O3_EXTERN_C void TheForge_QueuePresent(TheForge_QueueHandle queue, TheForge_SwapChainHandle swapChain, uint32_t swapChainImageIndex, uint32_t waitSemaphoreCount, TheForge_SemaphoreHandle* pWaitSemaphores);
 
-// In normal TheForge these are hidden behind the resource loader but for our stripped down (eventually)
-// these are exposed out to the client
-AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer, TheForge_ReadRange* pRange);
-AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer);
-AL2O3_EXTERN_C void TheForge_CmdUpdateBuffer(TheForge_CmdHandle cmd, TheForge_BufferHandle dstBuffer, uint64_t dstOffset, TheForge_BufferHandle srcBuffer, uint64_t srcOffset, uint64_t size);
-AL2O3_EXTERN_C void TheForge_CmdUpdateSubresource(TheForge_CmdHandle cmd, TheForge_TextureHandle dstTexture, TheForge_BufferHandle srcBuffer, TheForge_SubresourceDataDesc* pSubresourceDesc);
-
 
 // accessors TheForge C API has opaque handles, this is largely okay as its mostly a push API
 // however a few things do need passing back (mostly for rendertarget and swapchain)
