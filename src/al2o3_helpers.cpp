@@ -1,7 +1,7 @@
 #include "al2o3_platform/platform.h"
 #include "al2o3_memory/memory.h"
 #include "gfx_theforge/theforge.h"
-#include "gfx_imageformat/formatcracker.h"
+#include "tiny_imageformat/formatcracker.h"
 
 AL2O3_EXTERN_C TheForge_ImageFormat ImageFormatToTheForge_ImageFormat(ImageFormat fmt) {
 	// TheForge uses a SRGB flag rather than format. so you will have to

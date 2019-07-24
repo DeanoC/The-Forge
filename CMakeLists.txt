@@ -98,7 +98,7 @@ endif ()
 set(Deps
 		al2o3_platform
 		al2o3_memory
-		gfx_imageformat
+		tiny_imageformat
 		)
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
 if (APPLE)
