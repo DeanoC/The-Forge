@@ -543,7 +543,7 @@ DXGI_FORMAT util_to_dx_swapchain_format(ImageFormat::Enum format)
 
 	if (result == DXGI_FORMAT_UNKNOWN)
 	{
-		LOGF(LogLevel::eERROR, "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
+		LOGERRORF( "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
 	}
 
 	return result;
@@ -554,7 +554,7 @@ DXGI_FORMAT util_to_dx_image_format_typeless(ImageFormat::Enum format)
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 	if (format >= sizeof(gFormatTranslatorTypeless) / sizeof(DXGI_FORMAT))
 	{
-		LOGF(LogLevel::eERROR, "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
+		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
 	}
 	else
 	{
@@ -569,7 +569,7 @@ DXGI_FORMAT util_to_dx_image_format(ImageFormat::Enum format, bool srgb)
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 	if (format >= sizeof(gFormatTranslator) / sizeof(DXGI_FORMAT))
 	{
-		LOGF(LogLevel::eERROR, "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
+		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
 	}
 	else
 	{
@@ -614,7 +614,7 @@ static void internal_log(LogType type, const char* msg, const char* component)
 		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -882,7 +882,7 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -910,7 +910,7 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, Subr
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -941,7 +941,7 @@ static void AddDevice(Renderer* pRenderer)
 
 	if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pRenderer->pDXGIFactory)))
 	{
-		LOGF(LogLevel::eERROR, "Could not create DXGI factory.");
+		LOGERRORF( "Could not create DXGI factory.");
 		return;
 	}
 	ASSERT(pRenderer->pDXGIFactory);
@@ -1114,7 +1114,7 @@ static void AddDevice(Renderer* pRenderer)
 		&pRenderer->pDxContext);
 	ASSERT(SUCCEEDED(hr));
 	if (FAILED(hr))
-		LOGF(LogLevel::eERROR, "Failed to create D3D11 device and context.");
+		LOGERRORF( "Failed to create D3D11 device and context.");
 }
 
 static void RemoveDevice(Renderer* pRenderer)
@@ -1206,8 +1206,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			//when initializing the forge
 			RemoveDevice(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
+			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGERRORF( "Office preset is not supported by The Forge.");
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -1707,7 +1707,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	desc.MaxLOD = ((pDesc->mMipMapMode == MIPMAP_MODE_LINEAR) ? D3D11_FLOAT32_MAX : 0.0f);
 
 	if (FAILED(pRenderer->pDxDevice->CreateSamplerState(&desc, &pSampler->pSamplerState)))
-		LOGF(LogLevel::eERROR, "Failed to create sampler state.");
+		LOGERRORF( "Failed to create sampler state.");
 
 	*ppSampler = pSampler;
 }
@@ -2032,7 +2032,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	{
 		if (pBuffer->mDesc.mVertexStride == 0)
 		{
-			LOGF(LogLevel::eERROR, "Vertex Stride must be a non zero value");
+			LOGERRORF( "Vertex Stride must be a non zero value");
 			ASSERT(false);
 		}
 	}
@@ -2132,7 +2132,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
+		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -2945,7 +2945,7 @@ void addBlendState(Renderer* pRenderer, const BlendStateDesc* pDesc, BlendState*
 	}
 
 	if (FAILED(pRenderer->pDxDevice->CreateBlendState(&desc, &pBlendState->pBlendState)))
-		LOGF(LogLevel::eERROR, "Failed to create blend state.");
+		LOGERRORF( "Failed to create blend state.");
 
 	*ppBlendState = pBlendState;
 }
@@ -2989,7 +2989,7 @@ void addDepthState(Renderer* pRenderer, const DepthStateDesc* pDesc, DepthState*
 	desc.FrontFace.StencilPassOp = gStencilOpTranslator[pDesc->mStencilBackPass];
 
 	if (FAILED(pRenderer->pDxDevice->CreateDepthStencilState(&desc, &pDepthState->pDxDepthStencilState)))
-		LOGF(LogLevel::eERROR, "Failed to create depth state.");
+		LOGERRORF( "Failed to create depth state.");
 
 	*ppDepthState = pDepthState;
 }
@@ -3022,7 +3022,7 @@ void addRasterizerState(Renderer* pRenderer, const RasterizerStateDesc* pDesc, R
 	desc.AntialiasedLineEnable = FALSE;
 
 	if (FAILED(pRenderer->pDxDevice->CreateRasterizerState(&desc, &pRasterizerState->pDxRasterizerState)))
-		LOGF(LogLevel::eERROR, "Failed to create depth state.");
+		LOGERRORF( "Failed to create depth state.");
 
 	*ppRasterizerState = pRasterizerState;
 }
@@ -3093,7 +3093,7 @@ void cmdBindRenderTargets(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3149,7 +3149,7 @@ void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, floa
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3174,7 +3174,7 @@ void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t h
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3198,7 +3198,7 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3220,7 +3220,7 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 	else
 	{
-		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
+		LOGERRORF( "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -3235,7 +3235,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3321,7 +3321,7 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t offset)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3344,7 +3344,7 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3373,7 +3373,7 @@ void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3394,7 +3394,7 @@ void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uin
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3417,7 +3417,7 @@ void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3440,7 +3440,7 @@ void cmdDrawIndexedInstanced(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3464,7 +3464,7 @@ void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3490,7 +3490,7 @@ void cmdResourceBarrier(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3514,7 +3514,7 @@ void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers,
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3538,7 +3538,7 @@ void cmdFlushBarriers(Cmd* pCmd)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3744,7 +3744,7 @@ void queueSubmit(
 						ASSERT(pParam);
 						if (!pParam->pName)
 						{
-							LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
+							LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
 							return;
 						}
 
@@ -4035,7 +4035,7 @@ void cmdExecuteIndirect(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4123,7 +4123,7 @@ void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4145,7 +4145,7 @@ void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4167,7 +4167,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4199,7 +4199,7 @@ void cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4222,7 +4222,7 @@ void cmdEndDebugMarker(Cmd* pCmd)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4242,7 +4242,7 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 

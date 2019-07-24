@@ -651,7 +651,7 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
                                                             error:&error];
             if (!_pipeline)
             {
-                LOGF(LogLevel::eERROR, "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
+                LOGERRORF( "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
             }
             [pPipeline->mHitPipelines addObject: _pipeline];
             
@@ -679,7 +679,7 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
                                                       error:&error];
             if (!_pipeline)
             {
-                LOGF(LogLevel::eERROR, "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
+                LOGERRORF( "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
             }
             [pPipeline->mMissPipelines addObject: _pipeline];
             

@@ -135,7 +135,7 @@ typedef struct TheForge_BinaryShaderStageDesc
 	char const* entryPoint;
 
 	// Shader source is needed for reflection on Metal only
-	char const source;
+	char const* source;
 } TheForge_BinaryShaderStageDesc;
 
 typedef struct TheForge_BinaryShaderDesc
@@ -219,11 +219,11 @@ typedef struct TheForge_GraphicsPipelineDesc
 {
 	TheForge_ShaderHandle            	shaderProgram;
 	TheForge_RootSignatureHandle     	rootSignature;
-	TheForge_VertexLayout*      			pVertexLayout;
+	TheForge_VertexLayout const*      pVertexLayout;
 	TheForge_BlendStateHandle        	blendState;
 	TheForge_DepthStateHandle        	depthState;
 	TheForge_RasterizerStateHandle   	rasterizerState;
-	TheForge_ImageFormat* 						pColorFormats;
+	TheForge_ImageFormat const* 			pColorFormats;
 	bool*															pSrgbValues;
 	uint32_t           								renderTargetCount;
 	TheForge_SampleCount        			sampleCount;
@@ -256,7 +256,7 @@ typedef struct TheForge_BlendStateDesc
 	TheForge_BlendConstant dstAlphaFactors[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendMode blendModes[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendMode blendAlphaModes[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
-	int32_t masks[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
+	uint32_t masks[TheForge_MAX_RENDER_TARGET_ATTACHMENTS];
 	TheForge_BlendStateTargets renderTargetMask;
 	bool alphaToCoverage;
 	bool independentBlend;
@@ -321,19 +321,19 @@ typedef struct TheForge_DescriptorData
 	{
 		struct
 		{
-			uint64_t* pOffsets;
-			uint64_t* pSizes;
+			uint64_t const* pOffsets;
+			uint64_t const* pSizes;
 		};
 		uint32_t UAVMipSlice;
 		bool bindStencilResource;
 	};
 	union
 	{
-		TheForge_TextureHandle* pTextures;
-		TheForge_SamplerHandle* pSamplers;
-		TheForge_BufferHandle* pBuffers;
-		void* pRootConstant;
-		TheForge_AcclerationStructureHandle* pAccelerationStructures;
+		TheForge_TextureHandle const* pTextures;
+		TheForge_SamplerHandle const* pSamplers;
+		TheForge_BufferHandle const* pBuffers;
+		void const* pRootConstant;
+		TheForge_AcclerationStructureHandle const* pAccelerationStructures;
 	};
 	uint32_t count;
 } TheForge_DescriptorData;
@@ -451,9 +451,8 @@ typedef struct TheForge_CommandSignatureDesc
 typedef struct TheForge_ReadRange
 {
 	uint64_t offset;
-	uint64_t aize;
+	uint64_t size;
 } TheForge_ReadRange;
-
 
 typedef struct TheForge_Region3D
 {
@@ -465,25 +464,12 @@ typedef struct TheForge_Region3D
 	uint32_t depth;
 } TheForge_Region3D;
 
-typedef struct TheForge_SubresourceDataDesc
-{
-	// Source description
-	uint64_t bufferOffset;
-	uint32_t rowPitch;
-	uint32_t alicePitch;
-	// Destination description
-	uint32_t arrayLayer;
-	uint32_t mipLevel;
-	TheForge_Region3D region;
-} TheForge_SubresourceDataDesc;
-
 typedef struct TheForge_Extent3D
 {
 	uint32_t width;
-	uint32_t geight;
+	uint32_t height;
 	uint32_t depth;
 } TheForge_Extent3D;
-
 
 typedef void* TheForge_IconHandle;
 
@@ -516,23 +502,6 @@ typedef struct TheForge_WindowsDesc
 #else
 	TheForge_WindowHandle handle = NULL;    //hWnd
 #endif
-	TheForge_RectDesc   windowedRect;
-	TheForge_RectDesc   fullscreenRect;
-	TheForge_RectDesc   clientRect;
-	bool       fullScreen = false;
-	unsigned   windowsFlags = 0;
-	TheForge_IconHandle bigIcon = NULL;
-	TheForge_IconHandle smallIcon = NULL;
-
-	bool cursorTracked = false;
-	bool iconified = false;
-	bool maximized = false;
-	bool minimized = false;
-	bool visible = true;
-
-	// maybe that should go to the input system?
-	// The last received cursor position, regardless of source
-	int lastCursorPosX, lastCursorPosY;
 } TheForge_WindowsDesc;
 
 typedef struct TheForge_SwapChainDesc

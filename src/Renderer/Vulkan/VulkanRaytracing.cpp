@@ -505,7 +505,7 @@ void FillShaderIdentifiers(	const RaytracingShaderTableRecordDesc* pRecords, uin
 		else
 		{
 			ASSERT(false);
-			LOGF(LogLevel::eERROR, "Could not find shader name %s identifier", nameStr.c_str());
+			LOGERRORF( "Could not find shader name %s identifier", nameStr.c_str());
 			continue;
 		}
 

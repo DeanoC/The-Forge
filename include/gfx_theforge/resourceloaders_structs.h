@@ -17,8 +17,12 @@ typedef struct TheForge_BufferLoadDesc
 typedef struct TheForge_RawImageData
 {
 	unsigned char* pRawData;
-	TheForge_ImageFormat mFormat;
-	uint32_t mWidth, mHeight, mDepth, mArraySize, mMipLevels;
+	TheForge_ImageFormat format;
+	uint32_t width;
+	uint32_t height;
+	uint32_t depth;
+	uint32_t arraySize;
+	uint32_t mipLevels;
 } TheForge_RawImageData;
 
 typedef struct TheForge_BinaryImageData

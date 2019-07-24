@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "../../ThirdParty/OpenSource/ModifiedSonyMath/vectormath.hpp"
 #include "../Interfaces/ILog.h"
 
 #if defined(ORBIS)
@@ -553,7 +554,7 @@ static inline int32_t GetChannelCount(const Enum format)
 
 	if (format >= sizeof(channelCount) / sizeof(int))
 	{
-		LOGF(LogLevel::eERROR, "Fail to find Channel in format : %s", GetFormatString(format));
+		LOGERRORF("Fail to find Channel in format : %s", GetFormatString(format));
 		return 0;
 	}
 

@@ -602,7 +602,7 @@ static const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature,
 	}
 	else
 	{
-		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
+		LOGERRORF( "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -924,7 +924,7 @@ static void internal_log(LogType type, const char* msg, const char* component)
 		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -954,7 +954,7 @@ static VkBool32 VKAPI_PTR internal_debug_report_callback(
 	}
 	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 	{
-		LOGF(LogLevel::eERROR, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGERRORF( "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 
 	return VK_FALSE;
@@ -983,7 +983,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL internal_debug_report_callback(
 	}
 	else if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 	{
-		LOGF(LogLevel::eERROR, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGERRORF( "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	
 	return VK_FALSE;
@@ -1227,7 +1227,7 @@ VkFormat util_to_vk_image_format(ImageFormat::Enum format, bool srgb)
 
 	if (format >= sizeof(gVkFormatTranslator) / sizeof(gVkFormatTranslator[0]))
 	{
-		LOGF(LogLevel::eERROR, "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gVulkanFormatTranslator");
+		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gVulkanFormatTranslator");
 	}
 	else
 	{
@@ -2389,7 +2389,7 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 		VkResult vkRes = volkInitialize();
 		if (vkRes != VK_SUCCESS)
 		{
-			LOGF(LogLevel::eERROR, "Failed to initialize Vulkan");
+			LOGERRORF( "Failed to initialize Vulkan");
 			return;
 		}
 
@@ -2409,8 +2409,8 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 			RemoveDevice(pRenderer);
 			RemoveInstance(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
+			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGERRORF( "Office preset is not supported by The Forge.");
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -2630,7 +2630,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 	}
 	else
 	{
-		LOGF(LogLevel::eERROR, "Cannot create queue of type (%u)", pDesc->mType);
+		LOGERRORF( "Cannot create queue of type (%u)", pDesc->mType);
 	}
 }
 
@@ -3249,7 +3249,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
+		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -3435,7 +3435,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		case VK_IMAGE_TYPE_3D:
 			if (pDesc->mArraySize > 1)
 			{
-				LOGF(LogLevel::eERROR, "Cannot support 3D Texture Array in Vulkan");
+				LOGERRORF( "Cannot support 3D Texture Array in Vulkan");
 				ASSERT(false);
 			}
 			view_type = VK_IMAGE_VIEW_TYPE_3D;
@@ -5651,7 +5651,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
+			LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
 			return;
 		}
 
@@ -5677,7 +5677,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (pDesc->mIndexInParent == -1)
 			{
-				LOGF(LogLevel::eERROR, 
+				LOGERRORF(
 					"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
 					"RootSignatureDesc::mStaticSamplers",
 					pParam->pName);
@@ -5685,14 +5685,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			}
 			if (!pParam->ppSamplers)
 			{
-				LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
+				LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppSamplers[i])
 				{
-					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGERRORF( "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[i]->mSamplerId, 1, pHash[setIndex]);
@@ -5703,7 +5703,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppTextures)
 			{
-				LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
+				LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 
@@ -5711,7 +5711,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			{
 				if (!pParam->ppTextures[i])
 				{
-					LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 
@@ -5732,7 +5732,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppTextures)
 			{
-				LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
+				LOGERRORF( "RW Texture descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 
@@ -5743,7 +5743,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			{
 				if (!pParam->ppTextures[i])
 				{
-					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 
@@ -5760,14 +5760,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppBuffers)
 			{
-				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
+				LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppBuffers[i])
 				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
@@ -5841,14 +5841,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 
 			if (!pParam->ppBuffers)
 			{
-				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
+				LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppBuffers[i])
 				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
@@ -5913,7 +5913,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 				descriptorSetSlotToUse = node->mUpdateCount[frameIdx][setIndex]++;
 				if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 				{
-					LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex); ASSERT(0);
+					LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex); ASSERT(0);
 					return;
 				}
 
@@ -6467,7 +6467,7 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 				pCommandSignature->mDrawType = INDIRECT_DISPATCH;
 				pCommandSignature->mDrawCommandStride += sizeof(IndirectDispatchArguments);
 				break;
-			default: LOGF(LogLevel::eERROR, "Vulkan runtime only supports IndirectDraw, IndirectDrawIndex and IndirectDispatch at this point"); break;
+			default: LOGERRORF( "Vulkan runtime only supports IndirectDraw, IndirectDrawIndex and IndirectDispatch at this point"); break;
 		}
 	}
 

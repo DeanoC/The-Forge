@@ -47,6 +47,7 @@
 #endif
 #define MAX_PATH PATH_MAX
 #endif
+#include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
 
 // buffer functions
@@ -1228,7 +1229,7 @@ void vk_compileShader(
 		shaderc_compile_into_spv(compiler, code, codeSize, getShadercShaderType(stage), "shaderc_error", pEntryPoint ? pEntryPoint : "main", options);
 	if (shaderc_result_get_compilation_status(spvShader) != shaderc_compilation_status_success)
 	{
-		LOGF(LogLevel::eERROR, "Shader compiling failed! with status");
+		LOGERRORF( "Shader compiling failed! with status");
 		abort();
 	}
 
@@ -1397,10 +1398,10 @@ void mtl_compileShader(
 			file.Close();
 		}
 		else
-			ErrorMsg("Failed to assemble shader's %s .metallib file", fileName.c_str());
+			LOGERRORF("Failed to assemble shader's %s .metallib file", fileName.c_str());
 	}
 	else
-		ErrorMsg("Failed to compile shader %s", fileName.c_str());
+		LOGERRORF("Failed to compile shader %s", fileName.c_str());
 }
 #endif
 #if (defined(DIRECT3D12) || defined(DIRECT3D11)) && !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
@@ -1465,7 +1466,7 @@ static bool process_source_file(File* original, File* file, time_t& outTimeStamp
 			includeFile.Open(includeFileName, FM_ReadBinary, FSR_Absolute);
 			if (!includeFile.IsOpen())
 			{
-				LOGF(LogLevel::eERROR, "Cannot open #include file: %s", includeFileName.c_str());
+				LOGERRORF( "Cannot open #include file: %s", includeFileName.c_str());
 				return false;
 			}
 
@@ -1521,7 +1522,7 @@ bool check_for_byte_code(const eastl::string& binaryShaderName, time_t sourceTim
 	file.Open(binaryShaderName, FM_ReadBinary, FSR_Absolute);
 	if (!file.IsOpen())
 	{
-		LOGF(LogLevel::eERROR, (binaryShaderName + " is not a valid shader bytecode file").c_str());
+		LOGERRORF( (binaryShaderName + " is not a valid shader bytecode file").c_str());
 		return false;
 	}
 
@@ -1639,13 +1640,13 @@ bool load_shader_stage_byte_code(
 			if (!save_byte_code(binaryShaderName, byteCode))
 			{
 				const char* shaderName = shaderSource.GetName().c_str();
-				LOGF(LogLevel::eWARNING, "Failed to save byte code for file %s", shaderName);
+				LOGWARNINGF("Failed to save byte code for file %s", shaderName);
 			}
 #endif
 		}
 		if (!byteCode.size())
 		{
-			ErrorMsg("Error while generating bytecode for shader %s", fileName);
+			LOGERRORF("Error while generating bytecode for shader %s", fileName);
 			shaderSource.Close();
 			return false;
 		}

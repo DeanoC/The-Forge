@@ -32,6 +32,7 @@
 #include <linux/limits.h>    //PATH_MAX declaration
 #define MAX_PATH PATH_MAX
 #endif
+#include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
 
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)

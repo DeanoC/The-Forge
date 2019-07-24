@@ -65,7 +65,7 @@ extern void onWindowResize(const WindowResizeEventData* pData);
 
 void getRecommendedResolution(RectDesc* rect) { *rect = { 0, 0, 1920, 1080 }; }
 
-void requestShutdown() { LOGF(LogLevel::eERROR, "Cannot manually shutdown on Android"); }
+void requestShutdown() { LOGERRORF( "Cannot manually shutdown on Android"); }
 
 /************************************************************************/
 // App Entrypoint

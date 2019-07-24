@@ -1282,7 +1282,7 @@ bool iLoadDDSFromMemory(Image* pImage,
 bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memoryAllocationFunc pAllocator, void* pUserData)
 {
 #ifndef TARGET_IOS
-	LOGF(LogLevel::eERROR, "Load PVR failed: Only supported on iOS targets.");
+	LOGERRORF("Load PVR failed: Only supported on iOS targets.");
 	return false;
 #else
 	
@@ -1299,19 +1299,19 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 
 	if (psPVRHeader->mVersion != gPvrtexV3HeaderVersion)
 	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Not a valid PVR V3 header.");
+		LOGERRORF( "Load PVR failed: Not a valid PVR V3 header.");
 		return 0;
 	}
 	
 	if (psPVRHeader->mPixelFormat > 3)
 	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Not a supported PVR pixel format.  Only PVRTC is supported at the moment.");
+		LOGERRORF( "Load PVR failed: Not a supported PVR pixel format.  Only PVRTC is supported at the moment.");
 		return 0;
 	}
 	
 	if (psPVRHeader->mNumSurfaces > 1 && psPVRHeader->mNumFaces > 1)
 	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Loading arrays of cubemaps isn't supported.");
+		LOGERRORF( "Load PVR failed: Loading arrays of cubemaps isn't supported.");
 		return 0;
 	}
 
@@ -1338,7 +1338,7 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 		imageFormat = ImageFormat::PVR_4BPPA;
 		break;
 	default:    // NOT SUPPORTED
-		LOGF(LogLevel::eERROR, "Load PVR failed: pixel type not supported. ");
+		LOGERRORF( "Load PVR failed: pixel type not supported. ");
 		ASSERT(0);
 		return false;
 	}
@@ -1392,7 +1392,7 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 	char *format = (char *)(header.mIdentifier + 1);
 	if (strncmp(format, "KTX 11", 6) != 0)
 	{
-		LOGF(LogLevel::eERROR, "Load KTX failed: Not a valid KTX header.");
+		LOGERRORF( "Load KTX failed: Not a valid KTX header.");
 		return false;
 	}
 
@@ -1413,7 +1413,7 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 
 	if (arrayCount > 1 && faceCount > 1)
 	{
-		LOGF(LogLevel::eERROR, "Load KTX failed: Loading arrays of cubemaps isn't supported.");
+		LOGERRORF( "Load KTX failed: Loading arrays of cubemaps isn't supported.");
 		return false;
 	}
 
@@ -1438,13 +1438,13 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 	else
 	{
 #if !defined(TARGET_IOS) && !defined(__ANDROID__)
-		LOGF(LogLevel::eERROR, "Load KTX failed: Compressed formats supported on mobile targets only.");
+		LOGERRORF( "Load KTX failed: Compressed formats supported on mobile targets only.");
 		return false;
 #else
 
 		if (!(internalFormat >= KTXInternalFormat_RGBA_ASTC_4x4 && internalFormat <= KTXInternalFormat_SRGB8_ALPHA8_ASTC_12x12))
 		{
-			LOGF(LogLevel::eERROR, "Load KTX failed: Support for loading ASTC compressed textures only.");
+			LOGERRORF( "Load KTX failed: Support for loading ASTC compressed textures only.");
 			return false;
 		}
 
@@ -1628,7 +1628,7 @@ bool Image::iLoadGNFFromMemory(const char* memory, size_t memSize, const bool us
 		mFormat = ImageFormat::GNF_BC7;
 	else
 	{
-		LOGF(LogLevel::eERROR, "Couldn't find the data format of the texture");
+		LOGERRORF( "Couldn't find the data format of the texture");
 		return false;
 	}
 
@@ -1853,7 +1853,7 @@ bool Image::loadImage(const char* origFileName, memoryAllocationFunc pAllocator,
 	file.Open(fileName, FM_ReadBinary, root);
 	if (!file.IsOpen())
 	{
-		LOGF(LogLevel::eERROR, "\"%s\": Image file not found.", fileName);
+		LOGERRORF( "\"%s\": Image file not found.", fileName);
 		return false;
 	}
 
@@ -1863,7 +1863,7 @@ bool Image::loadImage(const char* origFileName, memoryAllocationFunc pAllocator,
 	{
 		//char output[256];
 		//sprintf(output, "\"%s\": Image file is empty.", fileName);
-		LOGF(LogLevel::eERROR, "\"%s\": Image is an empty file.", fileName);
+		LOGERRORF( "\"%s\": Image is an empty file.", fileName);
 		file.Close();
 		return false;
 	}
@@ -1890,7 +1890,7 @@ bool Image::loadImage(const char* origFileName, memoryAllocationFunc pAllocator,
 	}
 	if (!support)
 	{
-		LOGF(LogLevel::eERROR, "Can't load this file format for image  :  %s", fileName);
+		LOGERRORF( "Can't load this file format for image  :  %s", fileName);
 	}
 	else
 	{
@@ -1934,7 +1934,7 @@ bool Image::Convert(const ImageFormat::Enum newFormat)
 		if (!ImageFormat::IsPlainFormat(mFormat) || !(ImageFormat::IsPlainFormat(newFormat) || newFormat == ImageFormat::RGB10A2 ||
 													  newFormat == ImageFormat::RGBE8 || newFormat == ImageFormat::RGB9E5))
 		{
-			LOGF(LogLevel::eERROR, 
+			LOGERRORF(
 				"Image: %s fail to convert from  %s  to  %s", mLoadFileName.c_str(), ImageFormat::GetFormatString(mFormat),
 				ImageFormat::GetFormatString(newFormat));
 			return false;
@@ -2470,7 +2470,7 @@ bool Image::SaveImage(const char* fileName)
 	}
 	if (!support)
 	{
-		LOGF(LogLevel::eERROR, "Can't save this file format for image  :  %s", fileName);
+		LOGERRORF( "Can't save this file format for image  :  %s", fileName);
 	}
 
 	return false;

@@ -221,7 +221,7 @@ void get_files_with_extension(const char* dir, const char* ext, eastl::vector<ea
 	BOOL isDir = YES;
 	if (![fileMan fileExistsAtPath:pStrSearchDir isDirectory:&isDir])
 	{
-		LOGF(LogLevel::eERROR, "Directory '%s' doesn't exist.", dir);
+		LOGERRORF( "Directory '%s' doesn't exist.", dir);
 		return;
 	}
 	NSArray* pContents = [fileMan subpathsAtPath:pStrSearchDir];

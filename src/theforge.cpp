@@ -3,6 +3,18 @@
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
 
+// these are hidden but we want them
+extern void addBuffer(Renderer* pRenderer, const BufferDesc* desc, Buffer** pp_buffer);
+extern void removeBuffer(Renderer* pRenderer, Buffer* p_buffer);
+extern void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** pp_texture);
+extern void removeTexture(Renderer* pRenderer, Texture* p_texture);
+
+extern void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange);
+extern void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer);
+extern void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
+extern void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
+extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer);
+
 #ifdef METAL
 // account for app directory
 // I don't like this at all but for now just grin an bare it!
@@ -36,25 +48,6 @@ const char *pszBases[FSR_Count] = {
 };
 
 #endif
-
-extern void addBuffer(Renderer *pRenderer, const BufferDesc *desc, Buffer **pp_buffer);
-extern void removeBuffer(Renderer *pRenderer, Buffer *p_buffer);
-extern void mapBuffer(Renderer *pRenderer, Buffer *pBuffer, ReadRange *pRange);
-extern void unmapBuffer(Renderer *pRenderer, Buffer *pBuffer);
-extern void addTexture(Renderer *pRenderer, const TextureDesc *pDesc, Texture **pp_texture);
-extern void removeTexture(Renderer *pRenderer, Texture *p_texture);
-extern void cmdUpdateBuffer(Cmd *pCmd,
-														Buffer *pBuffer,
-														uint64_t dstOffset,
-														Buffer *pSrcBuffer,
-														uint64_t srcOffset,
-														uint64_t size);
-extern void cmdUpdateSubresource(Cmd *pCmd,
-																 Texture *pTexture,
-																 Buffer *pSrcBuffer,
-																 SubresourceDataDesc *pSubresourceDesc);
-extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer *pRenderer);
-
 static void LogFunc(LogType type, const char *m0, const char *m1) {
 	switch (type) {
 	case LogType::LOG_TYPE_INFO: LOGINFOF("%s %s", m0, m1);
@@ -75,16 +68,17 @@ static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage)
 		return SHADER_STAGE_NONE;
 	}
 #else
-	switch (stage) {
-	case TheForge_SS_NONE: return SHADER_STAGE_NONE;
-	case TheForge_SS_VERT: return SHADER_STAGE_VERT;
-	case TheForge_SS_TESC: return SHADER_STAGE_TESC;
-	case TheForge_SS_TESE: return SHADER_STAGE_TESE;
-	case TheForge_SS_GEOM: return SHADER_STAGE_GEOM;
-	case TheForge_SS_FRAG: return SHADER_STAGE_FRAG;
-	case TheForge_SS_COMP: return SHADER_STAGE_COMP;
-	case TheForge_SS_RAYTRACING: return SHADER_STAGE_RAYTRACING;
-	default: LOGERRORF("Shader stage is not supported on Metal backend");
+	switch(stage) {
+	case TheForge_SS_NONE:				return SHADER_STAGE_NONE;
+	case TheForge_SS_VERT:				return SHADER_STAGE_VERT;
+	case TheForge_SS_TESC:				return SHADER_STAGE_TESC;
+	case TheForge_SS_TESE:				return SHADER_STAGE_TESE;
+	case TheForge_SS_GEOM:				return SHADER_STAGE_GEOM;
+	case TheForge_SS_FRAG:				return SHADER_STAGE_FRAG;
+	case TheForge_SS_COMP:				return SHADER_STAGE_COMP;
+	case TheForge_SS_RAYTRACING:	return SHADER_STAGE_RAYTRACING;
+	default:
+		LOGERRORF("Shader stage is not supported on Metal backend");
 		return SHADER_STAGE_NONE;
 	}
 #endif
@@ -100,20 +94,13 @@ static ShaderStage TheForge_ShaderStageFlagsToShaderStage(uint32_t flags) {
 	if (flags & TheForge_SS_COMP)
 		stage |= SHADER_STAGE_COMP;
 #else
-	if (flags & TheForge_SS_VERT)
-		stage |= SHADER_STAGE_VERT;
-	if (flags & TheForge_SS_FRAG)
-		stage |= SHADER_STAGE_FRAG;
-	if (flags & TheForge_SS_COMP)
-		stage |= SHADER_STAGE_COMP;
-	if (flags & TheForge_SS_TESC)
-		stage |= SHADER_STAGE_TESC;
-	if (flags & TheForge_SS_TESE)
-		stage |= SHADER_STAGE_TESE;
-	if (flags & TheForge_SS_GEOM)
-		stage |= SHADER_STAGE_GEOM;
-	if (flags & TheForge_SS_RAYTRACING)
-		stage |= SHADER_STAGE_RAYTRACING;
+	if(flags & TheForge_SS_VERT) stage |= SHADER_STAGE_VERT;
+	if(flags & TheForge_SS_FRAG) stage |= SHADER_STAGE_FRAG;
+	if(flags & TheForge_SS_COMP) stage |= SHADER_STAGE_COMP;
+	if(flags & TheForge_SS_TESC) stage |= SHADER_STAGE_TESC;
+	if(flags & TheForge_SS_TESE) stage |= SHADER_STAGE_TESE;
+	if(flags & TheForge_SS_GEOM) stage |= SHADER_STAGE_GEOM;
+	if(flags & TheForge_SS_RAYTRACING) stage |= SHADER_STAGE_RAYTRACING;
 #endif
 	return (ShaderStage) stage;
 }
@@ -149,12 +136,14 @@ static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc co
 		ShaderStageLoadDesc *dstStage = &dst->mStages[i];
 
 #ifdef METAL
-		switch(i) {
-		case 0: srcStage = &src->stages[0]; break;
-		case 1: srcStage = &src->stages[1]; break;
-		case 2: srcStage = &src->stages[5]; break;
-		default:
-			LOGERRORF("Shader stage is not supported on Metal backend");
+		switch (i) {
+		case 0: srcStage = &src->stages[0];
+			break;
+		case 1: srcStage = &src->stages[1];
+			break;
+		case 2: srcStage = &src->stages[5];
+			break;
+		default: LOGERRORF("Shader stage is not supported on Metal backend");
 			return;
 		}
 #else
@@ -174,11 +163,11 @@ static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc co
 AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(
 		char const *appName,
 		TheForge_RendererDesc const *settings) {
-	RendererDesc desc{
+
+	RendererDesc desc {
 			&LogFunc,
 			(RendererApi) 0,
 			(ShaderTarget) settings->shaderTarget,
-
 	};
 
 	Renderer *renderer;
@@ -347,7 +336,7 @@ AL2O3_EXTERN_C void TheForge_AddSampler(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	addSampler(renderer, (SamplerDesc *) &pDesc, (Sampler **) pSampler);
+	addSampler(renderer, (SamplerDesc *) pDesc, (Sampler **) pSampler);
 }
 AL2O3_EXTERN_C void TheForge_RemoveSampler(TheForge_RendererHandle handle, TheForge_SamplerHandle sampler) {
 	auto renderer = (Renderer *) handle;
@@ -364,16 +353,16 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 #ifdef METAL
-		ShaderDesc desc{};
-		desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
+	ShaderDesc desc{};
+	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
+	if (desc.mStages & SHADER_STAGE_VERT)
 		TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
+	if (desc.mStages & SHADER_STAGE_FRAG)
 		TheForge_ShaderStageToShaderStage(&pDesc->frag, &desc.mFrag);
-		TheForge_ShaderStageToShaderStage(&pDesc->geom, &desc.mGeom);
-		TheForge_ShaderStageToShaderStage(&pDesc->hull, &desc.mHull);
-		TheForge_ShaderStageToShaderStage(&pDesc->domain, &desc.mDomain);
+	if (desc.mStages & SHADER_STAGE_COMP)
 		TheForge_ShaderStageToShaderStage(&pDesc->comp, &desc.mComp);
 
-		addShader(renderer, &desc, (Shader **) pShader);
+	addShader(renderer, &desc, (Shader **) pShader);
 #else
 	LOGERROR("AddShader is only supported on Metal backends, Use AddShaderBinary");
 #endif
@@ -388,12 +377,20 @@ AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
 
 	BinaryShaderDesc desc{};
 	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->frag, &desc.mFrag);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->geom, &desc.mGeom);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->hull, &desc.mHull);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->domain, &desc.mDomain);
-	TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->comp, &desc.mComp);
+	if (desc.mStages & SHADER_STAGE_VERT)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
+	if (desc.mStages & SHADER_STAGE_FRAG)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->frag, &desc.mFrag);
+#ifndef METAL
+	if(desc.mStages & SHADER_STAGE_GEOM)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->geom, &desc.mGeom);
+	if(desc.mStages & SHADER_STAGE_HULL)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->hull, &desc.mHull);
+	if(desc.mStages & SHADER_STAGE_DOMN)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->domain, &desc.mDomain);
+#endif
+	if (desc.mStages & SHADER_STAGE_COMP)
+		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->comp, &desc.mComp);
 
 	addShaderBinary(renderer, &desc, (Shader **) pShader);
 }
@@ -460,7 +457,7 @@ AL2O3_EXTERN_C void TheForge_AddDescriptorBinder(TheForge_RendererHandle handle,
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveDescriptorBinder(TheForge_RendererHandle handle,
-																										TheForge_DescriptorBinderHandle *descriptorBinder) {
+																										TheForge_DescriptorBinderHandle descriptorBinder) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return;
@@ -587,8 +584,8 @@ AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge
 AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,
 																								 uint32_t bufferCount,
 																								 TheForge_BufferHandle *pBuffers,
-																								 uint64_t *pOffsets) {
-	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, pOffsets);
+																								 uint64_t const *pOffsets) {
+	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, (uint64_t*)pOffsets);
 }
 AL2O3_EXTERN_C void TheForge_CmdDraw(TheForge_CmdHandle cmd, uint32_t vertexCount, uint32_t firstVertex) {
 	cmdDraw((Cmd *) cmd, vertexCount, firstVertex);
@@ -799,7 +796,7 @@ AL2O3_EXTERN_C void TheForge_SetBufferName(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	setBufferName(renderer, (Buffer *) buffer, pName);
+	setBufferName(renderer, (Buffer*)buffer, pName);
 #endif
 }
 AL2O3_EXTERN_C void TheForge_SetTextureName(TheForge_RendererHandle handle,
@@ -810,7 +807,7 @@ AL2O3_EXTERN_C void TheForge_SetTextureName(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	setTextureName(renderer, (Texture *) texture, pName);
+	setTextureName(renderer, (Texture*)texture, pName);
 #endif
 }
 AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
@@ -820,7 +817,16 @@ AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	addSwapChain(renderer, (SwapChainDesc *) pDesc, (SwapChain **) pSwapChain);
+	// we don't use virtually any of the the forges windows desc as we just want
+	// the swap chain to attached (WindowsDesc is if you used TheForges OS to
+	// allocate teh window)
+	WindowsDesc windowsDesc;
+	windowsDesc.handle = (WindowHandle)pDesc->pWindow->handle;
+	SwapChainDesc scDesc;
+	memcpy(&scDesc, pDesc, sizeof(TheForge_SwapChainDesc));
+	scDesc.pWindow = &windowsDesc;
+
+	addSwapChain(renderer, &scDesc, (SwapChain **) pSwapChain);
 }
 
 
@@ -882,6 +888,53 @@ AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_R
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const *TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget) {
 	return (TheForge_RenderTargetDesc const *) &((RenderTarget *) renderTarget)->mDesc;
 }
+AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader) {
+	return (TheForge_PipelineReflection const *) &((Shader *) shader)->mReflection;
+
+}
+
+AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle, TheForge_BufferDesc const* pDesc, TheForge_BufferHandle* pBuffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addBuffer(renderer, (BufferDesc const*)pDesc, (Buffer**)pBuffer);
+}
+AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_RendererHandle handle, TheForge_TextureDesc const* pDesc, TheForge_TextureHandle* pTexture) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	addTexture(renderer, (TextureDesc const*)pDesc, (Texture**)pTexture);
+}
+AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	removeBuffer(renderer, (Buffer*)buffer);
+}
+AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_RendererHandle handle, TheForge_TextureHandle texture) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+
+	removeTexture(renderer, (Texture*)texture);
+}
+
+AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer, TheForge_ReadRange* pRange) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	mapBuffer(renderer, (Buffer*)buffer, (ReadRange*)pRange);
+}
+
+AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return;
+	unmapBuffer(renderer, (Buffer*)buffer);
+
+}
 
 AL2O3_EXTERN_C void TheForge_InitResourceLoaderInterface(TheForge_RendererHandle handle,
 																												 TheForge_ResourceLoaderDesc *pDesc) {
@@ -908,23 +961,23 @@ AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle,
 	addShader(renderer, &desc, (Shader **) pShader);
 }
 
-AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_BufferLoadDesc *pBufferLoadDesc, bool batch) {
+AL2O3_EXTERN_C void TheForge_LoadBuffer(TheForge_BufferLoadDesc const *pBufferLoadDesc, bool batch) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, batch);
 }
-AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_TextureLoadDesc *pTextureLoadDesc, bool batch) {
+AL2O3_EXTERN_C void TheForge_LoadTexture(TheForge_TextureLoadDesc const *pTextureLoadDesc, bool batch) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, batch);
 }
-AL2O3_EXTERN_C void TheForge_AddBufferWithToken(TheForge_BufferLoadDesc *pBufferLoadDesc, TheForge_SyncToken *token) {
+AL2O3_EXTERN_C void TheForge_LoadBufferWithToken(TheForge_BufferLoadDesc const *pBufferLoadDesc, TheForge_SyncToken *token) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, (SyncToken *) token);
 }
-AL2O3_EXTERN_C void TheForge_AddTextureWithToken(TheForge_TextureLoadDesc *pTextureLoadDesc,
+AL2O3_EXTERN_C void TheForge_LoadTextureWithToken(TheForge_TextureLoadDesc const *pTextureLoadDesc,
 																								 TheForge_SyncToken *token) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, (SyncToken *) token);
 }
-AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc *pBuffer, bool batch) {
+AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc const *pBuffer, bool batch) {
 	updateResource((BufferUpdateDesc *) pBuffer, batch);
 }
-AL2O3_EXTERN_C void TheForge_UpdateTexture(TheForge_TextureUpdateDesc *pTexture, bool batch) {
+AL2O3_EXTERN_C void TheForge_UpdateTexture(TheForge_TextureUpdateDesc const *pTexture, bool batch) {
 	updateResource((TextureUpdateDesc *) pTexture, batch);
 }
 AL2O3_EXTERN_C void TheForge_UpdateResources(uint32_t resourceCount, TheForge_ResourceUpdateDesc *pResources) {
@@ -953,56 +1006,12 @@ AL2O3_EXTERN_C bool TheForge_IsTokenCompleted(TheForge_SyncToken token) {
 AL2O3_EXTERN_C void TheForge_WaitTokenCompleted(TheForge_SyncToken token) {
 	waitTokenCompleted(token);
 }
-AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_BufferHandle buffer) {
-	removeResource((Buffer *) buffer);
-}
-AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_TextureHandle texture) {
-	removeResource((Texture *) texture);
-}
+
 AL2O3_EXTERN_C void TheForge_FlushResourceUpdates() {
 	flushResourceUpdates();
 }
 AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 	finishResourceLoading();
-}
-
-AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle,
-																			 TheForge_BufferHandle buffer,
-																			 TheForge_ReadRange *pRange) {
-	auto renderer = (Renderer *) handle;
-	if (!renderer)
-		return;
-
-	mapBuffer(renderer, (Buffer *) buffer, (ReadRange *) pRange);
-}
-AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
-	auto renderer = (Renderer *) handle;
-	if (!renderer)
-		return;
-
-	unmapBuffer(renderer, (Buffer *) buffer);
-}
-AL2O3_EXTERN_C void TheForge_CmdUpdateBuffer(TheForge_CmdHandle cmd,
-																						 TheForge_BufferHandle dstBuffer,
-																						 uint64_t dstOffset,
-																						 TheForge_BufferHandle srcBuffer,
-																						 uint64_t srcOffset,
-																						 uint64_t size) {
-
-	cmdUpdateBuffer((Cmd *) cmd,
-									(Buffer *) dstBuffer, dstOffset,
-									(Buffer *) srcBuffer, srcOffset,
-									size
-	);
-}
-AL2O3_EXTERN_C void TheForge_CmdUpdateSubresource(TheForge_CmdHandle cmd,
-																									TheForge_TextureHandle dstTexture,
-																									TheForge_BufferHandle srcBuffer,
-																									TheForge_SubresourceDataDesc *pSubresourceDesc) {
-	cmdUpdateSubresource((Cmd*)cmd,
-			(Texture*)dstTexture,
-			(Buffer*)srcBuffer,
-			(SubresourceDataDesc*)pSubresourceDesc);
 }
 
 static void API_CHECK() {
@@ -1205,23 +1214,6 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_RectDesc, right) == offsetof(RectDesc, right));
 	static_assert(offsetof(TheForge_RectDesc, bottom) == offsetof(RectDesc, bottom));
 
-	static_assert(sizeof(TheForge_WindowsDesc) == sizeof(WindowsDesc));
-	static_assert(offsetof(TheForge_WindowsDesc, handle) == offsetof(WindowsDesc, handle));
-	static_assert(offsetof(TheForge_WindowsDesc, windowedRect) == offsetof(WindowsDesc, windowedRect));
-	static_assert(offsetof(TheForge_WindowsDesc, fullscreenRect) == offsetof(WindowsDesc, fullscreenRect));
-	static_assert(offsetof(TheForge_WindowsDesc, clientRect) == offsetof(WindowsDesc, clientRect));
-	static_assert(offsetof(TheForge_WindowsDesc, fullScreen) == offsetof(WindowsDesc, fullScreen));
-	static_assert(offsetof(TheForge_WindowsDesc, windowsFlags) == offsetof(WindowsDesc, windowsFlags));
-	static_assert(offsetof(TheForge_WindowsDesc, bigIcon) == offsetof(WindowsDesc, bigIcon));
-	static_assert(offsetof(TheForge_WindowsDesc, smallIcon) == offsetof(WindowsDesc, smallIcon));
-	static_assert(offsetof(TheForge_WindowsDesc, cursorTracked) == offsetof(WindowsDesc, cursorTracked));
-	static_assert(offsetof(TheForge_WindowsDesc, iconified) == offsetof(WindowsDesc, iconified));
-	static_assert(offsetof(TheForge_WindowsDesc, maximized) == offsetof(WindowsDesc, maximized));
-	static_assert(offsetof(TheForge_WindowsDesc, minimized) == offsetof(WindowsDesc, minimized));
-	static_assert(offsetof(TheForge_WindowsDesc, visible) == offsetof(WindowsDesc, visible));
-	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosX) == offsetof(WindowsDesc, lastCursorPosX));
-	static_assert(offsetof(TheForge_WindowsDesc, lastCursorPosY) == offsetof(WindowsDesc, lastCursorPosY));
-
 	static_assert(sizeof(TheForge_SwapChainDesc) == sizeof(SwapChainDesc));
 	static_assert(offsetof(TheForge_SwapChainDesc, pWindow) == offsetof(SwapChainDesc, pWindow));
 	static_assert(offsetof(TheForge_SwapChainDesc, pPresentQueues) == offsetof(SwapChainDesc, ppPresentQueues));
@@ -1235,5 +1227,11 @@ static void API_CHECK() {
 	static_assert(offsetof(TheForge_SwapChainDesc, colorClearValue) == offsetof(SwapChainDesc, mColorClearValue));
 	static_assert(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
 	static_assert(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
+
+	static_assert(sizeof(TheForge_RawImageData) == sizeof(RawImageData));
+
+	static_assert(sizeof(TheForge_PipelineReflection) == sizeof(PipelineReflection));
+	static_assert(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
+	static_assert(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
 
 }

@@ -354,7 +354,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 
 	if (fileName.size() == 0)
 	{
-		LOGF(LogLevel::eERROR, "Could not open file with empty name");
+		LOGERRORF("Could not open file with empty name");
 		return false;
 	}
 
@@ -364,7 +364,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 
 	if (!pHandle)
 	{
-		LOGF(LogLevel::eERROR, "Could not open file %s", fileName.c_str());
+		LOGERRORF("Could not open file %s", fileName.c_str());
 		return false;
 	}
 
@@ -379,7 +379,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 	size_t size = FileSystem::GetFileSize(pHandle);
 	if (size > UINT_MAX)
 	{
-		LOGF(LogLevel::eERROR, "Could not open file %s which is larger than 4GB", fileName.c_str());
+		LOGERRORF("Could not open file %s which is larger than 4GB", fileName.c_str());
 		Close();
 		mSize = 0;
 		return false;
@@ -420,7 +420,7 @@ unsigned File::Read(void* dest, unsigned size)
 
 	if (IsWriteOnly())
 	{
-		LOGF(LogLevel::eERROR, "File not opened for reading");
+		LOGERRORF("File not opened for reading");
 		return 0;
 	}
 
@@ -488,7 +488,7 @@ unsigned File::Write(const void* data, unsigned size)
 
 	if (IsReadOnly())
 	{
-		LOGF(LogLevel::eERROR, "File not opened for writing");
+		LOGERRORF("File not opened for writing");
 		return 0;
 	}
 
@@ -508,7 +508,7 @@ unsigned File::Write(const void* data, unsigned size)
 	{
 		// Return to the position where the write began
 		seek_file(pHandle, mPosition + mOffset, SEEK_SET);
-		LOGF(LogLevel::eERROR, ("Error while writing to file " + GetName()).c_str());
+		LOGERRORF("Error while writing to file %s", GetName().c_str());
 		return 0;
 	}
 
@@ -944,9 +944,9 @@ bool FileSystem::CreateDir(const eastl::string& pathName)
 #endif
 
 	if (success)
-		LOGF(LogLevel::eDEBUG, ("Created directory " + pathName).c_str());
+		LOGERRORF("Created directory %s", pathName.c_str());
 	else
-		LOGF(LogLevel::eERROR, ("Failed to create directory " + pathName).c_str());
+		LOGERRORF("Failed to create directory %s" ,pathName.c_str());
 
 	return success;
 }

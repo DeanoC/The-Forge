@@ -129,7 +129,8 @@ typedef enum TheForge_MaxEnums
 	TheForge_MAX_SEMANTIC_NAME_LENGTH = 128,
 	TheForge_MAX_MIP_LEVELS = 0xFFFFFFFF,
 	TheForge_MAX_BATCH_BARRIERS = 64,
-	TheForge_MAX_GPU_VENDOR_STRING_LENGTH = 64    //max size for GPUVendorPreset strings
+	TheForge_MAX_GPU_VENDOR_STRING_LENGTH = 64,    //max size for GPUVendorPreset strings
+	TheForge_MAX_SHADER_STAGE_COUNT = 5,
 } TheForge_MaxEnums;
 
 typedef enum TheForge_ShaderTarget
