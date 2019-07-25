@@ -5,6 +5,6 @@
 #include "al2o3_platform/platform.h"
 #include "tiny_imageformat/format.h"
 
-AL2O3_EXTERN_C TheForge_ImageFormat ImageFormatToTheForge_ImageFormat(ImageFormat fmt);
+AL2O3_EXTERN_C TheForge_ImageFormat TinyImageFormatToTheForge_ImageFormat(TinyImageFormat fmt);
 
 #endif
