@@ -48,6 +48,7 @@ typedef struct RawImageData
 	unsigned char* pRawData;
 	ImageFormat::Enum mFormat;
 	uint32_t mWidth, mHeight, mDepth, mArraySize, mMipLevels;
+	TinyImageFormat mTinyFormat; // if mFormat == ImageFormat::NONE use this
 } RawImageData;
 
 typedef struct BinaryImageData

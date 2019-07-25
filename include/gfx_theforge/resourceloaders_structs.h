@@ -23,6 +23,7 @@ typedef struct TheForge_RawImageData
 	uint32_t depth;
 	uint32_t arraySize;
 	uint32_t mipLevels;
+	TinyImageFormat tinyFormat;
 } TheForge_RawImageData;
 
 typedef struct TheForge_BinaryImageData

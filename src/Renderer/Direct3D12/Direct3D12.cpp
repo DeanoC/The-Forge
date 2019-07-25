@@ -43,7 +43,7 @@
 #include "../../ThirdParty/OpenSource/renderdoc/renderdoc_app.h"
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
-
+#include "tiny_imageformat/formatcracker.h"
 
 #include "Direct3D12Hooks.h"
 
@@ -3024,9 +3024,17 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		pTexture->mOwnsImage = true;
 	}
 
+
 	//add to gpu
 	D3D12_RESOURCE_DESC desc = {};
-	DXGI_FORMAT         dxFormat = util_to_dx_image_format(pDesc->mFormat, pDesc->mSrgb);
+
+	DXGI_FORMAT dxFormat = DXGI_FORMAT_UNKNOWN;
+	if(pDesc->mFormat == ImageFormat::NONE) {
+		dxFormat = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mTinyFormat);
+	} else {
+		dxFormat = util_to_dx_image_format(pDesc->mFormat, pDesc->mSrgb);
+	}
+
 	DescriptorType      descriptors = pDesc->mDescriptors;
 
 	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
@@ -3049,7 +3057,11 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		desc.Height = pDesc->mHeight;
 		desc.DepthOrArraySize = (UINT16)(pDesc->mArraySize != 1 ? pDesc->mArraySize : pDesc->mDepth);
 		desc.MipLevels = (UINT16)pDesc->mMipLevels;
-		desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
+		if(pDesc->mFormat == ImageFormat::NONE) {
+			desc.Format = (DXGI_FORMAT) TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
+		} else {
+			desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
+		}
 		desc.SampleDesc.Count = (UINT)pDesc->mSampleCount;
 		desc.SampleDesc.Quality = (UINT)pDesc->mSampleQuality;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;

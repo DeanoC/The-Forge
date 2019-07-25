@@ -3,6 +3,7 @@
 #define GFX_THEFORGE_STRUCTS_H_
 
 #include "gfx_theforge/enums.h"
+#include "tiny_imageformat/format.h"
 
 typedef struct TheForge_Renderer *TheForge_RendererHandle;
 typedef struct TheForge_Fence *TheForge_FenceHandle;
@@ -81,9 +82,16 @@ typedef struct TheForge_RenderTargetDesc
 	uint32_t mipLevels;
 	/// MSAA
 	TheForge_SampleCount sampleCount;
-	/// Internal image format
-	TheForge_ImageFormat format;
-	bool sRGB;
+	union {
+		struct {
+			/// original TheForge image format
+			TheForge_ImageFormat format;
+			bool sRGB;
+		};
+		/// TinyImageFormat (wider range the TheForge image formats)
+		TinyImageFormat tinyFormat;
+	};
+
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	TheForge_ClearValue clearValue;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
@@ -383,6 +391,8 @@ typedef struct TheForge_TextureDesc
 	TheForge_SampleCount mSampleCount;
 	uint32_t mSampleQuality;
 	TheForge_ImageFormat mFormat;
+	bool mSrgb;
+	TinyImageFormat mTinyFormat;
 	TheForge_ClearValue mClearValue;
 	TheForge_ResourceState mStartState;
 	TheForge_DescriptorType mDescriptors;
@@ -391,7 +401,6 @@ typedef struct TheForge_TextureDesc
 	uint32_t* pSharedNodeIndices;
 	uint32_t mSharedNodeIndexCount;
 	uint32_t mNodeIndex;
-	bool mSrgb;
 	bool mHostVisible;
 } heForge_TextureDesc;
 

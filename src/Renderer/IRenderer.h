@@ -91,7 +91,7 @@
 #include "../ThirdParty/OpenSource/EASTL/string_hash_map.h"
 #include "../OS/Interfaces/IOperatingSystem.h"
 #include "../OS/Interfaces/IThread.h"
-
+#include "tiny_imageformat/format.h"
 #ifdef __cplusplus
 #ifndef MAKE_ENUM_FLAG
 #define MAKE_ENUM_FLAG(TYPE, ENUM_TYPE)                                                                        \
@@ -790,8 +790,12 @@ typedef struct TextureDesc
 	SampleCount mSampleCount;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
 	uint32_t mSampleQuality;
-	/// Internal image format
+	/// original TheForge image format
 	ImageFormat::Enum mFormat;
+	/// Set whether texture is srgb
+	bool mSrgb;
+	/// TinyImageFormat (wider range the TheForge image formats) used if mFormat == NONE
+	TinyImageFormat mTinyFormat;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// What state will the texture get created in
@@ -808,8 +812,6 @@ typedef struct TextureDesc
 	uint32_t mSharedNodeIndexCount;
 	/// GPU which will own this texture
 	uint32_t mNodeIndex;
-	/// Set whether texture is srgb
-	bool mSrgb;
 	/// Is the texture CPU accessible (applicable on hardware supporting CPU mapped textures (UMA))
 	bool mHostVisible;
 } TextureDesc;

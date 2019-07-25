@@ -49,6 +49,7 @@
 #endif
 #include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
+#include "tiny_imageformat/formatcracker.h"
 
 // buffer functions
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
@@ -434,8 +435,8 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	uint32_t  textureAlignment = pRenderer->pActiveGpuSettings->mUploadBufferTextureAlignment;
 	uint32_t  textureRowAlignment = pRenderer->pActiveGpuSettings->mUploadBufferTextureRowAlignment;
 
-	uint32_t          nSlices = img.IsCube() ? 6 : 1;
-	uint32_t          arrayCount = img.GetArrayCount() * nSlices;
+	uint32_t	nSlices = img.IsCube() ? 6 : 1;
+	uint32_t	arrayCount = img.GetArrayCount() * nSlices;
 
 	// TODO: move to Image
 	bool isSwizzledZCurve = !img.IsLinearLayout();
@@ -450,14 +451,28 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 		TextureBarrier preCopyBarrier = { pTexture, RESOURCE_STATE_COPY_DEST };
 		cmdResourceBarrier(pCmd, 0, NULL, 1, &preCopyBarrier, false);
 	}
+	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
 
 	ImageFormat::Enum fmt = img.getFormat();
-	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
-	const uint32_t    blockSize = ImageFormat::GetBytesPerBlock(fmt);
-	const uint32      pxPerRow = max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
-	const uint3       queueGranularity = { pxPerRow, uploadGran.mHeight, uploadGran.mDepth };
-	const uint3       pxBlockDim = ImageFormat::GetBlockSize(fmt);
+	uint32_t blockSize;
+	uint3 pxBlockDim;
 
+	if(fmt != ImageFormat::NONE) {
+		blockSize = ImageFormat::GetBytesPerBlock(fmt);
+		pxBlockDim = ImageFormat::GetBlockSize(fmt);
+	} else {
+		TinyImageFormat tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
+		blockSize = ((TinyImageFormat_IsCompressed(tinyFmt)) ?
+											TinyImageFormat_BitSizeOfBlock(tinyFmt) :
+											TinyImageFormat_BitSize(tinyFmt)) / 8;
+
+		pxBlockDim = { TinyImageFormat_WidthOfBlock(tinyFmt),
+									 TinyImageFormat_HeightOfBlock(tinyFmt),
+									 TinyImageFormat_DepthOfBlock(tinyFmt) };
+
+	}
+	const uint32 pxPerRow = max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
+	const uint3 queueGranularity = {pxPerRow, uploadGran.mHeight, uploadGran.mDepth};
 	for (; i < pTexture->mDesc.mMipLevels; ++i)
 	{
 		uint3    pxImageDim{ img.GetWidth(i), img.GetHeight(i), img.GetDepth(i) };
@@ -980,6 +995,8 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 
 	bool freeImage = false;
 	Image* pImage = NULL;
+	TinyImageFormat tinyFormat = TinyImageFormat_UNDEFINED;
+
 	if (pTextureDesc->pFilename)
 	{
 		pImage = conf_new(Image);
@@ -1007,6 +1024,9 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 		pImage = conf_new(Image);
 		pImage->Create(pTextureDesc->pRawImageData->mFormat, pTextureDesc->pRawImageData->mWidth, pTextureDesc->pRawImageData->mHeight, pTextureDesc->pRawImageData->mDepth, pTextureDesc->pRawImageData->mMipLevels, pTextureDesc->pRawImageData->mArraySize, pTextureDesc->pRawImageData->pRawData);
 		freeImage = true;
+		if(pTextureDesc->pRawImageData->mFormat == ImageFormat::NONE) {
+			tinyFormat = pTextureDesc->pRawImageData->mTinyFormat;
+		}
 	}
 	else if (pTextureDesc->pBinaryImageData)
 	{
@@ -1034,6 +1054,10 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	desc.mSampleCount = SAMPLE_COUNT_1;
 	desc.mSampleQuality = 0;
 	desc.mFormat = pImage->getFormat();
+	if(pImage->getFormat() == ImageFormat::NONE) {
+		desc.mTinyFormat = tinyFormat;
+	}
+
 	desc.mClearValue = ClearValue();
 	desc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	desc.mStartState = RESOURCE_STATE_COPY_DEST;
