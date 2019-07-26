@@ -19,13 +19,16 @@ set(LibName gfx_theforge)
 project(${LibName})
 
 set(Interface
+		enums.h
+		resourceloader.h
+		resourceloaders_structs.h
+		shaderreflection.h
+		structs.h
 		theforge.h
-		al2o3_helpers.h
 		)
 
 set(Src
 		theforge.cpp
-		al2o3_helpers.cpp
 		OS/Core/Atomics.h
 		OS/Core/Compiler.h
 		OS/Core/DLL.h
