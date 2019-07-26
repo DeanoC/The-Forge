@@ -2437,13 +2437,13 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 			}
 
 			renderPipelineDesc.vertexDescriptor.attributes[i].offset = attrib->mOffset;
-			renderPipelineDesc.vertexDescriptor.attributes[i].bufferIndex = attrib->mBinding;
+			renderPipelineDesc.vertexDescriptor.attributes[i].bufferIndex = attrib->mBinding + 16;
 			renderPipelineDesc.vertexDescriptor.attributes[i].format = util_to_mtl_vertex_format(attrib->mFormat);
 
 			//setup layout for all bindings instead of just 0.
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount - 1].stride += ImageFormat::GetImageFormatStride(attrib->mFormat);
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount - 1].stepRate = 1;
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount - 1].stepFunction =
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16- 1].stride += ImageFormat::GetImageFormatStride(attrib->mFormat);
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepRate = 1;
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepFunction =
 				pPipeline->pShader->mtlVertexShader.patchType != MTLPatchTypeNone ? MTLVertexStepFunctionPerPatchControlPoint
 																				  : MTLVertexStepFunctionPerVertex;
 		}
@@ -3143,7 +3143,7 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 	{
 		[pCmd->mtlRenderEncoder setVertexBuffer:ppBuffers[i]->mtlBuffer
 										 offset:(ppBuffers[i]->mPositionInHeap + (pOffsets ? pOffsets[i] : 0))
-										atIndex:(i - startIdx)];
+										atIndex:((i - startIdx)+16)];
 	}
 }
 

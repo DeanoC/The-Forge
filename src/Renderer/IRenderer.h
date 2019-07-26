@@ -887,6 +887,9 @@ typedef struct RenderTargetDesc
 	SampleCount mSampleCount;
 	/// Internal image format
 	ImageFormat::Enum mFormat;
+    /// Set whether rendertarget is srgb
+    bool mSrgb;
+    TinyImageFormat mTinyFormat;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
@@ -902,8 +905,6 @@ typedef struct RenderTargetDesc
 	uint32_t mSharedNodeIndexCount;
 	/// GPU which will own this texture
 	uint32_t mNodeIndex;
-	/// Set whether rendertarget is srgb
-	bool mSrgb;
 } RenderTargetDesc;
 
 typedef struct RenderTarget

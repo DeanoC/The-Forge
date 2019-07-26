@@ -82,15 +82,12 @@ typedef struct TheForge_RenderTargetDesc
 	uint32_t mipLevels;
 	/// MSAA
 	TheForge_SampleCount sampleCount;
-	union {
-		struct {
-			/// original TheForge image format
-			TheForge_ImageFormat format;
-			bool sRGB;
-		};
-		/// TinyImageFormat (wider range the TheForge image formats)
-		TinyImageFormat tinyFormat;
-	};
+
+    /// original TheForge image format
+    TheForge_ImageFormat format;
+    bool sRGB;
+    /// TinyImageFormat (wider range the TheForge image formats)
+    TinyImageFormat tinyFormat;
 
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	TheForge_ClearValue clearValue;

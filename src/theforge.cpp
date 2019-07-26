@@ -309,7 +309,9 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 			pDesc->mipLevels,
 			(SampleCount) pDesc->sampleCount,
 			tfif,
-			cv,
+            pDesc->sRGB,
+			TinyImageFormat_UNDEFINED,
+            cv,
 			pDesc->sampleQuality,
 			(DescriptorType) pDesc->descriptors,
 			nullptr,
@@ -317,7 +319,6 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 			0,
 			0,
 			0,
-			pDesc->sRGB,
 	};
 	addRenderTarget(renderer, &desc, (RenderTarget **) pRenderTarget);
 
