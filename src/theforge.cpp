@@ -1020,7 +1020,7 @@ AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS
 #define API_CHK(x) ASSERT(x)
 #else
-#defien API_CHK(x) static_assert(x)
+#define API_CHK(x) static_assert(x)
 #endif
 
 static void API_CHECK() {
@@ -1267,14 +1267,14 @@ static void API_CHECK() {
 
 	API_CHK(sizeof(TheForge_TextureLoadDesc) == sizeof(TextureLoadDesc));
 	API_CHK(offsetof(TheForge_TextureLoadDesc,pTexture) == offsetof(TextureLoadDesc,ppTexture));
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pDesc) == offsetof(TextureLoadDesc, pDesc))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename) )
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mRoot) == offsetof(TextureLoadDesc, mRoot))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mNodeIndex) == offsetof(TextureLoadDesc, mNodeIndex))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mSrgb) == offsetof(TextureLoadDesc, mSrgb))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pRawImageData) == offsetof(TextureLoadDesc, pRawImageData))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pBinaryImageData) == offsetof(TextureLoadDesc, pBinaryImageData))
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mCreationFlag) == offsetof(TextureLoadDesc, mCreationFlag))
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pDesc) == offsetof(TextureLoadDesc, pDesc));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename) );
+	API_CHK(offsetof(TheForge_TextureLoadDesc, mRoot) == offsetof(TextureLoadDesc, mRoot));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, mNodeIndex) == offsetof(TextureLoadDesc, mNodeIndex));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, mSrgb) == offsetof(TextureLoadDesc, mSrgb));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pRawImageData) == offsetof(TextureLoadDesc, pRawImageData));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pBinaryImageData) == offsetof(TextureLoadDesc, pBinaryImageData));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, mCreationFlag) == offsetof(TextureLoadDesc, mCreationFlag));
 
 	API_CHK(sizeof(TheForge_TextureDesc) == sizeof(TextureDesc));
 	API_CHK(offsetof(TheForge_TextureDesc, mFlags) == offsetof(TextureDesc, mFlags));

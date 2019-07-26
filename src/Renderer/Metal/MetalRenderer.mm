@@ -43,7 +43,9 @@
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
+#include "tiny_imageformat/formatcracker.h"
 #include "../../OS/Interfaces/IMemory.h"
+
 
 #define MAX_BUFFER_BINDINGS 31
 
@@ -3514,6 +3516,9 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pIntermediate, S
 	MTLBlitOption blitOptions = MTLBlitOptionNone;
 #else
 	bool isPvrtc = (pTexture->mDesc.mFormat >= ImageFormat::PVR_2BPP && pTexture->mDesc.mFormat <= ImageFormat::PVR_4BPPA);
+	if(pTexture->mDesc.mFormat == ImageFormat::NONE) {
+		isPvrtc = ImageFormat_IsPvr(pTexture->mDesc.mTinyFormat);
+	}
 	MTLBlitOption blitOptions = isPvrtc ? MTLBlitOptionRowLinearPVRTC : MTLBlitOptionNone;
 #endif
 
@@ -4315,7 +4320,11 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 
 	pTexture->mDesc = *pDesc;
 
-	pTexture->mtlPixelFormat = util_to_mtl_pixel_format(pTexture->mDesc.mFormat, pTexture->mDesc.mSrgb);
+	if(pTexture->mDesc.mFormat == ImageFormat::NONE) {
+		pTexture->mtlPixelFormat = (MTLPixelFormat) TinyImageFormat_ToMTLPixelFormat(pTexture->mDesc.mTinyFormat);
+	} else {
+		pTexture->mtlPixelFormat = util_to_mtl_pixel_format(pTexture->mDesc.mFormat, pTexture->mDesc.mSrgb);
+	}
 #ifndef TARGET_IOS
 	if (pTexture->mtlPixelFormat == MTLPixelFormatDepth24Unorm_Stencil8 && ![pRenderer->pDevice isDepth24Stencil8PixelFormatSupported])
 	{
