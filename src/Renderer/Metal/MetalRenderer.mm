@@ -2847,7 +2847,9 @@ void cmdBindRenderTargets(
 		}
 		else
 		{
-			LOGWARNING( "Render pass is active but no root signature is bound!");
+			if(renderTargetCount > 0 || pDepthStencil) {
+				LOGWARNING("Render pass is active but no root signature is bound!");
+			}
 		}
 
 		@autoreleasepool

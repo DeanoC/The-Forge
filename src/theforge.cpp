@@ -2,6 +2,7 @@
 #include "gfx_theforge/theforge.h"
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
+#include "tiny_imageformat/formatcracker.h"
 
 static void API_CHECK();
 
@@ -1016,6 +1017,22 @@ AL2O3_EXTERN_C void TheForge_FlushResourceUpdates() {
 }
 AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 	finishResourceLoading();
+}
+AL2O3_EXTERN_C bool TheForge_DoesSupportShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return false;
+
+	// TODO ask the renderer itself
+#ifdef METAL
+	return TinyImageFormat_ToMTLPixelFormat(format) != TIF_MTLPixelFormatInvalid;
+#elif DIRECT3D12
+	return TinyImageFormat_ToDXGI_FORMAT(format) != TIF_DXGI_FORMAT_UNKNOWN;
+#elif VULKAN
+	return TinyImageFormat_ToVkFormat(format) != TIF_VK_FORMAT_UNDEFINED;
+#else
+	return false
+#endif
 }
 
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS
