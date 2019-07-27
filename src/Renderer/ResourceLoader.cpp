@@ -416,6 +416,37 @@ Region3D calculateUploadRegion(uint3 offset, uint3 extent, uint3 uploadBlock, ui
 	return { regionOffset.x, regionOffset.y, regionOffset.z, regionSize.x, regionSize.y, regionSize.z };
 }
 
+uint64_t GetMipMappedSizeUpto( uint3 dims, uint32_t nMipMapLevels, TinyImageFormat format)
+{
+	uint32_t w = dims.x;
+	uint32_t h = dims.y;
+	uint32_t d = dims.z;
+
+	int size = 0;
+	for(uint32_t i = 0; i < nMipMapLevels;++i)
+	{
+		uint32_t bx = TinyImageFormat_WidthOfBlock(format);
+		uint32_t by = TinyImageFormat_HeightOfBlock(format);
+		uint32_t bz = TinyImageFormat_DepthOfBlock(format);
+
+		size += ((w + bx - 1) / bx) * ((h + by - 1) / by) * ((d + bz - 1) / bz);
+
+		w >>= 1;
+		h >>= 1;
+		d >>= 1;
+		if (w + h + d == 0)
+			break;
+		if (w == 0)
+			w = 1;
+		if (h == 0)
+			h = 1;
+		if (d == 0)
+			d = 1;
+	}
+	size = size * TinyImageFormat_BitSize(format) / 8;
+	return size;
+}
+
 static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t activeSet, UpdateState& pTextureUpdate)
 {
 	TextureUpdateDescInternal& texUpdateDesc = pTextureUpdate.mRequest.texUpdateDesc;
@@ -454,6 +485,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
 
 	ImageFormat::Enum fmt = img.getFormat();
+	TinyImageFormat tinyFmt = TinyImageFormat_UNDEFINED;
 	uint32_t blockSize;
 	uint3 pxBlockDim;
 
@@ -461,7 +493,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 		blockSize = ImageFormat::GetBytesPerBlock(fmt);
 		pxBlockDim = ImageFormat::GetBlockSize(fmt);
 	} else {
-		TinyImageFormat tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
+		tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
 		blockSize = ((TinyImageFormat_IsCompressed(tinyFmt)) ?
 											TinyImageFormat_BitSizeOfBlock(tinyFmt) :
 											TinyImageFormat_BitSize(tinyFmt)) / 8;
@@ -471,11 +503,13 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 									 TinyImageFormat_DepthOfBlock(tinyFmt) };
 
 	}
+
 	const uint32 pxPerRow = max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
 	const uint3 queueGranularity = {pxPerRow, uploadGran.mHeight, uploadGran.mDepth};
+
 	for (; i < pTexture->mDesc.mMipLevels; ++i)
 	{
-		uint3    pxImageDim{ img.GetWidth(i), img.GetHeight(i), img.GetDepth(i) };
+		uint3 const pxImageDim{ img.GetWidth(i), img.GetHeight(i), img.GetDepth(i) };
 		uint3    uploadExtent{ (pxImageDim + pxBlockDim - uint3(1)) / pxBlockDim };
 		uint3    granularity{ min(queueGranularity, uploadExtent) };
 		uint32_t srcPitchY{ blockSize * uploadExtent.x };
@@ -526,7 +560,16 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 
 			uint32_t n = j / nSlices;
 			uint32_t k = j - n * nSlices;
-			uint8_t* pSrcData = (uint8_t*)img.GetPixels(i, n) + k * srcPitches.z;
+			uint8_t* pSrcData;
+			if(fmt == ImageFormat::NONE) {
+				ASSERT(tinyFmt != TinyImageFormat_UNDEFINED);
+				pSrcData = (uint8_t *) img.GetPixels() +
+						GetMipMappedSizeUpto({img.GetWidth(), img.GetHeight(), img.GetDepth()}, i, tinyFmt) +
+						k * srcPitches.z;
+						//+ arraySlice + GetMipMappedSize(0, mipMapLevel) +
+			} else {
+				pSrcData = (uint8_t *) img.GetPixels(i, n) + k * srcPitches.z;
+			}
 
 			Region3D uploadRegion{ uploadOffset.x,     uploadOffset.y,     uploadOffset.z,
 								   uploadRectExtent.x, uploadRectExtent.y, uploadRectExtent.z };
