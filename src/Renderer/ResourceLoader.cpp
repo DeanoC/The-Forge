@@ -571,7 +571,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 			// tinyimageformat images arrays are laid out differently from TheForge images
 			// a slice is just another dimension (the 4th) that doesn't undergo mip map reduction
 			// so images the top level is just w * h * d * s in size
-			// a mipmap level is w >> mml * h >> mml * d >> mml * size
+			// a mipmap level is w >> mml * h >> mml * d >> mml * s in size
 			if(fmt == ImageFormat::NONE) {
 				ASSERT(tinyFmt != TinyImageFormat_UNDEFINED);
 				pSrcData = (uint8_t *) img.GetPixels() +
