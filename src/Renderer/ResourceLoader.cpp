@@ -416,20 +416,22 @@ Region3D calculateUploadRegion(uint3 offset, uint3 extent, uint3 uploadBlock, ui
 	return { regionOffset.x, regionOffset.y, regionOffset.z, regionSize.x, regionSize.y, regionSize.z };
 }
 
-uint64_t GetMipMappedSizeUpto( uint3 dims, uint32_t nMipMapLevels, TinyImageFormat format)
+uint64_t GetMipMappedSizeUpto( uint3 dims, uint32_t nMipMapLevels, int32_t slices, TinyImageFormat format)
 {
 	uint32_t w = dims.x;
 	uint32_t h = dims.y;
 	uint32_t d = dims.z;
 
-	int size = 0;
+	uint64_t size = 0;
 	for(uint32_t i = 0; i < nMipMapLevels;++i)
 	{
-		uint32_t bx = TinyImageFormat_WidthOfBlock(format);
-		uint32_t by = TinyImageFormat_HeightOfBlock(format);
-		uint32_t bz = TinyImageFormat_DepthOfBlock(format);
+		uint64_t bx = TinyImageFormat_WidthOfBlock(format);
+		uint64_t by = TinyImageFormat_HeightOfBlock(format);
+		uint64_t bz = TinyImageFormat_DepthOfBlock(format);
 
-		size += ((w + bx - 1) / bx) * ((h + by - 1) / by) * ((d + bz - 1) / bz);
+		uint64_t tmpsize = ((w + bx - 1) / bx) * ((h + by - 1) / by) * ((d + bz - 1) / bz);
+		tmpsize *= slices;
+		size += tmpsize;
 
 		w >>= 1;
 		h >>= 1;
@@ -466,8 +468,6 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	uint32_t  textureAlignment = pRenderer->pActiveGpuSettings->mUploadBufferTextureAlignment;
 	uint32_t  textureRowAlignment = pRenderer->pActiveGpuSettings->mUploadBufferTextureRowAlignment;
 
-	uint32_t	nSlices = img.IsCube() ? 6 : 1;
-	uint32_t	arrayCount = img.GetArrayCount() * nSlices;
 
 	// TODO: move to Image
 	bool isSwizzledZCurve = !img.IsLinearLayout();
@@ -488,10 +488,14 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	TinyImageFormat tinyFmt = TinyImageFormat_UNDEFINED;
 	uint32_t blockSize;
 	uint3 pxBlockDim;
+	uint32_t	nSlices;
+	uint32_t	arrayCount;
 
 	if(fmt != ImageFormat::NONE) {
 		blockSize = ImageFormat::GetBytesPerBlock(fmt);
 		pxBlockDim = ImageFormat::GetBlockSize(fmt);
+		nSlices = img.IsCube() ? 6 : 1;
+		arrayCount = img.GetArrayCount() * nSlices;
 	} else {
 		tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
 		blockSize = ((TinyImageFormat_IsCompressed(tinyFmt)) ?
@@ -501,11 +505,16 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 		pxBlockDim = { TinyImageFormat_WidthOfBlock(tinyFmt),
 									 TinyImageFormat_HeightOfBlock(tinyFmt),
 									 TinyImageFormat_DepthOfBlock(tinyFmt) };
-
+		// cubemaps slices are just normal slices for tinyimageformat images
+		// so nSlices == 1
+		nSlices = 1;
+		arrayCount = img.GetArrayCount();
 	}
+
 
 	const uint32 pxPerRow = max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
 	const uint3 queueGranularity = {pxPerRow, uploadGran.mHeight, uploadGran.mDepth};
+	const uint3 fullSizeDim = {img.GetWidth(), img.GetHeight(), img.GetDepth()};
 
 	for (; i < pTexture->mDesc.mMipLevels; ++i)
 	{
@@ -558,16 +567,19 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 			texData.mRowPitch = uploadPitches.y;
 			texData.mSlicePitch = uploadPitches.z;
 
-			uint32_t n = j / nSlices;
-			uint32_t k = j - n * nSlices;
 			uint8_t* pSrcData;
+			// tinyimageformat images arrays are laid out differently from TheForge images
+			// a slice is just another dimension (the 4th) that doesn't undergo mip map reduction
+			// so images the top level is just w * h * d * s in size
+			// a mipmap level is w >> mml * h >> mml * d >> mml * size
 			if(fmt == ImageFormat::NONE) {
 				ASSERT(tinyFmt != TinyImageFormat_UNDEFINED);
 				pSrcData = (uint8_t *) img.GetPixels() +
-						GetMipMappedSizeUpto({img.GetWidth(), img.GetHeight(), img.GetDepth()}, i, tinyFmt) +
-						k * srcPitches.z;
-						//+ arraySlice + GetMipMappedSize(0, mipMapLevel) +
+						GetMipMappedSizeUpto(fullSizeDim, i, arrayCount, tinyFmt) +
+						j * srcPitches.z;
 			} else {
+				uint32_t n = j / nSlices;
+				uint32_t k = j - n * nSlices;
 				pSrcData = (uint8_t *) img.GetPixels(i, n) + k * srcPitches.z;
 			}
 
