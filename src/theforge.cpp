@@ -1018,21 +1018,26 @@ AL2O3_EXTERN_C void TheForge_FlushResourceUpdates() {
 AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 	finishResourceLoading();
 }
-AL2O3_EXTERN_C bool TheForge_DoesSupportShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format) {
+
+AL2O3_EXTERN_C bool TheForge_CanShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return false;
 
-	// TODO ask the renderer itself
-#ifdef METAL
-	return TinyImageFormat_ToMTLPixelFormat(format) != TIF_MTLPixelFormatInvalid;
-#elif DIRECT3D12
-	return TinyImageFormat_ToDXGI_FORMAT(format) != TIF_DXGI_FORMAT_UNKNOWN;
-#elif VULKAN
-	return TinyImageFormat_ToVkFormat(format) != TIF_VK_FORMAT_UNDEFINED;
-#else
-	return false
-#endif
+	return renderer->canShaderReadFrom[format];
+}
+AL2O3_EXTERN_C bool TheForge_CanColorWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return false;
+	return renderer->canShaderWriteTo[format];
+}
+
+AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return false;
+	return renderer->canColorWriteTo[format];
 }
 
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS

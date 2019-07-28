@@ -43,9 +43,9 @@
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
-#include "tiny_imageformat/formatcracker.h"
 #include "../../OS/Interfaces/IMemory.h"
-
+#include "tiny_imageformat/formatcracker.h"
+#include "MetalCapBuilder.h"
 
 #define MAX_BUFFER_BINDINGS 31
 
@@ -1506,6 +1506,7 @@ uint32_t queryThreadExecutionWidth(Renderer* pRenderer)
 	return (uint32_t)computePipelineState.threadExecutionWidth;
 }
 
+
 void initRenderer(const char* appName, const RendererDesc* settings, Renderer** ppRenderer)
 {
 	Renderer* pRenderer = (Renderer*)conf_calloc(1, sizeof(*pRenderer));
@@ -1522,6 +1523,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 	{
 		// Get the systems default device.
 		pRenderer->pDevice = MTLCreateSystemDefaultDevice();
+
+		utils_caps_builder(pRenderer);
 
 		//get gpu vendor and model id.
 		GPUVendorPreset gpuVendor;
@@ -3848,7 +3851,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
     memcpy(&data[0], &pQueryHeap->gpuTimestampStart, sizeof(uint64_t));
     memcpy(&data[1], &pQueryHeap->gpuTimestampEnd, sizeof(uint64_t));
 }
-    
+
 // -------------------------------------------------------------------------------------------------
 // Utility functions
 // -------------------------------------------------------------------------------------------------
@@ -4158,7 +4161,7 @@ void util_bind_argument_buffer(Cmd* pCmd, DescriptorBinderNode& node, const Desc
 	if (descInfo->mDesc.used_stages == SHADER_STAGE_COMP)
 		[pCmd->mtlComputeEncoder setBuffer:argumentBuffer->mtlBuffer offset:argumentBuffer->mPositionInHeap atIndex:descInfo->mDesc.reg];
 }
-	
+
 void util_end_current_encoders(Cmd* pCmd)
 {
 	const bool barrierRequired(pCmd->pCmdPool->pQueue->mBarrierFlags);

@@ -84,7 +84,7 @@
 #elif defined(METAL)
 #define ENABLE_RAYTRACING
 #endif
-
+#include "al2o3_platform/platform.h"
 #include "../OS/Image/ImageEnums.h"
 #include "../ThirdParty/OpenSource/EASTL/string.h"
 #include "../ThirdParty/OpenSource/EASTL/vector.h"
@@ -92,6 +92,8 @@
 #include "../OS/Interfaces/IOperatingSystem.h"
 #include "../OS/Interfaces/IThread.h"
 #include "tiny_imageformat/format.h"
+#include "tiny_imageformat/formatcracker.h"
+
 #ifdef __cplusplus
 #ifndef MAKE_ENUM_FLAG
 #define MAKE_ENUM_FLAG(TYPE, ENUM_TYPE)                                                                        \
@@ -1893,6 +1895,11 @@ typedef struct Renderer
 	BlendState*      pDefaultBlendState;
 	DepthState*      pDefaultDepthState;
 	RasterizerState* pDefaultRasterizerState;
+
+	bool							canShaderReadFrom[TinyImageFormat_Count()];
+	bool							canShaderWriteTo[TinyImageFormat_Count()];
+	bool							canColorWriteTo[TinyImageFormat_Count()];
+
 } Renderer;
 
 // Indirect command sturcture define
