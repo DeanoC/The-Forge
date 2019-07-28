@@ -44,7 +44,7 @@
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
 #include "tiny_imageformat/formatcracker.h"
-
+#include "Direct3D12CapBuider.h"
 #include "Direct3D12Hooks.h"
 
 #if !defined(_WIN32)
@@ -1867,6 +1867,10 @@ static void AddDevice(Renderer* pRenderer)
 		const GpuDesc& gpu1 = gpuDesc[testIndex];
 		const GpuDesc& gpu2 = gpuDesc[refIndex];
 
+// force to an Intel, useful sometimes for debugging
+//		if(stricmp(gpu1.mVendorId, "0x8086") == 0 )
+//			return true;
+
 		// If shader model 6.0 or higher is requested, prefer the GPU which supports it
 		if (gpu1.pRenderer->mSettings.mShaderTarget >= shader_target_6_0)
 		{
@@ -2098,6 +2102,9 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			ppRenderer = NULL;
 			return;
 		}
+
+		utils_caps_builder(pRenderer);
+
 		if (pRenderer->mSettings.mShaderTarget >= shader_target_6_0)
 		{
 			// Query the level of support of Shader Model.
