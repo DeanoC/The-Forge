@@ -44,7 +44,7 @@
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
 #include "tiny_imageformat/formatcracker.h"
-#include "Direct3D12CapBuider.h"
+#include "Direct3D12CapBuilder.h"
 #include "Direct3D12Hooks.h"
 
 #if !defined(_WIN32)
@@ -3799,7 +3799,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	pSampler->mDxSamplerDesc.AddressU = util_to_dx_texture_address_mode(pDesc->mAddressU);
 	pSampler->mDxSamplerDesc.AddressV = util_to_dx_texture_address_mode(pDesc->mAddressV);
 	pSampler->mDxSamplerDesc.AddressW = util_to_dx_texture_address_mode(pDesc->mAddressW);
-	pSampler->mDxSamplerDesc.MipLODBias = pDesc->mMipLosBias;
+	pSampler->mDxSamplerDesc.MipLODBias = pDesc->mMipLodBias;
 	pSampler->mDxSamplerDesc.MaxAnisotropy = max((UINT)pDesc->mMaxAnisotropy, 1U);
 	pSampler->mDxSamplerDesc.ComparisonFunc = gDx12ComparisonFuncTranslator[pDesc->mCompareFunc];
 	pSampler->mDxSamplerDesc.BorderColor[0] = 0.0f;

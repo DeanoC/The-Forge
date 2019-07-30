@@ -3711,7 +3711,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** pp_samp
 	add_info.addressModeV = util_to_vk_address_mode(pDesc->mAddressV);
 	add_info.addressModeW = util_to_vk_address_mode(pDesc->mAddressW);
 	add_info.mipLodBias = pDesc->mMipLodBias;
-	add_info.anisotropyEnable = (pDesc->mMaxAnisotropy > 1.0f)? VK_TRUE : VK_FALSE;
+	add_info.anisotropyEnable = (pDesc->mMaxAnisotropy > 0.0f)? VK_TRUE : VK_FALSE;
 	add_info.maxAnisotropy = pDesc->mMaxAnisotropy;
 	add_info.compareEnable = (gVkComparisonFuncTranslator[pDesc->mCompareFunc] != VK_COMPARE_OP_NEVER) ? VK_TRUE : VK_FALSE;
 	add_info.compareOp = gVkComparisonFuncTranslator[pDesc->mCompareFunc];
