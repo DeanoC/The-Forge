@@ -14,7 +14,7 @@ if (NOT hasParent)
 	endif ()
 endif ()
 
-set(USE_VULKAN FALSE)
+set(USE_VULKAN TRUE)
 
 SET_MIN_VERSIONS()
 set(LibName gfx_theforge)
