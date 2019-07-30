@@ -412,7 +412,7 @@ uint3 calculateUploadRect(uint64_t mem, uint3 pitches, uint3 offset, uint3 exten
 Region3D calculateUploadRegion(uint3 offset, uint3 extent, uint3 uploadBlock, uint3 pxImageDim)
 {
 	uint3 regionOffset = offset * uploadBlock;
-	uint3 regionSize = min(extent * uploadBlock, pxImageDim);
+	uint3 regionSize = min<uint3>(extent * uploadBlock, pxImageDim);
 	return { regionOffset.x, regionOffset.y, regionOffset.z, regionSize.x, regionSize.y, regionSize.z };
 }
 
@@ -520,7 +520,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	{
 		uint3 const pxImageDim{ img.GetWidth(i), img.GetHeight(i), img.GetDepth(i) };
 		uint3    uploadExtent{ (pxImageDim + pxBlockDim - uint3(1)) / pxBlockDim };
-		uint3    granularity{ min(queueGranularity, uploadExtent) };
+		uint3    granularity{ min<uint3>(queueGranularity, uploadExtent) };
 		uint32_t srcPitchY{ blockSize * uploadExtent.x };
 		uint32_t dstPitchY{ round_up(srcPitchY, textureRowAlignment) };
 		uint3    srcPitches{ blockSize, srcPitchY, srcPitchY * uploadExtent.y };
@@ -1393,13 +1393,13 @@ void vk_compileShader(
 		// If for some reason the error file could not be created just log error msg
 		if (!errorFile.IsOpen())
 		{
-			ErrorMsg("Failed to compile shader %s", fileName.c_str());
+			LOGERRORF("Failed to compile shader %s", fileName.c_str());
 		}
 		else
 		{
 			eastl::string errorLog = errorFile.ReadText();
 			errorFile.Close();
-			ErrorMsg("Failed to compile shader %s with error\n%s", fileName.c_str(), errorLog.c_str());
+			LOGERRORF("Failed to compile shader %s with error\n%s", fileName.c_str(), errorLog.c_str());
 			errorFile.Close();
 		}
 	}

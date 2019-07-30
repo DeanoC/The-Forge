@@ -3807,7 +3807,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	pSampler->mDxSamplerDesc.BorderColor[2] = 0.0f;
 	pSampler->mDxSamplerDesc.BorderColor[3] = 0.0f;
 	pSampler->mDxSamplerDesc.MinLOD = 0.0f;
-	pSampler->mDxSamplerDesc.MaxLOD = ((pDesc->mMipMapMode == MIPMAP_MODE_LINEAR) ? D3D12_FLOAT32_MAX : 0.0f);
+	pSampler->mDxSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 
 	add_sampler(pRenderer, &pSampler->mDxSamplerDesc, &pSampler->mDxSamplerHandle);
 

@@ -26,7 +26,7 @@
 
 #define SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS
 
-#include "../../ThirdParty/OpenSource/SPIRV_Cross/spirv_cross.hpp"
+#include "spirv_cross.hpp"
 
 // helper functions
 void ReflectBoundResources(

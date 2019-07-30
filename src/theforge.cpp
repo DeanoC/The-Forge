@@ -1019,6 +1019,14 @@ AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 	finishResourceLoading();
 }
 
+AL2O3_EXTERN_C TheForge_RendererApi TheForge_GetRendererApi(TheForge_RendererHandle handle) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer)
+		return TheForge_API_D3D11;
+
+	return (TheForge_RendererApi)renderer->mSettings.mApi;
+}
+
 AL2O3_EXTERN_C bool TheForge_CanShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
@@ -1132,7 +1140,7 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_SamplerDesc, addressU) == offsetof(SamplerDesc, mAddressU));
 	API_CHK(offsetof(TheForge_SamplerDesc, addressV) == offsetof(SamplerDesc, mAddressV));
 	API_CHK(offsetof(TheForge_SamplerDesc, addressW) == offsetof(SamplerDesc, mAddressW));
-	API_CHK(offsetof(TheForge_SamplerDesc, mipLosBias) == offsetof(SamplerDesc, mMipLosBias));
+	API_CHK(offsetof(TheForge_SamplerDesc, mipLodBias) == offsetof(SamplerDesc, mMipLodBias));
 	API_CHK(offsetof(TheForge_SamplerDesc, maxAnisotropy) == offsetof(SamplerDesc, mMaxAnisotropy));
 	API_CHK(offsetof(TheForge_SamplerDesc, compareFunc) == offsetof(SamplerDesc, mCompareFunc));
 
@@ -1270,6 +1278,10 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_RawImageData, mipLevels) == offsetof(RawImageData, mMipLevels));
 	API_CHK(offsetof(TheForge_RawImageData, tinyFormat) == offsetof(RawImageData, mTinyFormat));
 
+	API_CHK(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
+	API_CHK(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
+	API_CHK(sizeof(TheForge_ClearValue) == sizeof(ClearValue));
+
 	API_CHK(sizeof(TheForge_PipelineReflection) == sizeof(PipelineReflection));
 	API_CHK(offsetof(TheForge_PipelineReflection, mShaderStages) == offsetof(PipelineReflection,  mShaderStages));
 	API_CHK(offsetof(TheForge_PipelineReflection, mStageReflections) == offsetof(PipelineReflection,  mStageReflections));
@@ -1284,9 +1296,6 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_PipelineReflection, pVariables) == offsetof(PipelineReflection,  pVariables));
 	API_CHK(offsetof(TheForge_PipelineReflection, mVariableCount) == offsetof(PipelineReflection,  mVariableCount));
 
-	API_CHK(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
-	API_CHK(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
-	API_CHK(sizeof(TheForge_ClearValue) == sizeof(ClearValue));
 
 	API_CHK(sizeof(TheForge_TextureLoadDesc) == sizeof(TextureLoadDesc));
 	API_CHK(offsetof(TheForge_TextureLoadDesc,pTexture) == offsetof(TextureLoadDesc,ppTexture));

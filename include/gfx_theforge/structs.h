@@ -162,7 +162,7 @@ typedef struct TheForge_SamplerDesc
 	TheForge_AddressMode addressU;
 	TheForge_AddressMode addressV;
 	TheForge_AddressMode addressW;
-	float       mipLosBias;
+	float       mipLodBias;
 	float       maxAnisotropy;
 	TheForge_CompareMode compareFunc;
 } TheForge_SamplerDesc;
@@ -175,10 +175,11 @@ typedef struct TheForge_RootSignatureDesc
 	const char**           			pStaticSamplerNames;
 	TheForge_SamplerHandle*   	pStaticSamplers;
 	uint32_t               			staticSamplerCount;
-	// TODO These two are vulkan only
-//	const char**           			pDynamicUniformBufferNames;
-//	uint32_t               			dynamicUniformBufferCount;
 	TheForge_RootSignatureFlags flags;
+
+	// currently vulkan only
+	const char**           			pDynamicUniformBufferNames;
+	uint32_t               			dynamicUniformBufferCount;
 } TheForge_RootSignatureDesc;
 
 typedef struct TheForge_VertexAttrib

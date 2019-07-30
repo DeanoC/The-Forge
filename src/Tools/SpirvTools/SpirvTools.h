@@ -25,7 +25,7 @@
 #pragma once
 
 #include <stdint.h>
-#if defined _WIN32 || defined __CYGWIN__ || defined __MINGW32__
+/*#if defined _WIN32 || defined __CYGWIN__ || defined __MINGW32__
   #ifdef API_EXPORT
 	#ifdef __GNUC__
 	  #define SPIRV_INTERFACE __attribute__ ((dllexport))
@@ -52,7 +52,9 @@
 #else
 #define CALLTYPE
 #endif
-
+*/
+#define SPIRV_INTERFACE
+#define CALLTYPE
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // spirv cross
 // This is a C API DLL

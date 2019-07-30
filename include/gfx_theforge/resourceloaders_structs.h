@@ -45,9 +45,9 @@ typedef struct TheForge_TextureLoadDesc
 	uint32_t    mNodeIndex;
 	bool        mSrgb;
 	/// Load texture from raw data
-	TheForge_RawImageData* pRawImageData = NULL;
+	TheForge_RawImageData const* pRawImageData = NULL;
 	/// Load texture from binary data (with header)
-	TheForge_BinaryImageData* pBinaryImageData = NULL;
+	TheForge_BinaryImageData const* pBinaryImageData = NULL;
 
 	// Following is ignored if pDesc != NULL.  pDesc->mFlags will be considered instead.
 	TheForge_TextureCreationFlags mCreationFlag;

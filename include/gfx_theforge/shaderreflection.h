@@ -107,6 +107,9 @@ typedef struct TheForge_ShaderReflection
 	//number of tessellation control point
 	uint32_t mNumControlPoint;
 
+	// vulkan only
+	char* pEntryPoint;
+
 } TheForge_ShaderReflection;
 
 typedef struct TheForge_PipelineReflection
@@ -127,6 +130,7 @@ typedef struct TheForge_PipelineReflection
 
 	TheForge_ShaderVariable* pVariables;
 	uint32_t mVariableCount;
-} TheForge_PipelineReflection;
+}
+TheForge_PipelineReflection;
 
 #endif

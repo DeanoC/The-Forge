@@ -129,9 +129,8 @@ struct ShaderReflection
 	//number of tessellation control point
 	uint32_t mNumControlPoint;
 
-#if defined(VULKAN)
+	// vulkan only
 	char* pEntryPoint;
-#endif
 };
 
 struct PipelineReflection

@@ -14,6 +14,8 @@ if (NOT hasParent)
 	endif ()
 endif ()
 
+set(USE_VULKAN FALSE)
+
 SET_MIN_VERSIONS()
 set(LibName gfx_theforge)
 project(${LibName})
@@ -75,13 +77,16 @@ set(Src
 		ThirdParty/OpenSource/EASTL/EAStdC/EASprintf.cpp
 		)
 if (WIN32)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12.cpp)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.cpp)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.h)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12MemoryAllocator.cpp)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12MemoryAllocator.h)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12Raytracing.cpp)
-	list(APPEND Src Renderer/Direct3D12/Direct3D12ShaderReflection.cpp)
+	if(NOT USE_VULKAN)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12.cpp)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.cpp)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.h)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12MemoryAllocator.cpp)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12MemoryAllocator.h)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12Raytracing.cpp)
+		list(APPEND Src Renderer/Direct3D12/Direct3D12ShaderReflection.cpp)
+	endif()
+
 	list(APPEND Src OS/Windows/WindowsFileSystem.cpp)
 	list(APPEND Src OS/Windows/WindowsThread.cpp)
 	list(APPEND Src OS/Windows/WindowsTime.cpp)
@@ -103,13 +108,28 @@ set(Deps
 		al2o3_memory
 		tiny_imageformat
 		)
+
+if(USE_VULKAN)
+	find_package(Vulkan REQUIRED)
+	list(APPEND Src Renderer/Vulkan/Vulkan.cpp)
+	list(APPEND Src Renderer/Vulkan/VulkanRaytracing.cpp)
+	list(APPEND Src Renderer/Vulkan/VulkanShaderReflection.cpp)
+	list(APPEND Src Tools/SpirvTools/SpirvTools.cpp)
+
+	list(APPEND Deps gfx_spirvtools)
+	list(APPEND Deps gfx_spirvcross)
+endif()
+
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
+if(USE_VULKAN)
+	add_compile_definitions(${LibName} VULKAN)
+	target_include_directories(${LibName} PRIVATE Vulkan::Vulkan)
+	target_link_libraries(${LibName} PRIVATE Vulkan::Vulkan)
+endif()
+
 if (APPLE)
 	add_compile_definitions(${LibName} METAL)
 	target_compile_options(${LibName} PRIVATE -fobjc-arc -ObjC++)
-
-	set_source_files_properties(src/ThirdParty/OpenSource/gainput/lib/source/gainput/GainputMac.mm
-			PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 
 	target_link_libraries(${LibName} PRIVATE
 			stdc++
@@ -124,7 +144,10 @@ if (APPLE)
 			)
 endif ()
 if(WIN32)
-	target_compile_definitions(${LibName} PRIVATE DIRECT3D12)
+	if(NOT USE_VULKAN)
+		target_compile_definitions(${LibName} PRIVATE DIRECT3D12)
+	endif()
+
 	target_link_libraries(${LibName} PRIVATE
 			winmm
 			${CMAKE_CURRENT_SOURCE_DIR}/src/ThirdParty/OpenSource/winpixeventruntime/bin/x64/WinPixEventRuntime.lib)

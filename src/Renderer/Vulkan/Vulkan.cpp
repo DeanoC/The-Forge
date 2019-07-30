@@ -83,6 +83,7 @@ static const char * g_hackSemanticList[] =
 #include "../../OS/Core/Atomics.h"
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
+#include "VulkanCapsBuilder.h"
 
 #include "../../OS/Interfaces/IMemory.h"
 
@@ -921,9 +922,9 @@ static void internal_log(LogType type, const char* msg, const char* component)
 {
 	switch (type)
 	{
-		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_INFO: LOGINFOF("%s ( %s )", component, msg); break;
+		case LOG_TYPE_WARN: LOGWARNINGF("%s ( %s )", component, msg); break;
+		case LOG_TYPE_DEBUG: LOGDEBUGF("%s ( %s )", component, msg); break;
 		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
 		default: break;
 	}
@@ -966,7 +967,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL internal_debug_report_callback(
 {
 	if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
 	{
-		LOGF(LogLevel::eINFO, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGINFOF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 	{
@@ -975,11 +976,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL internal_debug_report_callback(
 		// Disable warnings for bind memory for dedicated allocations extension
 		if (gDedicatedAllocationExtension && messageCode != 11 && messageCode != 12)
 #endif
-			LOGF(LogLevel::eWARNING, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+			LOGWARNINGF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 	{
-		LOGF(LogLevel::eWARNING, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGWARNINGF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 	{
@@ -2108,9 +2109,9 @@ static void AddDevice(Renderer* pRenderer)
 #endif
 	ASSERT(VK_NULL_HANDLE != pRenderer->pVkActiveGPU);
 
-	LOGF(LogLevel::eINFO, "Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
-	LOGF(LogLevel::eINFO, "Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
-	LOGF(LogLevel::eINFO, "Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
+	LOGINFOF("Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
+	LOGINFOF("Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
+	LOGINFOF("Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
 
 	uint32_t              count = 0;
 	VkLayerProperties     layers[100];
@@ -2225,6 +2226,8 @@ static void AddDevice(Renderer* pRenderer)
 
 	vkGetPhysicalDeviceFeatures2KHR(pRenderer->pVkActiveGPU, &gpuFeatures2);
 
+	utils_caps_builder(pRenderer);
+
 	// need a queue_priorite for each queue in the queue family we create
 	uint32_t queueFamiliesCount = pRenderer->mVkQueueFamilyPropertyCount[pRenderer->mActiveGPUIndex];
 	VkQueueFamilyProperties* queueFamiliesProperties = pRenderer->mVkQueueFamilyProperties[pRenderer->mActiveGPUIndex];
@@ -2284,12 +2287,12 @@ static void AddDevice(Renderer* pRenderer)
 
 	if (gDedicatedAllocationExtension)
 	{
-		LOGF(LogLevel::eINFO, "Successfully loaded Dedicated Allocation extension");
+		LOGINFOF("Successfully loaded Dedicated Allocation extension");
 	}
 
 	if (gExternalMemoryExtension)
 	{
-		LOGF(LogLevel::eINFO, "Successfully loaded External Memory extension");
+		LOGINFOF("Successfully loaded External Memory extension");
 	}
 
 #ifdef VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME
@@ -2297,29 +2300,29 @@ static void AddDevice(Renderer* pRenderer)
 	{
 		pfnVkCmdDrawIndirectCountKHR = vkCmdDrawIndirectCountKHR;
 		pfnVkCmdDrawIndexedIndirectCountKHR = vkCmdDrawIndexedIndirectCountKHR;
-		LOGF(LogLevel::eINFO, "Successfully loaded Draw Indirect extension");
+		LOGINFOF("Successfully loaded Draw Indirect extension");
 	}
 	else if (gAMDDrawIndirectCountExtension)
 #endif
 	{
 		pfnVkCmdDrawIndirectCountKHR = vkCmdDrawIndirectCountAMD;
 		pfnVkCmdDrawIndexedIndirectCountKHR = vkCmdDrawIndexedIndirectCountAMD;
-		LOGF(LogLevel::eINFO, "Successfully loaded AMD Draw Indirect extension");
+		LOGINFOF("Successfully loaded AMD Draw Indirect extension");
 	}
 
 	if (gAMDGCNShaderExtension)
 	{
-		LOGF(LogLevel::eINFO, "Successfully loaded AMD GCN Shader extension");
+		LOGINFOF("Successfully loaded AMD GCN Shader extension");
 	}
 
 	if (gDescriptorIndexingExtension)
 	{
-		LOGF(LogLevel::eINFO, "Successfully loaded Descriptor Indexing extension");
+		LOGINFOF("Successfully loaded Descriptor Indexing extension");
 	}
 
 	if (gNVRayTracingExtension)
 	{
-		LOGF(LogLevel::eINFO, "Successfully loaded Nvidia Ray Tracing extension");
+		LOGINFOF("Successfully loaded Nvidia Ray Tracing extension");
 	}
 
 #ifdef USE_DEBUG_UTILS_EXTENSION
@@ -2607,7 +2610,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 		queueFamilyIndex = 0;
 		queueIndex = 0;
 
-		LOGF(LogLevel::eWARNING, "Could not find queue of type %u. Using default queue", (uint32_t)pDesc->mType);
+		LOGWARNINGF("Could not find queue of type %u. Using default queue", (uint32_t)pDesc->mType);
 	}
 
 	if (found)
@@ -3187,7 +3190,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, viewInfo.format, &formatProps);
 		if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))
 		{
-			LOGF(LogLevel::eWARNING, "Failed to create uniform texel buffer view for format %u", (uint32_t)pDesc->mFormat);
+			LOGWARNINGF("Failed to create uniform texel buffer view for format %u", (uint32_t)pDesc->mFormat);
 		}
 		else
 		{
@@ -3206,7 +3209,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, viewInfo.format, &formatProps);
 		if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT))
 		{
-			LOGF(LogLevel::eWARNING, "Failed to create storage texel buffer view for format %u", (uint32_t)pDesc->mFormat);
+			LOGWARNINGF("Failed to create storage texel buffer view for format %u", (uint32_t)pDesc->mFormat);
 		}
 		else
 		{
@@ -3296,7 +3299,11 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		add_info.pNext = NULL;
 		add_info.flags = 0;
 		add_info.imageType = image_type;
-		add_info.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
+		if(pDesc->mFormat == ImageFormat::NONE) {
+			add_info.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mTinyFormat);
+		} else {
+			add_info.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
+		}
 		add_info.extent.width = pDesc->mWidth;
 		add_info.extent.height = pDesc->mHeight;
 		add_info.extent.depth = pDesc->mDepth;
@@ -3322,21 +3329,22 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			add_info.usage |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		}
 
-		// Verify that GPU supports this format
-		DECLARE_ZERO(VkFormatProperties, format_props);
-		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, add_info.format, &format_props);
-		VkFormatFeatureFlags format_features = util_vk_image_usage_to_format_features(add_info.usage);
-		if (pDesc->mHostVisible)
-		{
-			VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
-			ASSERT((0 != flags) && "Format is not supported for host visible images");
+		if(add_info.format == ImageFormat::NONE) {
+			// TODO host visible
+			ASSERT(pRenderer->canShaderReadFrom[pDesc->mTinyFormat]);
+		} else {
+			// Verify that GPU supports this format
+			DECLARE_ZERO(VkFormatProperties, format_props);
+			vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, add_info.format, &format_props);
+			VkFormatFeatureFlags format_features = util_vk_image_usage_to_format_features(add_info.usage);
+			if (pDesc->mHostVisible) {
+				VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
+				ASSERT((0 != flags) && "Format is not supported for host visible images");
+			} else {
+				VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
+				ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
+			}
 		}
-		else
-		{
-			VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
-			ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
-		}
-
 		const bool linkedMultiGpu = (pRenderer->mSettings.mGpuMode == GPU_MODE_LINKED) && (pDesc->pSharedNodeIndices || pDesc->mNodeIndex);
 
 		AllocatorMemoryRequirements mem_reqs = { 0 };
@@ -3452,7 +3460,11 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	srvDesc.flags = 0;
 	srvDesc.image = pTexture->pVkImage;
 	srvDesc.viewType = view_type;
-	srvDesc.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
+	if(pDesc->mFormat == ImageFormat::NONE) {
+		srvDesc.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mTinyFormat);
+	} else {
+		srvDesc.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
+	}
 	srvDesc.components.r = VK_COMPONENT_SWIZZLE_R;
 	srvDesc.components.g = VK_COMPONENT_SWIZZLE_G;
 	srvDesc.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -3590,7 +3602,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 			if (VK_SUCCESS != vk_res)
 			{
 				textureDesc.mFormat = ImageFormat::D16;
-				LOGF(LogLevel::eWARNING, "Depth stencil format (%u) not supported. Falling back to D16 format", pDesc->mFormat);
+				LOGWARNINGF("Depth stencil format (%u) not supported. Falling back to D16 format", pDesc->mFormat);
 			}
 		}
 	}
@@ -3698,13 +3710,13 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** pp_samp
 	add_info.addressModeU = util_to_vk_address_mode(pDesc->mAddressU);
 	add_info.addressModeV = util_to_vk_address_mode(pDesc->mAddressV);
 	add_info.addressModeW = util_to_vk_address_mode(pDesc->mAddressW);
-	add_info.mipLodBias = pDesc->mMipLosBias;
-	add_info.anisotropyEnable = VK_FALSE;
+	add_info.mipLodBias = pDesc->mMipLodBias;
+	add_info.anisotropyEnable = (pDesc->mMaxAnisotropy > 1.0f)? VK_TRUE : VK_FALSE;
 	add_info.maxAnisotropy = pDesc->mMaxAnisotropy;
 	add_info.compareEnable = (gVkComparisonFuncTranslator[pDesc->mCompareFunc] != VK_COMPARE_OP_NEVER) ? VK_TRUE : VK_FALSE;
 	add_info.compareOp = gVkComparisonFuncTranslator[pDesc->mCompareFunc];
 	add_info.minLod = 0.0f;
-	add_info.maxLod = pDesc->mMagFilter >= FILTER_LINEAR ? FLT_MAX : 0.0f;
+	add_info.maxLod = FLT_MAX; //pDesc->mMagFilter >= FILTER_LINEAR ? FLT_MAX : 0.0f;
 	add_info.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 	add_info.unnormalizedCoordinates = VK_FALSE;
 
@@ -3924,13 +3936,13 @@ void addDescriptorBinder(Renderer* pRenderer, uint32_t gpuIndex, uint32_t descCo
 					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
 					{
 						if (TEXTURE_DIM_2DMS == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGWARNINGF("Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_2DMS_ARRAY == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGWARNINGF("Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_CUBE == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGWARNINGF("TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_CUBE_ARRAY == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGWARNINGF("TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
 
 						VkImageView uavDescriptor = pRenderer->pDefaultTextureUAV[gpuIndex][pDesc->mDesc.dim]->pVkUAVDescriptors[0];
 
@@ -4286,7 +4298,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[it->second].reg != pRes->reg)
 				{
-					ErrorMsg(
+					LOGERRORF(
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching binding. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4296,7 +4308,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[it->second].set != pRes->set)
 				{
-					ErrorMsg(
+					LOGERRORF(
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching set. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4357,13 +4369,12 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (pDesc->mDesc.size == 1)
 				{
-					LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC", pDesc->mDesc.name);
+					LOGINFOF("Descriptor (%s) : User specified VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC", pDesc->mDesc.name);
 					binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 				}
 				else
 				{
-					LOGF(
-						LogLevel::eWARNING, "Descriptor (%s) : Cannot use VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC for arrays",
+					LOGWARNINGF("Descriptor (%s) : Cannot use VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC for arrays",
 						pDesc->mDesc.name);
 				}
 			}
@@ -4384,7 +4395,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			decltype(staticSamplerMap)::iterator it = staticSamplerMap.find(pDesc->mDesc.name);
 			if (it != staticSamplerMap.end())
 			{
-				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
+				LOGINFOF("Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
 
 				// Set the index to an invalid value so we can use this later for error checking if user tries to update a static sampler
 				pDesc->mIndexInParent = -1;
@@ -6721,5 +6732,5 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 #if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
 }    // namespace RENDERER_CPP_NAMESPACE
 #endif
-#include "../../../Common_3/ThirdParty/OpenSource/volk/volk.c"
+#include "../../ThirdParty/OpenSource/volk/volk.c"
 #endif

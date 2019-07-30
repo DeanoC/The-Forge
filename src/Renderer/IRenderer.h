@@ -59,7 +59,7 @@
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_XLIB_KHR    //Use Xlib or Xcb as display server, defaults to Xlib
 #endif
-#include "../../Common_3/ThirdParty/OpenSource/volk/volk.h"
+#include "../ThirdParty/OpenSource/volk/volk.h"
 #endif
 #if defined(METAL)
 #import <MetalKit/MetalKit.h>
@@ -951,7 +951,7 @@ typedef struct SamplerDesc
 	AddressMode mAddressU;
 	AddressMode mAddressV;
 	AddressMode mAddressW;
-	float       mMipLosBias;
+	float       mMipLodBias;
 	float       mMaxAnisotropy;
 	CompareMode mCompareFunc;
 } SamplerDesc;
@@ -1028,11 +1028,11 @@ typedef struct RootSignatureDesc
 	const char**           ppStaticSamplerNames;
 	Sampler**              ppStaticSamplers;
 	uint32_t               mStaticSamplerCount;
-#if defined(VULKAN)
+	RootSignatureFlags     mFlags;
+
+	// currently vulkan only
 	const char**           ppDynamicUniformBufferNames;
 	uint32_t               mDynamicUniformBufferCount;
-#endif
-	RootSignatureFlags     mFlags;
 } RootSignatureDesc;
 
 typedef struct RootSignature

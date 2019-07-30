@@ -2,6 +2,15 @@
 #ifndef GFX_THEFORGE_ENUMS_H_
 #define GFX_THEFORGE_ENUMS_H_
 
+typedef enum TheForge_RendererApi
+{
+	TheForge_API_D3D12 = 0,
+	TheForge_API_VULKAN,
+	TheForge_API_METAL,
+	TheForge_API_XBOX_D3D12,
+	TheForge_API_D3D11
+} TheForge_RendererApi;
+
 typedef enum TheForge_ImageFormat
 {
 	TheForge_IF_NONE = 0,
