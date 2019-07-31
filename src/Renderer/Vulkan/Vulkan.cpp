@@ -79,6 +79,9 @@ static const char * g_hackSemanticList[] =
 #include "../../ThirdParty/OpenSource/EASTL/functional.h"
 #include "../../ThirdParty/OpenSource/EASTL/sort.h"
 #include "../../OS/Interfaces/ILog.h"
+
+//#define VMA_DEBUG_LOG(format, ...) LOGINFOF(format, __VA_ARGS__)
+#define VMA_ASSERT ASSERT
 #include "../../ThirdParty/OpenSource/VulkanMemoryAllocator/VulkanMemoryAllocator.h"
 #include "../../OS/Core/Atomics.h"
 #include "../../OS/Core/GPUConfig.h"

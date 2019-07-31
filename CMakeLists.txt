@@ -121,6 +121,7 @@ if(USE_VULKAN)
 endif()
 
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
+
 if(USE_VULKAN)
 	add_compile_definitions(${LibName} VULKAN)
 	target_include_directories(${LibName} PRIVATE Vulkan::Vulkan)

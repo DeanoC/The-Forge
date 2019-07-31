@@ -3880,10 +3880,11 @@ static T* VmaAllocateArray(const VkAllocationCallbacks* pAllocationCallbacks, si
 #define vma_new_array(allocator, type, count)   new(VmaAllocateArray<type>((allocator), (count)))(type)
 
 template<typename T>
-static void vma_delete(const VkAllocationCallbacks* pAllocationCallbacks, T* ptr)
-{
-    ptr->~T();
-    VmaFree(pAllocationCallbacks, ptr);
+static void vma_delete(const VkAllocationCallbacks* pAllocationCallbacks, T* ptr) {
+	if (ptr != VMA_NULL) {
+		ptr->~T();
+	}
+	VmaFree(pAllocationCallbacks, ptr);
 }
 
 template<typename T>
