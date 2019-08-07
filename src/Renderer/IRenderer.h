@@ -91,8 +91,7 @@
 #include "../ThirdParty/OpenSource/EASTL/string_hash_map.h"
 #include "../OS/Interfaces/IOperatingSystem.h"
 #include "../OS/Interfaces/IThread.h"
-#include "tiny_imageformat/format.h"
-#include "tiny_imageformat/formatcracker.h"
+#include "tiny_imageformat/tinyimageformat.h"
 
 #ifdef __cplusplus
 #ifndef MAKE_ENUM_FLAG
@@ -1896,9 +1895,9 @@ typedef struct Renderer
 	DepthState*      pDefaultDepthState;
 	RasterizerState* pDefaultRasterizerState;
 
-	bool							canShaderReadFrom[TinyImageFormat_Count()];
-	bool							canShaderWriteTo[TinyImageFormat_Count()];
-	bool							canColorWriteTo[TinyImageFormat_Count()];
+	bool							canShaderReadFrom[TinyImageFormat_Count];
+	bool							canShaderWriteTo[TinyImageFormat_Count];
+	bool							canColorWriteTo[TinyImageFormat_Count];
 
 } Renderer;
 

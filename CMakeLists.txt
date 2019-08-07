@@ -14,7 +14,10 @@ if (NOT hasParent)
 	endif ()
 endif ()
 
-set(USE_VULKAN TRUE)
+#currnet vulkan only on windows
+if (WIN32)
+	set(USE_VULKAN TRUE)
+endif()
 
 SET_MIN_VERSIONS()
 set(LibName gfx_theforge)

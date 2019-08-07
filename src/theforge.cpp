@@ -2,7 +2,7 @@
 #include "gfx_theforge/theforge.h"
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
-#include "tiny_imageformat/formatcracker.h"
+#include "tiny_imageformat/tinyimageformat.h"
 
 static void API_CHECK();
 

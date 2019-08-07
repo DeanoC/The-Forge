@@ -13,6 +13,6 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 	pRenderer->canShaderWriteTo[TinyImageFormat_##x] = (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) ? true : false; \
 	pRenderer->canColorWriteTo[TinyImageFormat_##x] = (formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) ? true : false;
 #define IF_END_MACRO
-#include "tiny_imageformat/format.h"
+#include "tiny_imageformat/formatgen.h"
 
 }

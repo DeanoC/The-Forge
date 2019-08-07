@@ -14,6 +14,6 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 	pRenderer->canShaderWriteTo[TinyImageFormat_##x] = (formatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) ? true : false; \
 	pRenderer->canColorWriteTo[TinyImageFormat_##x] = (formatSupport.Support1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) ? true : false;
 #define IF_END_MACRO
-#include "tiny_imageformat/format.h"
+#include "tiny_imageformat/formatgen.h"
 
 }

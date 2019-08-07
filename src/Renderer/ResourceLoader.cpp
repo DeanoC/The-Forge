@@ -49,7 +49,7 @@
 #endif
 #include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
-#include "tiny_imageformat/formatcracker.h"
+#include "tiny_imageformat/tinyimageformat.h"
 
 // buffer functions
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
@@ -445,7 +445,7 @@ uint64_t GetMipMappedSizeUpto( uint3 dims, uint32_t nMipMapLevels, int32_t slice
 		if (d == 0)
 			d = 1;
 	}
-	size = size * TinyImageFormat_BitSize(format) / 8;
+	size = size * TinyImageFormat_BitSizeOfPixelOrBlock(format) / 8;
 	return size;
 }
 
@@ -498,9 +498,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 		arrayCount = img.GetArrayCount() * nSlices;
 	} else {
 		tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
-		blockSize = ((TinyImageFormat_IsCompressed(tinyFmt)) ?
-											TinyImageFormat_BitSizeOfBlock(tinyFmt) :
-											TinyImageFormat_BitSize(tinyFmt)) / 8;
+		blockSize = TinyImageFormat_BitSizeOfPixelOrBlock(tinyFmt) / 8;
 
 		pxBlockDim = { TinyImageFormat_WidthOfBlock(tinyFmt),
 									 TinyImageFormat_HeightOfBlock(tinyFmt),
