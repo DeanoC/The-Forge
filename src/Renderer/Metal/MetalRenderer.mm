@@ -44,7 +44,8 @@
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Image/Image.h"
 #include "../../OS/Interfaces/IMemory.h"
-#include "tiny_imageformat/tinyimageformat.h"
+#include "tiny_imageformat/tinyimageformat_base.h"
+#include "tiny_imageformat/tinyimageformat_apis.h"
 #include "MetalCapBuilder.h"
 
 #define MAX_BUFFER_BINDINGS 31

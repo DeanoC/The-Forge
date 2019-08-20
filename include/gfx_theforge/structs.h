@@ -3,7 +3,7 @@
 #define GFX_THEFORGE_STRUCTS_H_
 
 #include "gfx_theforge/enums.h"
-#include "tiny_imageformat/tinyimageformat.h"
+#include "tiny_imageformat/tinyimageformat_base.h"
 
 typedef struct TheForge_Renderer *TheForge_RendererHandle;
 typedef struct TheForge_Fence *TheForge_FenceHandle;

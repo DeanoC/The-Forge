@@ -91,7 +91,7 @@
 #include "../ThirdParty/OpenSource/EASTL/string_hash_map.h"
 #include "../OS/Interfaces/IOperatingSystem.h"
 #include "../OS/Interfaces/IThread.h"
-#include "tiny_imageformat/tinyimageformat.h"
+#include "tiny_imageformat/tinyimageformat_base.h"
 
 #ifdef __cplusplus
 #ifndef MAKE_ENUM_FLAG
