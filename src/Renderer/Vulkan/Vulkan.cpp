@@ -64,7 +64,7 @@
 #include "../../ThirdParty/OpenSource/VulkanMemoryAllocator/VulkanMemoryAllocator.h"
 #include "../../OS/Core/Atomics.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "../../OS/Image/ImageEnum.h"
+#include "../../OS/Image/ImageEnums.h"
 #include "VulkanCapsBuilder.h"
 
 #include "../../OS/Interfaces/IMemory.h"
@@ -3389,16 +3389,19 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			DECLARE_ZERO(VkFormatProperties, format_props);
 			vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, add_info.format, &format_props);
 			VkFormatFeatureFlags format_features = util_vk_image_usage_to_format_features(add_info.usage);
-		if (pDesc->mHostVisible)
-		{
-			VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
-			ASSERT((0 != flags) && "Format is not supported for host visible images");
+
+			if (pDesc->mHostVisible)
+			{
+				VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
+				ASSERT((0 != flags) && "Format is not supported for host visible images");
+			}
+			else
+			{
+				VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
+				ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
+			}
 		}
-		else
-		{
-			VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
-			ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
-		}
+
 
 		const bool linkedMultiGpu = (pRenderer->mSettings.mGpuMode == GPU_MODE_LINKED) && (pDesc->pSharedNodeIndices || pDesc->mNodeIndex);
 
