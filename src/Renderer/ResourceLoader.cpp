@@ -22,6 +22,7 @@
  * under the License.
 */
 
+#define IMAGE_CLASS_ALLOWED
 
 // this is needed for the CopyEngine on XBox
 #ifdef _DURANGO
@@ -29,11 +30,12 @@
 #endif
 
 #include "../ThirdParty/OpenSource/EASTL/deque.h"
-
+#include "al2o3_memory/memory.h"
 #include "IRenderer.h"
 #include "ResourceLoader.h"
 #include "../OS/Interfaces/ILog.h"
 #include "../OS/Interfaces/IThread.h"
+#include "../OS/Interfaces/ITime.h"
 #include "../OS/Image/Image.h"
 
 //this is needed for unix as PATH_MAX is defined instead of MAX_PATH
@@ -47,7 +49,6 @@
 #endif
 #define MAX_PATH PATH_MAX
 #endif
-#include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
 #include "tiny_imageformat/tinyimageformat_base.h"
 #include "tiny_imageformat/tinyimageformat_query.h"
@@ -334,6 +335,75 @@ typedef struct UpdateState
 	uint64_t      mSize;
 } UpdateState;
 
+struct LocalImage : public Image {
+	LocalImage() {}
+};
+
+class ResourceLoader
+{
+public:
+	Renderer* pRenderer;
+
+	ResourceLoaderDesc mDesc;
+
+	volatile int mRun;
+	ThreadDesc   mThreadDesc;
+	ThreadHandle mThread;
+
+	Mutex mQueueMutex;
+	ConditionVariable mQueueCond;
+	Mutex mTokenMutex;
+	ConditionVariable mTokenCond;
+	eastl::deque <UpdateRequest> mRequestQueue[MAX_GPUS];
+
+	tfrg_atomic64_t mTokenCompleted;
+	tfrg_atomic64_t mTokenCounter;
+
+	static Image* AllocImage()
+	{
+		Image* img = (Image*) MEMORY_MALLOC(sizeof(Image));
+		return (Image*) conf_placement_new<LocalImage>(img);
+	}
+
+	static Image* CreateImage(const ImageFormat::Enum fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData)
+	{
+		Image* pImage = AllocImage();
+		pImage->Create(fmt, w, h, d, mipMapCount, arraySize, rawData);
+		return pImage;
+	}
+
+	static Image* CreateImage(const char* origFileName, memoryAllocationFunc pAllocator, void* pUserData, FSRoot root)
+	{
+		Image* pImage = AllocImage();
+		if (!pImage->LoadFromFile(origFileName, pAllocator, pUserData, root))
+		{
+			DestroyImage(pImage);
+			return NULL;
+		}
+
+		return pImage;
+	}
+
+	static Image* CreateImage(uint8_t const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData)
+	{
+		Image* pImage = AllocImage();
+		if (!pImage->LoadFromMemory(mem, size, extension, pAllocator, pUserData))
+		{
+			DestroyImage(pImage);
+			return NULL;
+		}
+
+		return pImage;
+	}
+
+	static void DestroyImage(Image* pImage)
+	{
+		pImage->Destroy();
+		pImage->~Image();
+		MEMORY_FREE(pImage);
+	}
+};
+
 uint32 SplitBitsWith0(uint32 x)
 {
 	x &= 0x0000ffff;
@@ -485,7 +555,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	}
 	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
 
-	ImageFormat::Enum fmt = img.getFormat();
+	ImageFormat::Enum fmt = img.GetFormat();
 	TinyImageFormat tinyFmt = TinyImageFormat_UNDEFINED;
 	uint32_t blockSize;
 	uint3 pxBlockDim;
@@ -622,11 +692,14 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 		TextureBarrier postCopyBarrier = { pTexture, util_determine_resource_start_state(pTexture->mDesc.mDescriptors) };
 		cmdResourceBarrier(pCmd, 0, NULL, 1, &postCopyBarrier, true);
 	}
+	else
+	{
+		pTexture->mCurrentState = util_determine_resource_start_state(pTexture->mDesc.mDescriptors);
+	}
 	
 	if (texUpdateDesc.mFreeImage)
 	{
-		texUpdateDesc.pImage->Destroy();
-		conf_delete(texUpdateDesc.pImage);
+		ResourceLoader::DestroyImage(texUpdateDesc.pImage);
 	}
 
 	return true;
@@ -729,26 +802,6 @@ static bool updateResourceState(Renderer* pRenderer, CopyEngine* pCopyEngine, si
 //////////////////////////////////////////////////////////////////////////
 // Resource Loader Implementation
 //////////////////////////////////////////////////////////////////////////
-typedef struct ResourceLoader
-{
-	Renderer* pRenderer;
-
-	ResourceLoaderDesc mDesc;
-
-	volatile int mRun;
-	ThreadDesc   mThreadDesc;
-	ThreadHandle mThread;
-
-	Mutex mQueueMutex;
-	ConditionVariable mQueueCond;
-	Mutex mTokenMutex;
-	ConditionVariable mTokenCond;
-	eastl::deque <UpdateRequest> mRequestQueue[MAX_GPUS];
-
-	tfrg_atomic64_t mTokenCompleted;
-	tfrg_atomic64_t mTokenCounter;
-} ResourceLoader;
-
 static bool allQueuesEmpty(ResourceLoader* pLoader)
 {
 	for (size_t i = 0; i < MAX_GPUS; ++i)
@@ -1053,10 +1106,9 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 
 	if (pTextureDesc->pFilename)
 	{
-		pImage = conf_new(Image);
-		if (!pImage->loadImage(pTextureDesc->pFilename, NULL, NULL, pTextureDesc->mRoot))
+		pImage = ResourceLoader::CreateImage(pTextureDesc->pFilename, NULL, NULL, pTextureDesc->mRoot);
+		if (!pImage)
 		{
-			conf_delete(pImage);
 			return;
 		}
 		freeImage = true;
@@ -1075,8 +1127,7 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	}
 	else if (pTextureDesc->pRawImageData && !pTextureDesc->pBinaryImageData)
 	{
-		pImage = conf_new(Image);
-		pImage->Create(pTextureDesc->pRawImageData->mFormat, pTextureDesc->pRawImageData->mWidth, pTextureDesc->pRawImageData->mHeight, pTextureDesc->pRawImageData->mDepth, pTextureDesc->pRawImageData->mMipLevels, pTextureDesc->pRawImageData->mArraySize, pTextureDesc->pRawImageData->pRawData);
+		pImage = ResourceLoader::CreateImage(pTextureDesc->pRawImageData->mFormat, pTextureDesc->pRawImageData->mWidth, pTextureDesc->pRawImageData->mHeight, pTextureDesc->pRawImageData->mDepth, pTextureDesc->pRawImageData->mMipLevels, pTextureDesc->pRawImageData->mArraySize, pTextureDesc->pRawImageData->pRawData);
 		freeImage = true;
 		if(pTextureDesc->pRawImageData->mFormat == ImageFormat::NONE) {
 			tinyFormat = pTextureDesc->pRawImageData->mTinyFormat;
@@ -1084,11 +1135,10 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	}
 	else if (pTextureDesc->pBinaryImageData)
 	{
-		pImage = conf_new(Image);
+		pImage = ResourceLoader::CreateImage(pTextureDesc->pBinaryImageData->pBinaryData, pTextureDesc->pBinaryImageData->mSize, pTextureDesc->pBinaryImageData->pExtension, NULL, NULL);
 #ifdef _DEBUG
-		bool success =
+		bool success = pImage;
 #endif
-		pImage->loadFromMemory(pTextureDesc->pBinaryImageData->pBinaryData, pTextureDesc->pBinaryImageData->mSize, pTextureDesc->pBinaryImageData->pExtension);
 #ifdef _DEBUG
 		ASSERT(success);
 #endif
@@ -1107,14 +1157,14 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	desc.mMipLevels = pImage->GetMipMapCount();
 	desc.mSampleCount = SAMPLE_COUNT_1;
 	desc.mSampleQuality = 0;
-	desc.mFormat = pImage->getFormat();
-	if(pImage->getFormat() == ImageFormat::NONE) {
+	desc.mFormat = pImage->GetFormat();
+	if(pImage->GetFormat() == ImageFormat::NONE) {
 		desc.mTinyFormat = tinyFormat;
 	}
 
 	desc.mClearValue = ClearValue();
 	desc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	desc.mStartState = RESOURCE_STATE_COPY_DEST;
+	desc.mStartState = RESOURCE_STATE_COMMON;
 	desc.pNativeHandle = NULL;
 	desc.mHostVisible = false;
 	desc.mSrgb = pImage->IsSrgb() || pTextureDesc->mSrgb;
@@ -1187,9 +1237,7 @@ void updateResource(TextureUpdateDesc* pTextureUpdate, SyncToken* token)
 	desc.pTexture = pTextureUpdate->pTexture;
 	if (pTextureUpdate->pRawImageData)
 	{
-		Image* pImage = conf_new(Image);
-		pImage->Create(
-			pTextureUpdate->pRawImageData->mFormat, pTextureUpdate->pRawImageData->mWidth, pTextureUpdate->pRawImageData->mHeight,
+		Image* pImage = ResourceLoader::CreateImage(pTextureUpdate->pRawImageData->mFormat, pTextureUpdate->pRawImageData->mWidth, pTextureUpdate->pRawImageData->mHeight,
 			pTextureUpdate->pRawImageData->mDepth, pTextureUpdate->pRawImageData->mMipLevels, pTextureUpdate->pRawImageData->mArraySize,
 			pTextureUpdate->pRawImageData->pRawData);
 		desc.mFreeImage = true;
@@ -1848,6 +1896,14 @@ bool find_shader_stage(
 #endif
 void addShader(Renderer* pRenderer, const ShaderLoadDesc* pDesc, Shader** ppShader)
 {
+	if (pDesc->mTarget > pRenderer->mSettings.mShaderTarget)
+	{
+		eastl::string error = eastl::string().sprintf("Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
+			(uint32_t)pDesc->mTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
+		LOGERROR( error.c_str());
+		return;
+	}
+
 #ifndef TARGET_IOS
 	BinaryShaderDesc      binaryDesc = {};
 	eastl::vector<char> byteCodes[SHADER_STAGE_COUNT] = {};

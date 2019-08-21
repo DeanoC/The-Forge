@@ -40,7 +40,7 @@
 #include "../../ThirdParty/OpenSource/EASTL/functional.h"
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "../../OS/Image/Image.h"
+#include "../../OS/Image/ImageEnums.h"
 #include "Direct3D11Commands.h"
 
 #if !defined(_WIN32)
@@ -1468,12 +1468,6 @@ void addCmd(CmdPool* pCmdPool, bool secondary, Cmd** ppCmd)
 	ASSERT(pCmd->pRenderer->pDxDevice);
 	ASSERT(pCmdPool->mCmdPoolDesc.mCmdPoolType < CmdPoolType::MAX_CMD_TYPE);
 
-	if (pCmdPool->mCmdPoolDesc.mCmdPoolType == CMD_POOL_DIRECT)
-	{
-		pCmd->pBoundColorFormats = (uint32_t*)conf_calloc(MAX_RENDER_TARGET_ATTACHMENTS, sizeof(uint32_t));
-		pCmd->pBoundSrgbValues = (bool*)conf_calloc(MAX_RENDER_TARGET_ATTACHMENTS, sizeof(bool));
-	}
-
 	//set new command
 	*ppCmd = pCmd;
 }
@@ -1483,12 +1477,6 @@ void removeCmd(CmdPool* pCmdPool, Cmd* pCmd)
 	//verify that given command and pool are valid
 	ASSERT(pCmdPool);
 	ASSERT(pCmd);
-
-	if (pCmd->pBoundColorFormats)
-		SAFE_FREE(pCmd->pBoundColorFormats);
-
-	if (pCmd->pBoundSrgbValues)
-		SAFE_FREE(pCmd->pBoundSrgbValues);
 
 	if (pCmd->pRootConstantBuffer)
 		removeBuffer(pCmd->pRenderer, pCmd->pRootConstantBuffer);
@@ -2248,10 +2236,9 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	}
 
 	// Compute texture size
-	Image img;
-	img.RedefineDimensions(
-		pTexture->mDesc.mFormat, pTexture->mDesc.mWidth, pTexture->mDesc.mHeight, pTexture->mDesc.mDepth, pTexture->mDesc.mMipLevels);
-	pTexture->mTextureSize = pDesc->mArraySize * img.GetMipMappedSize(0, pTexture->mDesc.mMipLevels);
+	pTexture->mTextureSize = pTexture->mDesc.mArraySize * ImageFormat::GetMipMappedSize(
+		pTexture->mDesc.mWidth, pTexture->mDesc.mHeight, pTexture->mDesc.mDepth,
+		pTexture->mDesc.mMipLevels, pTexture->mDesc.mFormat);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -2716,17 +2703,6 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 		{
 			const VertexAttrib* attrib = &(pVertexLayout->mAttribs[attrib_index]);
 
-#ifdef FORGE_JHABLE_EDITS_V01
-			input_elements[input_elementCount].SemanticName = g_hackSemanticList[attrib->mSemanticType];
-			input_elements[input_elementCount].SemanticIndex = attrib->mSemanticIndex;
-
-			if (attrib->mSemanticNameLength > 0)
-			{
-				uint32_t name_length = min(MAX_SEMANTIC_NAME_LENGTH, attrib->mSemanticNameLength);
-				strncpy_s(semantic_names[attrib_index], attrib->mSemanticName, name_length);
-			}
-
-#else
 			ASSERT(SEMANTIC_UNDEFINED != attrib->mSemantic);
 
 			if (attrib->mSemanticNameLength > 0)
@@ -2778,7 +2754,6 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 			input_elements[input_elementCount].SemanticName = semantic_names[attrib_index];
 			input_elements[input_elementCount].SemanticIndex = semantic_index;
-#endif
 			input_elements[input_elementCount].Format = util_to_dx_image_format(attrib->mFormat, false);
 			input_elements[input_elementCount].InputSlot = attrib->mBinding;
 			input_elements[input_elementCount].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
@@ -3135,9 +3110,6 @@ void cmdBindRenderTargets(
 	}
 	cmd.mBindRenderTargetsCmd.mLoadActions = pLoadActions ? *pLoadActions : LoadActionsDesc{};
 	cachedCmdsIter->second.push_back(cmd);
-
-	pCmd->mBoundWidth = pDepthStencil ? pDepthStencil->mDesc.mWidth : ppRenderTargets[0]->mDesc.mWidth;
-	pCmd->mBoundHeight = pDepthStencil ? pDepthStencil->mDesc.mHeight : ppRenderTargets[0]->mDesc.mHeight;
 }
 
 void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, float minDepth, float maxDepth)
@@ -4111,6 +4083,14 @@ void removeQueryHeap(Renderer* pRenderer, QueryHeap* pQueryHeap)
 	}
 	SAFE_FREE(pQueryHeap->ppDxQueries);
 	SAFE_FREE(pQueryHeap);
+}
+
+void cmdResetQueryHeap(Cmd* pCmd, QueryHeap* pQueryHeap, uint32_t startQuery, uint32_t queryCount)
+{
+	UNREF_PARAM(pCmd);
+	UNREF_PARAM(pQueryHeap);
+	UNREF_PARAM(startQuery);
+	UNREF_PARAM(queryCount);
 }
 
 void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)

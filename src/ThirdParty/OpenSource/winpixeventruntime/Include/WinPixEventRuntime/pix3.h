@@ -14,29 +14,24 @@
 #include <sal.h>
 
 #ifndef __cplusplus
-#error "Only C++ files can include pix3.h. C is not supported."
+#error "Only C++ files can include pix.h. C is not supported."
 #endif
 
-#if !defined(USE_PIX_SUPPORTED_ARCHITECTURE)
-#if defined(_M_X64) || defined(USE_PIX_ON_ALL_ARCHITECTURES) || defined(_M_ARM64)
-#define USE_PIX_SUPPORTED_ARCHITECTURE
-#endif
-#endif
-
-#if !defined(USE_PIX)
-#if defined(USE_PIX_SUPPORTED_ARCHITECTURE) && (defined(_DEBUG) || DBG || defined(PROFILE) || defined(PROFILE_BUILD)) && !defined(_PREFAST_)
-#define USE_PIX
-#endif
-#endif
-
-#if defined(USE_PIX) && !defined(USE_PIX_SUPPORTED_ARCHITECTURE)
-#pragma message("Warning: Pix markers are only supported on AMD64 and ARM64")
-#endif
-
-#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO) || defined(_GAMING_XBOX)
+#if defined(XBOX) || defined(_XBOX_ONE) || defined(_DURANGO)
 #include "pix3_xbox.h"
 #else
 #include "pix3_win.h"
+#endif
+
+//
+// The PIX event/marker APIs compile to nothing on retail builds and on x86 builds
+//
+#if (!defined(USE_PIX)) && ((defined(_DEBUG) || DBG || (defined(PROFILE) && !defined(FASTCAP)) || defined(PROFILE_BUILD)) && !defined(i386) && defined(_AMD64_) && !defined(_PREFAST_))
+#define USE_PIX
+#endif
+
+#if defined(USE_PIX) && !defined(_AMD64_) && !defined(USE_PIX_ON_ALL_ARCHITECTURES)
+#pragma message("Warning: Pix markers are only supported on AMD64")
 #endif
 
 // These flags are used by both PIXBeginCapture and PIXGetCaptureState
@@ -67,9 +62,7 @@ typedef union PIXCaptureParameters
 
 
 
-#if defined(USE_PIX) && defined(USE_PIX_SUPPORTED_ARCHITECTURE)
-
-#define PIX_EVENTS_ARE_TURNED_ON
+#if defined (USE_PIX) && (defined(_AMD64_) || defined(USE_PIX_ON_ALL_ARCHITECTURES))
 
 #include "PIXEventsCommon.h"
 #include "PIXEventsGenerated.h"
@@ -94,7 +87,6 @@ inline HRESULT PIXBeginCapture(DWORD, _In_opt_ const PIXCaptureParameters*) { re
 inline HRESULT PIXEndCapture(BOOL) { return S_OK; }
 inline DWORD PIXGetCaptureState() { return 0; }
 inline void PIXReportCounter(_In_ PCWSTR, float) {}
-inline void PIXNotifyWakeFromFenceSignal(_In_ HANDLE) {}
 
 inline void PIXBeginEvent(UINT64, _In_ PCSTR, ...) {}
 inline void PIXBeginEvent(UINT64, _In_ PCWSTR, ...) {}

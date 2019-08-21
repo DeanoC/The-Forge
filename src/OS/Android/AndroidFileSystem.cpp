@@ -52,7 +52,7 @@ FileHandle open_file(const char* filename, const char* flags)
 	// Android does not support write to file. All assets accessed through asset manager are read only.
 	if(strstr(flags, "w") != NULL)
 	{
-		LOGERRORF( "Writing to asset file is not supported on android platform!");
+		LOGF(LogLevel::eERROR, "Writing to asset file is not supported on android platform!");
 		return NULL;
 	}
 	if(_mgr == NULL)
@@ -103,7 +103,7 @@ void get_files_with_extension(const char* dir, const char* ext, eastl::vector<ea
 
 void flush_file(FileHandle handle)
 {
-	LOGERRORF( "FileSystem::Flush not supported on Android!");
+	LOGF(LogLevel::eERROR, "FileSystem::Flush not supported on Android!");
 	abort();
 }
 
@@ -111,7 +111,7 @@ size_t read_file(void *buffer, size_t byteCount, FileHandle handle)
 {
 	AAsset* assetHandle = reinterpret_cast<AAsset*>(handle);
 	size_t  readSize = AAsset_read(assetHandle, buffer, byteCount);
-	ASSERT(readSize == byteCount);
+	//ASSERT(readSize == byteCount);
 	return readSize;
 }
 
@@ -133,26 +133,26 @@ size_t write_file(const void *buffer, size_t byteCount, FileHandle handle)
 {
 	//It cannot be done.It is impossible.
 	//https://stackoverflow.com/questions/3760626/how-to-write-files-to-assets-folder-or-raw-folder-in-android
-	LOGERRORF( "FileSystem::Write not supported in Android!");
+	LOGF(LogLevel::eERROR, "FileSystem::Write not supported in Android!");
 	abort();
 	return -1;
 }
 
 time_t get_file_last_modified_time(const char* _fileName)
 {
-	LOGERRORF("FileSystem::Last Modified Time not supported in Android!");
+	LOGF(LogLevel::eERROR,"FileSystem::Last Modified Time not supported in Android!");
 	return -1;
 }
 
 time_t get_file_last_accessed_time(const char* _fileName)
 {
-	LOGERRORF("FileSystem::Last Modified Time not supported in Android!");
+	LOGF(LogLevel::eERROR,"FileSystem::Last Modified Time not supported in Android!");
 	return -1;
 }
 
 time_t get_file_creation_time(const char* _fileName)
 {
-	LOGERRORF( "FileSystem::Last Modified Time not supported in Android!");
+	LOGF(LogLevel::eERROR, "FileSystem::Last Modified Time not supported in Android!");
 	return -1;
 }
 
@@ -187,7 +187,7 @@ void set_current_dir(const char* path)
 
 bool copy_file(const char* src, const char* dst)
 {
-	LOGERRORF( "Not supported in Android!");
+	LOGF(LogLevel::eERROR, "Not supported in Android!");
 	return false;
 }
 
@@ -195,21 +195,21 @@ void open_file_dialog(
 	const char* title, const char* dir, FileDialogCallbackFn callback, void* userData, const char* fileDesc,
 	const eastl::vector<eastl::string>& fileExtensions)
 {
-	LOGERRORF( "Not supported in Android!");
+	LOGF(LogLevel::eERROR, "Not supported in Android!");
 }
 
 void save_file_dialog(
 	const char* title, const char* dir, FileDialogCallbackFn callback, void* userData, const char* fileDesc,
 	const eastl::vector<eastl::string>& fileExtensions)
 {
-	LOGERRORF( "Not supported in Android!");
+	LOGF(LogLevel::eERROR, "Not supported in Android!");
 }
 
 FileSystem::Watcher::Watcher(const char* pWatchPath, FSRoot root, uint32_t eventMask, Callback callback)
 {
-	LOGERRORF("Not supported in Android!");
+	LOGF(LogLevel::eERROR,"Not supported in Android!");
 }
 
-FileSystem::Watcher::~Watcher() { LOGERRORF("Not supported in Android!"); }
+FileSystem::Watcher::~Watcher() { LOGF(LogLevel::eERROR,"Not supported in Android!"); }
 
 #endif

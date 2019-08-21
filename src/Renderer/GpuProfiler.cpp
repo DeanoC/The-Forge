@@ -28,11 +28,12 @@
 #include "../ThirdParty/OpenSource/MicroProfile/ProfilerBase.h"
 #include "../OS/Interfaces/IThread.h"
 #include "../OS/Interfaces/ILog.h"
+#include "../OS/Interfaces/ITime.h"
+
 #if __linux__
 #include <linux/limits.h>    //PATH_MAX declaration
 #define MAX_PATH PATH_MAX
 #endif
-#include "../OS/Interfaces/ITime.h"
 #include "../OS/Interfaces/IMemory.h"
 
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
@@ -136,6 +137,7 @@ void addGpuProfiler(Renderer* pRenderer, Queue* pQueue, GpuProfiler** ppGpuProfi
 	ASSERT(pGpuProfiler);
 
 	conf_placement_new<GpuProfiler>(pGpuProfiler);
+	pGpuProfiler->mReset = true;
 
 #if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11) || defined(METAL)
 	const uint32_t nodeIndex = pQueue->mQueueDesc.mNodeIndex;
@@ -317,10 +319,21 @@ void cmdEndGpuTimestampQuery(Cmd* pCmd, struct GpuProfiler* pGpuProfiler, GpuTim
 void cmdBeginGpuFrameProfile(Cmd* pCmd, GpuProfiler* pGpuProfiler, bool bUseMarker)
 {
 #if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11)|| defined(METAL)
+	// Reset the query pool completely once
+	// After this we only reset the number of queries used during that frame to keep GPU and CPU overhead minimum
+	if (pGpuProfiler->mReset)
+	{
+		for (uint32_t i = 0; i < GpuProfiler::NUM_OF_FRAMES; ++i)
+			cmdResetQueryHeap(pCmd, pGpuProfiler->pQueryHeap[i], 0, pGpuProfiler->pQueryHeap[i]->mDesc.mQueryCount);
+
+		pGpuProfiler->mReset = false;
+	}
+
 	// resolve last frame
 	cmdResolveQuery(
 		pCmd, pGpuProfiler->pQueryHeap[pGpuProfiler->mBufferIndex], pGpuProfiler->pReadbackBuffer[pGpuProfiler->mBufferIndex], 0,
 		pGpuProfiler->mCurrentTimerCount * 2);
+	cmdResetQueryHeap(pCmd, pGpuProfiler->pQueryHeap[pGpuProfiler->mBufferIndex], 0, pGpuProfiler->mCurrentTimerCount * 2);
 #endif
 
 	uint32_t nextIndex = (pGpuProfiler->mBufferIndex + 1) % GpuProfiler::NUM_OF_FRAMES;
@@ -339,7 +352,7 @@ void cmdBeginGpuFrameProfile(Cmd* pCmd, GpuProfiler* pGpuProfiler, bool bUseMark
 	// Attach GpuProfiler to MicroProfile log of the current thread
 	ProfileGpuSetContext(pGpuProfiler);
 #endif
-  cmdBeginGpuTimestampQuery(pCmd, pGpuProfiler, "GPU", bUseMarker, {1, 1, 0}, true);
+	cmdBeginGpuTimestampQuery(pCmd, pGpuProfiler, "GPU", bUseMarker, {1, 1, 0}, true);
 }
 
 void cmdEndGpuFrameProfile(Cmd* pCmd, GpuProfiler* pGpuProfiler)

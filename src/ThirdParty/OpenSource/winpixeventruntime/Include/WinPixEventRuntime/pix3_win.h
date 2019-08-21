@@ -17,17 +17,20 @@
 #ifndef _PIX3_WIN_H_
 #define _PIX3_WIN_H_
 
- // PIXEventsThreadInfo is defined in PIXEventsCommon.h
-struct PIXEventsThreadInfo;
+struct PIXEventsBlockInfo
+{
+};
+
+struct PIXEventsThreadInfo
+{
+    PIXEventsBlockInfo* block;
+    UINT64* biasedLimit;
+    UINT64* destination;
+    UINT64* limit;
+    UINT64 id;
+};
 
 extern "C" PIXEventsThreadInfo* PIXGetThreadInfo();
-
-#if defined(USE_PIX) && defined(USE_PIX_SUPPORTED_ARCHITECTURE)
-// Notifies PIX that an event handle was set as a result of a D3D12 fence being signaled.
-// The event specified must have the same handle value as the handle
-// used in ID3D12Fence::SetEventOnCompletion.
-extern "C" void WINAPI PIXNotifyWakeFromFenceSignal(_In_ HANDLE event);
-#endif
 
 // The following defines denote the different metadata values that have been used
 // by tools to denote how to parse pix marker event data. The first two values
@@ -45,13 +48,8 @@ __forceinline UINT64 PIXGetTimestampCounter()
     return time.QuadPart;
 }
 
-template<class T>
-void PIXCopyEventArgument(UINT64*&, const UINT64*, T);
-
-template<class T>
-void PIXStoreContextArgument(UINT64*& destination, const UINT64* limit, T context)
-{
-    PIXCopyEventArgument(destination, limit, context);
-};
+#define PIXSetCPUMarkerOnContext(context, metadata, ...) MakeCPUSetMarkerForContext(metadata, context, __VA_ARGS__)
+#define PIXBeginCPUEventOnContext(context, metadata, ...) MakeCPUBeginEventForContext(metadata, context, __VA_ARGS__)
+#define PIXEndCPUEventOnContext(context) MakeCPUEndEventForContext(context)
 
 #endif //_PIX3_WIN_H_

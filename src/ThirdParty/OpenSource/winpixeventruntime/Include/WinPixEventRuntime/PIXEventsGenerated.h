@@ -12,6 +12,7 @@
 
 //__declspec(noinline) is specified to stop compiler from making bad inlining decisions
 //inline has to be specified for functions fully defined in header due to one definition rule
+//supported context types for TContext are ID3D11DeviceContextX, ID3D11ComputeContextX and ID3D11DmaEngineContextX
 
 __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR formatString)
 {
@@ -20,10 +21,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_NoArgs);
             *destination++ = color;
 
@@ -42,10 +42,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -65,10 +64,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -89,10 +87,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -114,10 +111,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -140,10 +136,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -167,10 +162,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -195,10 +189,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -224,10 +217,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -254,10 +246,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -285,10 +276,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -317,10 +307,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -350,10 +339,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -384,10 +372,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -419,10 +406,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -455,10 +441,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -492,10 +477,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -529,10 +513,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_NoArgs);
             *destination++ = color;
 
@@ -551,10 +534,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -574,10 +556,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -598,10 +579,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -623,10 +603,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -649,10 +628,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -676,10 +654,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -704,10 +681,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -733,10 +709,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -763,10 +738,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -794,10 +768,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -826,10 +799,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -859,10 +831,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -893,10 +864,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -928,10 +898,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -964,10 +933,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -1001,10 +969,9 @@ __declspec(noinline) inline void PIXBeginEventAllocate(UINT64 color, _In_ PCWSTR
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_VarArgs);
             *destination++ = color;
 
@@ -2124,10 +2091,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_NoArgs);
             *destination++ = color;
 
@@ -2147,10 +2113,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2171,10 +2136,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2196,10 +2160,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2222,10 +2185,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2249,10 +2211,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2277,10 +2238,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2306,10 +2266,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2336,10 +2295,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2367,10 +2325,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2399,10 +2356,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2432,10 +2388,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2466,10 +2421,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2501,10 +2455,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2537,10 +2490,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2574,10 +2526,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2612,10 +2563,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCSTR f
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2650,10 +2600,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_NoArgs);
             *destination++ = color;
 
@@ -2673,10 +2622,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2697,10 +2645,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2722,10 +2669,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2748,10 +2694,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2775,10 +2720,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2803,10 +2747,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2832,10 +2775,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2862,10 +2804,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2893,10 +2834,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2925,10 +2865,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2958,10 +2897,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -2992,10 +2930,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -3027,10 +2964,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -3063,10 +2999,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -3100,10 +3035,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -3138,10 +3072,9 @@ __declspec(noinline) inline void PIXSetMarkerAllocate(UINT64 color, _In_ PCWSTR 
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_VarArgs);
             *destination++ = color;
 
@@ -4255,2178 +4188,6 @@ inline void PIXSetMarker(UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T
     }
 }
 
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            PIXCopyEventArgument(destination, limit, a16);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-__declspec(noinline) inline void PIXBeginCPUEventOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            PIXCopyEventArgument(destination, limit, a16);
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString);
-    }
-}
-
-template<class T1>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1);
-    }
-}
-
-template<class T1, class T2>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2);
-    }
-}
-
-template<class T1, class T2, class T3>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3);
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-        PIXCopyEventArgument(destination, limit, a16);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
-    }
-}
-
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString);
-    }
-}
-
-template<class T1>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1);
-    }
-}
-
-template<class T1, class T2>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2);
-    }
-}
-
-template<class T1, class T2, class T3>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3);
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-inline void PIXBeginCPUEventOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-        PIXCopyEventArgument(destination, limit, a16);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXBeginCPUEventOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
-    }
-}
-
 template<class TContext>
 inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatString)
 {
@@ -6436,12 +4197,12 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_NoArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_NoArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1>
@@ -6453,13 +4214,13 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2>
@@ -6471,14 +4232,14 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     PIXCopyEventArgument(destination, limit, a2);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3>
@@ -6490,7 +4251,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6498,7 +4259,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a2);
     PIXCopyEventArgument(destination, limit, a3);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4>
@@ -6510,7 +4271,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6519,7 +4280,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a3);
     PIXCopyEventArgument(destination, limit, a4);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5>
@@ -6531,7 +4292,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6541,7 +4302,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a4);
     PIXCopyEventArgument(destination, limit, a5);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -6553,7 +4314,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6564,7 +4325,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a5);
     PIXCopyEventArgument(destination, limit, a6);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -6576,7 +4337,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6588,7 +4349,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a6);
     PIXCopyEventArgument(destination, limit, a7);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
@@ -6600,7 +4361,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6613,7 +4374,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a7);
     PIXCopyEventArgument(destination, limit, a8);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
@@ -6625,7 +4386,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6639,7 +4400,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a8);
     PIXCopyEventArgument(destination, limit, a9);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
@@ -6651,7 +4412,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6666,7 +4427,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a9);
     PIXCopyEventArgument(destination, limit, a10);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
@@ -6678,7 +4439,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6694,7 +4455,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a10);
     PIXCopyEventArgument(destination, limit, a11);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
@@ -6706,7 +4467,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6723,7 +4484,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a11);
     PIXCopyEventArgument(destination, limit, a12);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
@@ -6735,7 +4496,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6753,7 +4514,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a12);
     PIXCopyEventArgument(destination, limit, a13);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
@@ -6765,7 +4526,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6784,7 +4545,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a13);
     PIXCopyEventArgument(destination, limit, a14);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
@@ -6796,7 +4557,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6816,7 +4577,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a14);
     PIXCopyEventArgument(destination, limit, a15);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
@@ -6828,7 +4589,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6849,7 +4610,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCSTR formatStri
     PIXCopyEventArgument(destination, limit, a15);
     PIXCopyEventArgument(destination, limit, a16);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext>
@@ -6861,12 +4622,12 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_NoArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_NoArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1>
@@ -6878,13 +4639,13 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2>
@@ -6896,14 +4657,14 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     PIXCopyEventArgument(destination, limit, a2);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3>
@@ -6915,7 +4676,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6923,7 +4684,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a2);
     PIXCopyEventArgument(destination, limit, a3);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4>
@@ -6935,7 +4696,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6944,7 +4705,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a3);
     PIXCopyEventArgument(destination, limit, a4);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5>
@@ -6956,7 +4717,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6966,7 +4727,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a4);
     PIXCopyEventArgument(destination, limit, a5);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -6978,7 +4739,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -6989,7 +4750,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a5);
     PIXCopyEventArgument(destination, limit, a6);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -7001,7 +4762,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7013,7 +4774,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a6);
     PIXCopyEventArgument(destination, limit, a7);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
@@ -7025,7 +4786,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7038,7 +4799,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a7);
     PIXCopyEventArgument(destination, limit, a8);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
@@ -7050,7 +4811,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7064,7 +4825,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a8);
     PIXCopyEventArgument(destination, limit, a9);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
@@ -7076,7 +4837,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7091,7 +4852,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a9);
     PIXCopyEventArgument(destination, limit, a10);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
@@ -7103,7 +4864,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7119,7 +4880,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a10);
     PIXCopyEventArgument(destination, limit, a11);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
@@ -7131,7 +4892,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7148,7 +4909,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a11);
     PIXCopyEventArgument(destination, limit, a12);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
@@ -7160,7 +4921,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7178,7 +4939,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a12);
     PIXCopyEventArgument(destination, limit, a13);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
@@ -7190,7 +4951,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7209,7 +4970,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a13);
     PIXCopyEventArgument(destination, limit, a14);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
@@ -7221,7 +4982,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7241,7 +5002,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a14);
     PIXCopyEventArgument(destination, limit, a15);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
@@ -7253,7 +5014,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_BeginEvent_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_BeginEvent_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -7274,2213 +5035,7 @@ inline void PIXBeginEvent(TContext* context, UINT64 color, _In_ PCWSTR formatStr
     PIXCopyEventArgument(destination, limit, a15);
     PIXCopyEventArgument(destination, limit, a16);
     *destination = 0ull;
-    PIXBeginGPUEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
-}
-
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            PIXCopyEventArgument(destination, limit, a16);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-__declspec(noinline)  inline void PIXSetCPUMarkerOnContextAllocate(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    UINT64 time = PIXEventsReplaceBlock(false);
-    if (time)
-    {
-        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-        UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
-        if (destination < limit)
-        {
-            limit += PIXEventsSafeFastCopySpaceQwords;
-            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-            *destination++ = color;
-
-            PIXStoreContextArgument(destination, limit, context);
-            PIXCopyEventArgument(destination, limit, formatString);
-            PIXCopyEventArgument(destination, limit, a1);
-            PIXCopyEventArgument(destination, limit, a2);
-            PIXCopyEventArgument(destination, limit, a3);
-            PIXCopyEventArgument(destination, limit, a4);
-            PIXCopyEventArgument(destination, limit, a5);
-            PIXCopyEventArgument(destination, limit, a6);
-            PIXCopyEventArgument(destination, limit, a7);
-            PIXCopyEventArgument(destination, limit, a8);
-            PIXCopyEventArgument(destination, limit, a9);
-            PIXCopyEventArgument(destination, limit, a10);
-            PIXCopyEventArgument(destination, limit, a11);
-            PIXCopyEventArgument(destination, limit, a12);
-            PIXCopyEventArgument(destination, limit, a13);
-            PIXCopyEventArgument(destination, limit, a14);
-            PIXCopyEventArgument(destination, limit, a15);
-            PIXCopyEventArgument(destination, limit, a16);
-
-            *destination = PIXEventsBlockEndMarker;
-            threadInfo->destination = destination;
-        }
-    }
-}
-
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString);
-    }
-}
-
-template<class T1>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1);
-    }
-}
-
-template<class T1, class T2>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2);
-    }
-}
-
-template<class T1, class T2, class T3>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3);
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-        PIXCopyEventArgument(destination, limit, a16);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
-    }
-}
-
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString);
-    }
-}
-
-template<class T1>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1);
-    }
-}
-
-template<class T1, class T2>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2);
-    }
-}
-
-template<class T1, class T2, class T3>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3);
-    }
-}
-
-template<class T1, class T2, class T3, class T4>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-    }
-}
-
-template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
-inline void PIXSetCPUMarkerOnContext(PVOID context, UINT64 color, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
-{
-    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
-    UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
-    if (destination < limit)
-    {
-        limit += PIXEventsSafeFastCopySpaceQwords;
-        UINT64 time = PIXGetTimestampCounter();
-        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
-        *destination++ = color;
-
-        PIXStoreContextArgument(destination, limit, context);
-        PIXCopyEventArgument(destination, limit, formatString);
-        PIXCopyEventArgument(destination, limit, a1);
-        PIXCopyEventArgument(destination, limit, a2);
-        PIXCopyEventArgument(destination, limit, a3);
-        PIXCopyEventArgument(destination, limit, a4);
-        PIXCopyEventArgument(destination, limit, a5);
-        PIXCopyEventArgument(destination, limit, a6);
-        PIXCopyEventArgument(destination, limit, a7);
-        PIXCopyEventArgument(destination, limit, a8);
-        PIXCopyEventArgument(destination, limit, a9);
-        PIXCopyEventArgument(destination, limit, a10);
-        PIXCopyEventArgument(destination, limit, a11);
-        PIXCopyEventArgument(destination, limit, a12);
-        PIXCopyEventArgument(destination, limit, a13);
-        PIXCopyEventArgument(destination, limit, a14);
-        PIXCopyEventArgument(destination, limit, a15);
-        PIXCopyEventArgument(destination, limit, a16);
-
-        *destination = PIXEventsBlockEndMarker;
-        threadInfo->destination = destination;
-    }
-    else if (limit != nullptr)
-    {
-        PIXSetCPUMarkerOnContextAllocate(context, color, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
-    }
+    PIXBeginEventOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext>
@@ -9492,12 +5047,12 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_NoArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_NoArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1>
@@ -9509,13 +5064,13 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2>
@@ -9527,14 +5082,14 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     PIXCopyEventArgument(destination, limit, a2);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3>
@@ -9546,7 +5101,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9554,7 +5109,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a2);
     PIXCopyEventArgument(destination, limit, a3);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4>
@@ -9566,7 +5121,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9575,7 +5130,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a3);
     PIXCopyEventArgument(destination, limit, a4);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5>
@@ -9587,7 +5142,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9597,7 +5152,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a4);
     PIXCopyEventArgument(destination, limit, a5);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -9609,7 +5164,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9620,7 +5175,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a5);
     PIXCopyEventArgument(destination, limit, a6);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -9632,7 +5187,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9644,7 +5199,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a6);
     PIXCopyEventArgument(destination, limit, a7);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
@@ -9656,7 +5211,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9669,7 +5224,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a7);
     PIXCopyEventArgument(destination, limit, a8);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
@@ -9681,7 +5236,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9695,7 +5250,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a8);
     PIXCopyEventArgument(destination, limit, a9);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
@@ -9707,7 +5262,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9722,7 +5277,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a9);
     PIXCopyEventArgument(destination, limit, a10);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
@@ -9734,7 +5289,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9750,7 +5305,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a10);
     PIXCopyEventArgument(destination, limit, a11);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
@@ -9762,7 +5317,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9779,7 +5334,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a11);
     PIXCopyEventArgument(destination, limit, a12);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
@@ -9791,7 +5346,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9809,7 +5364,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a12);
     PIXCopyEventArgument(destination, limit, a13);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
@@ -9821,7 +5376,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9840,7 +5395,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a13);
     PIXCopyEventArgument(destination, limit, a14);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
@@ -9852,7 +5407,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9872,7 +5427,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a14);
     PIXCopyEventArgument(destination, limit, a15);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
@@ -9884,7 +5439,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9905,7 +5460,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCSTR formatStrin
     PIXCopyEventArgument(destination, limit, a15);
     PIXCopyEventArgument(destination, limit, a16);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext>
@@ -9917,12 +5472,12 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_NoArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_NoArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1>
@@ -9934,13 +5489,13 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2>
@@ -9952,14 +5507,14 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
     PIXCopyEventArgument(destination, limit, a1);
     PIXCopyEventArgument(destination, limit, a2);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3>
@@ -9971,7 +5526,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -9979,7 +5534,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a2);
     PIXCopyEventArgument(destination, limit, a3);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4>
@@ -9991,7 +5546,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10000,7 +5555,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a3);
     PIXCopyEventArgument(destination, limit, a4);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5>
@@ -10012,7 +5567,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10022,7 +5577,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a4);
     PIXCopyEventArgument(destination, limit, a5);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -10034,7 +5589,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10045,7 +5600,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a5);
     PIXCopyEventArgument(destination, limit, a6);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -10057,7 +5612,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10069,7 +5624,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a6);
     PIXCopyEventArgument(destination, limit, a7);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
@@ -10081,7 +5636,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10094,7 +5649,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a7);
     PIXCopyEventArgument(destination, limit, a8);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
@@ -10106,7 +5661,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10120,7 +5675,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a8);
     PIXCopyEventArgument(destination, limit, a9);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
@@ -10132,7 +5687,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10147,7 +5702,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a9);
     PIXCopyEventArgument(destination, limit, a10);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
@@ -10159,7 +5714,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10175,7 +5730,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a10);
     PIXCopyEventArgument(destination, limit, a11);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
@@ -10187,7 +5742,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10204,7 +5759,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a11);
     PIXCopyEventArgument(destination, limit, a12);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
@@ -10216,7 +5771,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10234,7 +5789,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a12);
     PIXCopyEventArgument(destination, limit, a13);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
@@ -10246,7 +5801,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10265,7 +5820,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a13);
     PIXCopyEventArgument(destination, limit, a14);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
@@ -10277,7 +5832,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10297,7 +5852,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a14);
     PIXCopyEventArgument(destination, limit, a15);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
 
 template<class TContext, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
@@ -10309,7 +5864,7 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     UINT64* destination = buffer;
     UINT64* limit = buffer + PIXEventsGraphicsRecordSpaceQwords - PIXEventsReservedTailSpaceQwords;
 
-    *destination++ = PIXEncodeEventInfo(0, PIXEvent_GPU_SetMarker_OnContext_VarArgs);
+    *destination++ = PIXEncodeEventInfo(0, PIXEvent_SetMarker_VarArgs);
     *destination++ = color;
 
     PIXCopyEventArgument(destination, limit, formatString);
@@ -10330,8 +5885,4320 @@ inline void PIXSetMarker(TContext* context, UINT64 color, _In_ PCWSTR formatStri
     PIXCopyEventArgument(destination, limit, a15);
     PIXCopyEventArgument(destination, limit, a16);
     *destination = 0ull;
-    PIXSetGPUMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
+    PIXSetMarkerOnContext(context, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 }
+
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            PIXCopyEventArgument(destination, limit, a16);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+__declspec(noinline)  inline void MakeCPUSetMarkerForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            PIXCopyEventArgument(destination, limit, a16);
+
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString);
+    }
+}
+
+template<class T1>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1);
+    }
+}
+
+template<class T1, class T2>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2);
+    }
+}
+
+template<class T1, class T2, class T3>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3);
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+        PIXCopyEventArgument(destination, limit, a16);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
+    }
+}
+
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_NoArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString);
+    }
+}
+
+template<class T1>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1);
+    }
+}
+
+template<class T1, class T2>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2);
+    }
+}
+
+template<class T1, class T2, class T3>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3);
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+inline void MakeCPUSetMarkerForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_SetMarker_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+        PIXCopyEventArgument(destination, limit, a16);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUSetMarkerForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
+    }
+}
+
+
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            PIXCopyEventArgument(destination, limit, a16);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+__declspec(noinline) inline void MakeCPUBeginEventForContextAllocate(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    UINT64 time = PIXEventsReplaceBlock(false);
+    if (time)
+    {
+        PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+        UINT64* destination = threadInfo->destination;
+        UINT64* limit = threadInfo->limit;
+        if (destination < limit)
+        {
+            *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+            *destination++ = color;
+
+            PIXCopyEventArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, formatString);
+            PIXCopyEventArgument(destination, limit, a1);
+            PIXCopyEventArgument(destination, limit, a2);
+            PIXCopyEventArgument(destination, limit, a3);
+            PIXCopyEventArgument(destination, limit, a4);
+            PIXCopyEventArgument(destination, limit, a5);
+            PIXCopyEventArgument(destination, limit, a6);
+            PIXCopyEventArgument(destination, limit, a7);
+            PIXCopyEventArgument(destination, limit, a8);
+            PIXCopyEventArgument(destination, limit, a9);
+            PIXCopyEventArgument(destination, limit, a10);
+            PIXCopyEventArgument(destination, limit, a11);
+            PIXCopyEventArgument(destination, limit, a12);
+            PIXCopyEventArgument(destination, limit, a13);
+            PIXCopyEventArgument(destination, limit, a14);
+            PIXCopyEventArgument(destination, limit, a15);
+            PIXCopyEventArgument(destination, limit, a16);
+            *destination = PIXEventsBlockEndMarker;
+            threadInfo->destination = destination;
+        }
+    }
+}
+
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString);
+    }
+}
+
+template<class T1>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1);
+    }
+}
+
+template<class T1, class T2>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2);
+    }
+}
+
+template<class T1, class T2, class T3>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3);
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+        PIXCopyEventArgument(destination, limit, a16);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
+    }
+}
+
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_NoArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString);
+    }
+}
+
+template<class T1>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1);
+    }
+}
+
+template<class T1, class T2>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2);
+    }
+}
+
+template<class T1, class T2, class T3>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3);
+    }
+}
+
+template<class T1, class T2, class T3, class T4>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+    }
+}
+
+template<class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8, class T9, class T10, class T11, class T12, class T13, class T14, class T15, class T16>
+inline void MakeCPUBeginEventForContext(UINT64 color, PVOID context, _In_ PCWSTR formatString, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7, T8 a8, T9 a9, T10 a10, T11 a11, T12 a12, T13 a13, T14 a14, T15 a15, T16 a16)
+{
+    PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
+    UINT64* destination = threadInfo->destination;
+    UINT64* limit = threadInfo->biasedLimit;
+    if (destination < limit)
+    {
+        limit += PIXEventsSafeFastCopySpaceQwords;
+        UINT64 time = PIXGetTimestampCounter();
+        *destination++ = PIXEncodeEventInfo(time, PIXEvent_BeginEvent_OnContext_VarArgs);
+        *destination++ = color;
+        
+        PIXCopyEventArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, formatString);
+        PIXCopyEventArgument(destination, limit, a1);
+        PIXCopyEventArgument(destination, limit, a2);
+        PIXCopyEventArgument(destination, limit, a3);
+        PIXCopyEventArgument(destination, limit, a4);
+        PIXCopyEventArgument(destination, limit, a5);
+        PIXCopyEventArgument(destination, limit, a6);
+        PIXCopyEventArgument(destination, limit, a7);
+        PIXCopyEventArgument(destination, limit, a8);
+        PIXCopyEventArgument(destination, limit, a9);
+        PIXCopyEventArgument(destination, limit, a10);
+        PIXCopyEventArgument(destination, limit, a11);
+        PIXCopyEventArgument(destination, limit, a12);
+        PIXCopyEventArgument(destination, limit, a13);
+        PIXCopyEventArgument(destination, limit, a14);
+        PIXCopyEventArgument(destination, limit, a15);
+        PIXCopyEventArgument(destination, limit, a16);
+
+        *destination = PIXEventsBlockEndMarker;
+        threadInfo->destination = destination;
+    }
+    else if (limit != nullptr)
+    {
+        MakeCPUBeginEventForContextAllocate(color, context, formatString, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
+    }
+}
+
 
 __declspec(noinline) inline void PIXEndEventAllocate()
 {
@@ -10340,10 +10207,9 @@ __declspec(noinline) inline void PIXEndEventAllocate()
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_EndEvent);
             *destination = PIXEventsBlockEndMarker;
             threadInfo->destination = destination;
@@ -10355,10 +10221,9 @@ inline void PIXEndEvent()
 {
     PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
     UINT64* destination = threadInfo->destination;
-    UINT64* limit = threadInfo->biasedLimit;
+    UINT64* limit = threadInfo->limit;
     if (destination < limit)
     {
-        limit += PIXEventsSafeFastCopySpaceQwords;
         UINT64 time = PIXGetTimestampCounter();
         *destination++ = PIXEncodeEventInfo(time, PIXEvent_EndEvent);
         *destination = PIXEventsBlockEndMarker;
@@ -10370,26 +10235,25 @@ inline void PIXEndEvent()
     }
 }
 
-__declspec(noinline) inline void PIXEndCPUEventOnContextAllocate(PVOID context)
+__declspec(noinline) inline void MakeCPUEndEventForContextAllocate(PVOID context)
 {
     UINT64 time = PIXEventsReplaceBlock(true);
     if (time)
     {
         PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
         UINT64* destination = threadInfo->destination;
-        UINT64* limit = threadInfo->biasedLimit;
+        UINT64* limit = threadInfo->limit;
         if (destination < limit)
         {
-            limit += PIXEventsSafeFastCopySpaceQwords;
             *destination++ = PIXEncodeEventInfo(time, PIXEvent_EndEvent_OnContext);
-            PIXStoreContextArgument(destination, limit, context);
+            PIXCopyEventArgument(destination, limit, context);
             *destination = PIXEventsBlockEndMarker;
             threadInfo->destination = destination;
         }
     }
 }
 
-inline void PIXEndCPUEventOnContext(PVOID context)
+inline void MakeCPUEndEventForContext(PVOID context)
 {
     PIXEventsThreadInfo* threadInfo = PIXGetThreadInfo();
     UINT64* destination = threadInfo->destination;
@@ -10399,13 +10263,13 @@ inline void PIXEndCPUEventOnContext(PVOID context)
         limit += PIXEventsSafeFastCopySpaceQwords;
         UINT64 time = PIXGetTimestampCounter();
         *destination++ = PIXEncodeEventInfo(time, PIXEvent_EndEvent_OnContext);
-        PIXStoreContextArgument(destination, limit, context);
+        PIXCopyEventArgument(destination, limit, context);
         *destination = PIXEventsBlockEndMarker;
         threadInfo->destination = destination;
     }
     else if (limit != nullptr)
     {
-        PIXEndCPUEventOnContextAllocate(context);
+        MakeCPUEndEventForContextAllocate(context);
     }
 }
 
@@ -10413,7 +10277,7 @@ template<class TContext>
 inline void PIXEndEvent(TContext* context)
 {
     PIXEndCPUEventOnContext(context);
-    PIXEndGPUEventOnContext(context);
+    PIXEndEventOnContext(context);
 }
 
 template<class TContext>

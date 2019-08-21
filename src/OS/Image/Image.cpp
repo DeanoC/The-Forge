@@ -31,6 +31,7 @@
 #include "../../ThirdParty/OpenSource/EASTL/functional.h"
 #include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
 
+#define IMAGE_CLASS_ALLOWED
 #include "Image.h"
 #include "../Interfaces/ILog.h"
 #include "../../ThirdParty/OpenSource/TinyEXR/tinyexr.h"
@@ -696,7 +697,7 @@ unsigned char* Image::Create(const ImageFormat::Enum fmt, const int w, const int
 	return pData;
 }
 
-unsigned char* Image::Create(const ImageFormat::Enum fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, unsigned char* rawData)
+unsigned char* Image::Create(const ImageFormat::Enum fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData)
 {
 	mFormat = fmt;
 	mWidth = w;
@@ -706,7 +707,7 @@ unsigned char* Image::Create(const ImageFormat::Enum fmt, const int w, const int
 	mArrayCount = arraySize;
 	mOwnsMemory = false;
 
-	pData = rawData;	
+	pData = (uint8_t*)rawData;
 	mLoadFileName = "Undefined";
 
 	return pData;
@@ -1764,32 +1765,7 @@ struct StaticImageLoader
 
 void Image::AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc) { gImageLoaders.push_back({ pExtension, pFunc }); }
 
-void Image::loadFromMemoryXY(
-	const void* mem, const int topLeftX, const int topLeftY, const int bottomRightX, const int bottomRightY, const int pitch)
-{
-	if (ImageFormat::IsPlainFormat(getFormat()) == false)
-		return;    // unsupported
-
-	int bpp_dest = ImageFormat::GetBytesPerPixel(getFormat());
-	int rowOffset_dest = bpp_dest * mWidth;
-	int subHeight = bottomRightY - topLeftY;
-	int subWidth = bottomRightX - topLeftX;
-	int subRowSize = subWidth * ImageFormat::GetBytesPerPixel(getFormat());
-
-	unsigned char* start = pData;
-	start = start + topLeftY * rowOffset_dest + topLeftX * bpp_dest;
-
-	unsigned char* from = (unsigned char*)mem;
-
-	for (int i = 0; i < subHeight; i++)
-	{
-		memcpy(start, from, subRowSize);
-		start += rowOffset_dest;
-		from += pitch;
-	}
-}
-
-bool Image::loadFromMemory(
+bool Image::LoadFromMemory(
 	void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData)
 {
 	// try loading the format
@@ -1806,7 +1782,7 @@ bool Image::loadFromMemory(
 	return loaded;
 }
 
-bool Image::loadImage(const char* origFileName, memoryAllocationFunc pAllocator, void* pUserData, FSRoot root)
+bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocator, void* pUserData, FSRoot root)
 {
 	// clear current image
 	Clear();
@@ -2455,7 +2431,7 @@ static ImageSaverDefinition gImageSavers[] = {
 	{ ".dds", &Image::iSaveDDS }
 };
 
-bool Image::SaveImage(const char* fileName)
+bool Image::Save(const char* fileName)
 {
 	const char* extension = strrchr(fileName, '.');
 	bool        support = false;
