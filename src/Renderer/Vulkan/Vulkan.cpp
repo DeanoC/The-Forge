@@ -6340,7 +6340,6 @@ ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR)
 #endif
 }
 
-bool isImageFormatSupported(ImageFormat::Enum format) { return gVkFormatTranslator[format] != VK_FORMAT_UNDEFINED; }
 /************************************************************************/
 // Indirect draw functions
 /************************************************************************/

@@ -42,10 +42,12 @@
 #include "MetalMemoryAllocator.h"
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "../../OS/Image/ImageEnums.h"
 #include "../../OS/Interfaces/IMemory.h"
 #include "tiny_imageformat/tinyimageformat_base.h"
 #include "tiny_imageformat/tinyimageformat_apis.h"
+#include "tiny_imageformat/tinyimageformat_query.h"
+#import "OS/Image/ImageHelper.h" // for GetMipMappedSize
+
 #include "MetalCapBuilder.h"
 
 #define MAX_BUFFER_BINDINGS 31
@@ -139,180 +141,6 @@ namespace RENDERER_CPP_NAMESPACE {
 #endif
 	};
 
-	static const MTLPixelFormat gMtlFormatTranslator[] =
-	{
-		MTLPixelFormatInvalid,
-
-		MTLPixelFormatR8Unorm,
-		MTLPixelFormatRG8Unorm,
-		MTLPixelFormatInvalid, //RGB8 not directly supported
-		MTLPixelFormatRGBA8Unorm,
-
-		MTLPixelFormatR16Unorm,
-		MTLPixelFormatRG16Unorm,
-		MTLPixelFormatInvalid, //RGB16 not directly supported
-		MTLPixelFormatRGBA16Unorm,
-
-		MTLPixelFormatR8Snorm,
-		MTLPixelFormatRG8Snorm,
-		MTLPixelFormatInvalid, //RGB8S not directly supported
-		MTLPixelFormatRGBA8Snorm,
-
-		MTLPixelFormatR16Snorm,
-		MTLPixelFormatRG16Snorm,
-		MTLPixelFormatInvalid, //RGB16S not directly supported
-		MTLPixelFormatRGBA16Snorm,
-
-		MTLPixelFormatR16Float,
-		MTLPixelFormatRG16Float,
-		MTLPixelFormatInvalid, //RGB16F not directly supported
-		MTLPixelFormatRGBA16Float,
-
-		MTLPixelFormatR32Float,
-		MTLPixelFormatRG32Float,
-		MTLPixelFormatInvalid, //RGB32F not directly supported
-		MTLPixelFormatRGBA32Float,
-
-		MTLPixelFormatR16Sint,
-		MTLPixelFormatRG16Sint,
-		MTLPixelFormatInvalid, //RGB16I not directly supported
-		MTLPixelFormatRGBA16Sint,
-
-		MTLPixelFormatR32Sint,
-		MTLPixelFormatRG32Sint,
-		MTLPixelFormatInvalid, //RGG32I not directly supported
-		MTLPixelFormatRGBA32Sint,
-
-		MTLPixelFormatR16Uint,
-		MTLPixelFormatRG16Uint,
-		MTLPixelFormatInvalid, //RGB16UI not directly supported
-		MTLPixelFormatRGBA16Uint,
-
-		MTLPixelFormatR32Uint,
-		MTLPixelFormatRG32Uint,
-		MTLPixelFormatInvalid, //RGB32UI not directly supported
-		MTLPixelFormatRGBA32Uint,
-
-		MTLPixelFormatInvalid, //RGBE8 not directly supported
-		MTLPixelFormatRGB9E5Float,
-		MTLPixelFormatRG11B10Float,
-		MTLPixelFormatInvalid, //B5G6R5 not directly supported
-		MTLPixelFormatInvalid, //RGBA4 not directly supported
-		MTLPixelFormatRGB10A2Unorm,
-
-#ifndef TARGET_IOS
-		MTLPixelFormatDepth16Unorm,
-		MTLPixelFormatDepth24Unorm_Stencil8,
-		MTLPixelFormatDepth24Unorm_Stencil8,
-#else
-		// Only 32-bit depth formats are supported on iOS.
-		MTLPixelFormatDepth32Float,
-		MTLPixelFormatDepth32Float,
-		MTLPixelFormatDepth32Float,
-#endif
-		MTLPixelFormatDepth32Float,
-
-#ifndef TARGET_IOS
-		MTLPixelFormatBC1_RGBA,
-		MTLPixelFormatBC2_RGBA,
-		MTLPixelFormatBC3_RGBA,
-		MTLPixelFormatBC4_RUnorm,
-		MTLPixelFormatBC5_RGUnorm,
-		
-		// PVR formats
-		MTLPixelFormatInvalid, // PVR_2BPP = 56,
-		MTLPixelFormatInvalid, // PVR_2BPPA = 57,
-		MTLPixelFormatInvalid, // PVR_4BPP = 58,
-		MTLPixelFormatInvalid, // PVR_4BPPA = 59,
-#else
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		
-		// PVR formats
-		MTLPixelFormatPVRTC_RGB_2BPP, // PVR_2BPP = 56,
-		MTLPixelFormatPVRTC_RGBA_2BPP, // PVR_2BPPA = 57,
-		MTLPixelFormatPVRTC_RGB_4BPP, // PVR_4BPP = 58,
-		MTLPixelFormatPVRTC_RGBA_4BPP, // PVR_4BPPA = 59,
-#endif
-
-		MTLPixelFormatInvalid, // INTZ = 60,	// Nvidia hack. Supported on all DX10+ HW
-		// XBox 360 specific fron buffer formats.
-		MTLPixelFormatInvalid, // LE_XRGB8 = 61,
-		MTLPixelFormatInvalid, // LE_ARGB8 = 62,
-		MTLPixelFormatInvalid, // LE_X2RGB10 = 63,
-		MTLPixelFormatInvalid, // LE_A2RGB10 = 64,
-		// Compressed mobile forms
-		MTLPixelFormatInvalid, // ETC1 = 65,	//  RGB
-		MTLPixelFormatInvalid, // ATC = 66, //  RGB
-		MTLPixelFormatInvalid, // ATCA = 67,	//  RGBA, explicit alpha
-		MTLPixelFormatInvalid, // ATCI = 68,	//  RGBA, interpolated alpha
-		MTLPixelFormatInvalid, // RAWZ = 69, //depth only, Nvidia (requires recombination of data) //FIX IT: PS3 as well?
-		MTLPixelFormatInvalid, // DF16 = 70, //depth only, Intel/AMD
-		MTLPixelFormatInvalid, // STENCILONLY = 71, // stencil ony usage
-		
-		// BC formats
-#ifndef TARGET_IOS
-		MTLPixelFormatBC1_RGBA,       // GNF_BC1    = 72,
-		MTLPixelFormatBC2_RGBA,       // GNF_BC2    = 73,
-		MTLPixelFormatBC3_RGBA,       // GNF_BC3    = 74,
-		MTLPixelFormatBC4_RUnorm,     // GNF_BC4    = 75,
-		MTLPixelFormatBC5_RGUnorm,    // GNF_BC5    = 76,
-		MTLPixelFormatBC6H_RGBUfloat, // GNF_BC6HUF = 77,
-		MTLPixelFormatBC6H_RGBFloat,  // GNF_BC6HSF = 78,
-		MTLPixelFormatBC7_RGBAUnorm,  // GNF_BC7    = 79,
-#else
-		MTLPixelFormatInvalid, // GNF_BC1    = 72,
-		MTLPixelFormatInvalid, // GNF_BC2    = 73,
-		MTLPixelFormatInvalid, // GNF_BC3    = 74,
-		MTLPixelFormatInvalid, // GNF_BC4    = 75,
-		MTLPixelFormatInvalid, // GNF_BC5    = 76,
-		MTLPixelFormatInvalid, // GNF_BC6HUF = 77,
-		MTLPixelFormatInvalid, // GNF_BC6HSF = 78,
-		MTLPixelFormatInvalid, // GNF_BC7    = 79,
-#endif
-		// Reveser Form
-		MTLPixelFormatBGRA8Unorm, // BGRA8 = 80,
-		// Extend for DXGI
-		MTLPixelFormatInvalid, // X8D24PAX32 = 81,
-		MTLPixelFormatStencil8,// S8 = 82,
-		MTLPixelFormatInvalid, // D16S8 = 83,
-		MTLPixelFormatDepth32Float_Stencil8, // D32S8 = 84,
-		
-#ifndef TARGET_IOS
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-		MTLPixelFormatInvalid,
-#else
-		MTLPixelFormatASTC_4x4_LDR,
-		MTLPixelFormatASTC_5x4_LDR,
-		MTLPixelFormatASTC_5x5_LDR,
-		MTLPixelFormatASTC_6x5_LDR,
-		MTLPixelFormatASTC_6x6_LDR,
-		MTLPixelFormatASTC_8x5_LDR,
-		MTLPixelFormatASTC_8x6_LDR,
-		MTLPixelFormatASTC_8x8_LDR,
-		MTLPixelFormatASTC_10x5_LDR,
-		MTLPixelFormatASTC_10x6_LDR,
-		MTLPixelFormatASTC_10x8_LDR,
-		MTLPixelFormatASTC_10x10_LDR,
-		MTLPixelFormatASTC_12x10_LDR,
-		MTLPixelFormatASTC_12x12_LDR,
-#endif
-	};
 // clang-format on
 
 // =================================================================================================
@@ -338,10 +166,9 @@ uint64_t util_pthread_to_uint64(const pthread_t& value);
 
 bool util_is_compatible_texture_view(const MTLTextureType& textureType, const MTLTextureType& subviewTye);
 
-MTLPixelFormat  util_to_mtl_pixel_format(const ImageFormat::Enum& format, const bool& srgb);
 bool            util_is_mtl_depth_pixel_format(const MTLPixelFormat& format);
 bool            util_is_mtl_compressed_pixel_format(const MTLPixelFormat& format);
-MTLVertexFormat util_to_mtl_vertex_format(const ImageFormat::Enum& format);
+MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format);
 MTLLoadAction   util_to_mtl_load_action(const LoadActionType& loadActionType);
 
 void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture, const bool isRT = false, const bool forceNonPrivate = false);
@@ -1191,7 +1018,7 @@ void create_default_resources(Renderer* pRenderer)
 	TextureDesc texture1DDesc = {};
 	texture1DDesc.mArraySize = 1;
 	texture1DDesc.mDepth = 1;
-	texture1DDesc.mFormat = ImageFormat::R8;
+	texture1DDesc.mFormat = TinyImageFormat_R8_UNORM;
 	texture1DDesc.mHeight = 1;
 	texture1DDesc.mMipLevels = 1;
 	texture1DDesc.mSampleCount = SAMPLE_COUNT_1;
@@ -1298,7 +1125,7 @@ void destroy_default_resources(Renderer* pRenderer)
 // API functions
 // -------------------------------------------------------------------------------------------------
 
-ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR) { return ImageFormat::BGRA8; }
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR) { return TinyImageFormat_B8G8R8A8_SRGB; }
 #ifndef TARGET_IOS
 // Returns the CFDictionary that contains the system profiler data type described in inDataType.
 CFDictionaryRef findDictionaryForDataType(const CFArrayRef inArray, CFStringRef inDataType)
@@ -1792,7 +1619,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
     CAMetalLayer* layer = (CAMetalLayer*)pSwapChain->pForgeView.layer;
 #endif
     // Set the view pixel format to match the swapchain's pixel format.
-    layer.pixelFormat = util_to_mtl_pixel_format(pSwapChain->mDesc.mColorFormat, pSwapChain->mDesc.mSrgb);
+    layer.pixelFormat = (MTLPixelFormat)TinyImageFormat_ToMTLPixelFormat(pSwapChain->mDesc.mColorFormat);
 
     pSwapChain->mMTKDrawable = nil;
     
@@ -1806,7 +1633,6 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	descColor.mDepth = 1;
 	descColor.mArraySize = 1;
 	descColor.mFormat = pSwapChain->mDesc.mColorFormat;
-	descColor.mSrgb = pSwapChain->mDesc.mSrgb;
 	descColor.mClearValue = pSwapChain->mDesc.mColorClearValue;
 	descColor.mSampleCount = SAMPLE_COUNT_1;
 	descColor.mSampleQuality = 0;
@@ -1930,7 +1756,6 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	rtDesc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	rtDesc.mStartState = RESOURCE_STATE_UNDEFINED;
 	rtDesc.pNativeHandle = pDesc->pNativeHandle;
-	rtDesc.mSrgb = pRenderTarget->mDesc.mSrgb;
 	rtDesc.mHostVisible = false;
 
 	rtDesc.mDescriptors |= pDesc->mDescriptors;
@@ -2386,7 +2211,7 @@ uint32_t util_calculate_vertex_layout_stride(const VertexLayout* pVertexLayout)
 	uint32_t result = 0;
 	for (uint32_t i = 0; i < pVertexLayout->mAttribCount; ++i)
 	{
-		result += ImageFormat::GetImageFormatStride(pVertexLayout->mAttribs[i].mFormat);
+		result += TinyImageFormat_BitSizeOfBlock(pVertexLayout->mAttribs[i].mFormat) / 8;
 	}
 	return result;
 }
@@ -2433,7 +2258,7 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 			renderPipelineDesc.vertexDescriptor.attributes[i].format = util_to_mtl_vertex_format(attrib->mFormat);
 
 			//setup layout for all bindings instead of just 0.
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16- 1].stride += ImageFormat::GetImageFormatStride(attrib->mFormat);
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16- 1].stride += TinyImageFormat_BitSizeOfBlock(attrib->mFormat) / 8;
 			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepRate = 1;
 			if(pPipeline->pShader->mtlVertexShader.patchType != MTLPatchTypeNone)
 				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepFunction = MTLVertexStepFunctionPerPatchControlPoint;
@@ -2461,7 +2286,7 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 	const BlendState* blendState = pDesc->pBlendState ? pDesc->pBlendState : pDefaultBlendState;
 	for (uint32_t i = 0; i < pDesc->mRenderTargetCount; i++)
 	{
-		renderPipelineDesc.colorAttachments[i].pixelFormat = util_to_mtl_pixel_format(pDesc->pColorFormats[i], pDesc->pSrgbValues[i]);
+		renderPipelineDesc.colorAttachments[i].pixelFormat = (MTLPixelFormat)TinyImageFormat_ToMTLPixelFormat(pDesc->pColorFormats[i]);
 
 		// set blend state
 		bool hasBlendState = (blendState != nil);
@@ -2478,9 +2303,9 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 	}
 
 	// assign pixel format form depth attachment
-	if (pDesc->mDepthStencilFormat != ImageFormat::NONE)
+	if (pDesc->mDepthStencilFormat != TinyImageFormat_UNDEFINED)
 	{
-		renderPipelineDesc.depthAttachmentPixelFormat = util_to_mtl_pixel_format(pDesc->mDepthStencilFormat, false);
+		renderPipelineDesc.depthAttachmentPixelFormat = (MTLPixelFormat) TinyImageFormat_ToMTLPixelFormat(pDesc->mDepthStencilFormat);
 #ifndef TARGET_IOS
 		if (renderPipelineDesc.depthAttachmentPixelFormat == MTLPixelFormatDepth24Unorm_Stencil8)
 			renderPipelineDesc.stencilAttachmentPixelFormat = renderPipelineDesc.depthAttachmentPixelFormat;
@@ -3818,41 +3643,6 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
 // Utility functions
 // -------------------------------------------------------------------------------------------------
 
-bool isImageFormatSupported(ImageFormat::Enum format)
-{
-	bool result = false;
-	switch (format)
-	{
-			// 1 channel
-		case ImageFormat::R8: result = true; break;
-		case ImageFormat::R16: result = true; break;
-		case ImageFormat::R16F: result = true; break;
-		case ImageFormat::R32UI: result = true; break;
-		case ImageFormat::R32F: result = true; break;
-		case ImageFormat::D32S8: result = true;	break;
-			// 2 channel
-		case ImageFormat::RG8: result = true; break;
-		case ImageFormat::RG16: result = true; break;
-		case ImageFormat::RG16F: result = true; break;
-		case ImageFormat::RG32UI: result = true; break;
-		case ImageFormat::RG32F: result = true;	break;
-			// 3 channel
-		case ImageFormat::RGB8: result = true; break;
-		case ImageFormat::RGB16: result = true; break;
-		case ImageFormat::RGB16F: result = true; break;
-		case ImageFormat::RGB32UI: result = true; break;
-		case ImageFormat::RGB32F: result = true; break;
-			// 4 channel
-		case ImageFormat::BGRA8: result = true; break;
-		case ImageFormat::RGBA16: result = true; break;
-		case ImageFormat::RGBA16F: result = true; break;
-		case ImageFormat::RGBA32UI: result = true; break;
-		case ImageFormat::RGBA32F: result = true; break;
-
-		default: result = false; break;
-	}
-	return result;
-}
 // -------------------------------------------------------------------------------------------------
 // Internal utility functions
 // -------------------------------------------------------------------------------------------------
@@ -3864,49 +3654,6 @@ uint64_t util_pthread_to_uint64(const pthread_t& value)
 	return threadId;
 }
 
-MTLPixelFormat util_to_mtl_pixel_format(const ImageFormat::Enum& format, const bool& srgb)
-{
-	MTLPixelFormat result = MTLPixelFormatInvalid;
-
-	if (format >= sizeof(gMtlFormatTranslator) / sizeof(gMtlFormatTranslator[0]))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to MTLPixelFormat, should add map method in gMtlFormatTranslator");
-	}
-	else
-	{
-		result = gMtlFormatTranslator[format];
-		if (srgb)
-		{
-			if (result == MTLPixelFormatRGBA8Unorm)
-				result = MTLPixelFormatRGBA8Unorm_sRGB;
-			else if (result == MTLPixelFormatBGRA8Unorm)
-				result = MTLPixelFormatBGRA8Unorm_sRGB;
-#ifndef TARGET_IOS
-			else if (result == MTLPixelFormatBC1_RGBA)
-				result = MTLPixelFormatBC1_RGBA_sRGB;
-			else if (result == MTLPixelFormatBC2_RGBA)
-				result = MTLPixelFormatBC2_RGBA_sRGB;
-			else if (result == MTLPixelFormatBC3_RGBA)
-				result = MTLPixelFormatBC3_RGBA_sRGB;
-			else if (result == MTLPixelFormatBC7_RGBAUnorm)
-				result = MTLPixelFormatBC7_RGBAUnorm_sRGB;
-#else
-		else if (result == MTLPixelFormatPVRTC_RGB_2BPP)
-			result = MTLPixelFormatPVRTC_RGB_2BPP_sRGB;
-		else if (result == MTLPixelFormatPVRTC_RGBA_2BPP)
-			result = MTLPixelFormatPVRTC_RGBA_2BPP_sRGB;
-		else if (result == MTLPixelFormatPVRTC_RGB_4BPP)
-			result = MTLPixelFormatPVRTC_RGB_4BPP_sRGB;
-		else if (result == MTLPixelFormatPVRTC_RGBA_4BPP)
-			result = MTLPixelFormatPVRTC_RGBA_4BPP_sRGB;
-		else if (result >= MTLPixelFormatASTC_4x4_LDR && result <= MTLPixelFormatASTC_12x12_LDR)
-			result = (MTLPixelFormat)(result - (MTLPixelFormatASTC_4x4_LDR - MTLPixelFormatASTC_4x4_sRGB));
-#endif
-		}
-	}
-
-	return result;
-}
 
 bool util_is_mtl_depth_pixel_format(const MTLPixelFormat& format)
 {
@@ -3926,54 +3673,55 @@ bool util_is_mtl_compressed_pixel_format(const MTLPixelFormat& format)
 #endif
 }
 
-MTLVertexFormat util_to_mtl_vertex_format(const ImageFormat::Enum& format)
+MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format)
 {
 	switch (format)
 	{
-		case ImageFormat::RG8: return MTLVertexFormatUChar2Normalized;
-		case ImageFormat::RGB8: return MTLVertexFormatUChar3Normalized;
-		case ImageFormat::RGBA8: return MTLVertexFormatUChar4Normalized;
+		case TinyImageFormat_R8G8_UNORM: return MTLVertexFormatUChar2Normalized;
+		case TinyImageFormat_R8G8B8_UNORM: return MTLVertexFormatUChar3Normalized;
+		case TinyImageFormat_R8G8B8A8_UNORM: return MTLVertexFormatUChar4Normalized;
 
-		case ImageFormat::RG8S: return MTLVertexFormatChar2Normalized;
-		case ImageFormat::RGB8S: return MTLVertexFormatChar3Normalized;
-		case ImageFormat::RGBA8S: return MTLVertexFormatChar4Normalized;
+		case TinyImageFormat_R8G8_SNORM: return MTLVertexFormatChar2Normalized;
+		case TinyImageFormat_R8G8B8_SNORM: return MTLVertexFormatChar3Normalized;
+		case TinyImageFormat_R8G8B8A8_SNORM: return MTLVertexFormatChar4Normalized;
 
-		case ImageFormat::RG16: return MTLVertexFormatUShort2Normalized;
-		case ImageFormat::RGB16: return MTLVertexFormatUShort3Normalized;
-		case ImageFormat::RGBA16: return MTLVertexFormatUShort4Normalized;
+		case TinyImageFormat_R16G16_UNORM: return MTLVertexFormatUShort2Normalized;
+		case TinyImageFormat_R16G16B16_UNORM: return MTLVertexFormatUShort3Normalized;
+		case TinyImageFormat_R16G16B16A16_UNORM: return MTLVertexFormatUShort4Normalized;
 
-		case ImageFormat::RG16S: return MTLVertexFormatShort2Normalized;
-		case ImageFormat::RGB16S: return MTLVertexFormatShort3Normalized;
-		case ImageFormat::RGBA16S: return MTLVertexFormatShort4Normalized;
+		case TinyImageFormat_R16G16_SNORM: return MTLVertexFormatShort2Normalized;
+		case TinyImageFormat_R16G16B16_SNORM: return MTLVertexFormatShort3Normalized;
+		case TinyImageFormat_R16G16B16A16_SNORM: return MTLVertexFormatShort4Normalized;
 
-		case ImageFormat::RG16I: return MTLVertexFormatShort2;
-		case ImageFormat::RGB16I: return MTLVertexFormatShort3;
-		case ImageFormat::RGBA16I: return MTLVertexFormatShort4;
+		case TinyImageFormat_R16G16_SINT: return MTLVertexFormatShort2;
+		case TinyImageFormat_R16G16B16_SINT: return MTLVertexFormatShort3;
+		case TinyImageFormat_R16G16B16A16_SINT: return MTLVertexFormatShort4;
 
-		case ImageFormat::RG16UI: return MTLVertexFormatUShort2;
-		case ImageFormat::RGB16UI: return MTLVertexFormatUShort3;
-		case ImageFormat::RGBA16UI: return MTLVertexFormatUShort4;
+		case TinyImageFormat_R16G16_UINT: return MTLVertexFormatUShort2;
+		case TinyImageFormat_R16G16B16_UINT: return MTLVertexFormatUShort3;
+		case TinyImageFormat_R16G16B16A16_UINT: return MTLVertexFormatUShort4;
 
-		case ImageFormat::RG16F: return MTLVertexFormatHalf2;
-		case ImageFormat::RGB16F: return MTLVertexFormatHalf3;
-		case ImageFormat::RGBA16F: return MTLVertexFormatHalf4;
+		case TinyImageFormat_R16G16_SFLOAT: return MTLVertexFormatHalf2;
+		case TinyImageFormat_R16G16B16_SFLOAT: return MTLVertexFormatHalf3;
+		case TinyImageFormat_R16G16B16A16_SFLOAT: return MTLVertexFormatHalf4;
 
-		case ImageFormat::R32F: return MTLVertexFormatFloat;
-		case ImageFormat::RG32F: return MTLVertexFormatFloat2;
-		case ImageFormat::RGB32F: return MTLVertexFormatFloat3;
-		case ImageFormat::RGBA32F: return MTLVertexFormatFloat4;
+		case TinyImageFormat_R32_SFLOAT: return MTLVertexFormatFloat;
+		case TinyImageFormat_R32G32_SFLOAT: return MTLVertexFormatFloat2;
+		case TinyImageFormat_R32G32B32_SFLOAT: return MTLVertexFormatFloat3;
+		case TinyImageFormat_R32G32B32A32_SFLOAT: return MTLVertexFormatFloat4;
 
-		case ImageFormat::R32I: return MTLVertexFormatInt;
-		case ImageFormat::RG32I: return MTLVertexFormatInt2;
-		case ImageFormat::RGB32I: return MTLVertexFormatInt3;
-		case ImageFormat::RGBA32I: return MTLVertexFormatInt4;
+		case TinyImageFormat_R32_SINT: return MTLVertexFormatInt;
+		case TinyImageFormat_R32G32_SINT: return MTLVertexFormatInt2;
+		case TinyImageFormat_R32G32B32_SINT: return MTLVertexFormatInt3;
+		case TinyImageFormat_R32G32B32A32_SINT: return MTLVertexFormatInt4;
 
-		case ImageFormat::R32UI: return MTLVertexFormatUInt;
-		case ImageFormat::RG32UI: return MTLVertexFormatUInt2;
-		case ImageFormat::RGB32UI: return MTLVertexFormatUInt3;
-		case ImageFormat::RGBA32UI: return MTLVertexFormatUInt4;
+		case TinyImageFormat_R32_UINT: return MTLVertexFormatUInt;
+		case TinyImageFormat_R32G32_UINT: return MTLVertexFormatUInt2;
+		case TinyImageFormat_R32G32B32_UINT: return MTLVertexFormatUInt3;
+		case TinyImageFormat_R32G32B32A32_UINT: return MTLVertexFormatUInt4;
 
-		case ImageFormat::RGB10A2: return MTLVertexFormatUInt1010102Normalized;
+		// TODO add this UINT + UNORM format to TinyImageFormat
+//		case TinyImageFormat_RGB10A2: return MTLVertexFormatUInt1010102Normalized;
 		default: break;
 	}
 	LOGERRORF( "Unknown vertex format: %d", format);
@@ -4287,22 +4035,18 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 
 	pTexture->mDesc = *pDesc;
 
-	if(pTexture->mDesc.mFormat == ImageFormat::NONE) {
-		pTexture->mtlPixelFormat = (MTLPixelFormat) TinyImageFormat_ToMTLPixelFormat(pTexture->mDesc.mTinyFormat);
-	} else {
-		pTexture->mtlPixelFormat = util_to_mtl_pixel_format(pTexture->mDesc.mFormat, pTexture->mDesc.mSrgb);
-	}
+	pTexture->mtlPixelFormat = (MTLPixelFormat) TinyImageFormat_ToMTLPixelFormat(pTexture->mDesc.mFormat);
 #ifndef TARGET_IOS
 	if (pTexture->mtlPixelFormat == MTLPixelFormatDepth24Unorm_Stencil8 && ![pRenderer->pDevice isDepth24Stencil8PixelFormatSupported])
 	{
 		internal_log(LOG_TYPE_WARN, "Format D24S8 is not supported on this device. Using D32 instead", "addTexture");
 		pTexture->mtlPixelFormat = MTLPixelFormatDepth32Float;
-		pTexture->mDesc.mFormat = ImageFormat::D32F;
+		pTexture->mDesc.mFormat = TinyImageFormat_D32_SFLOAT;
 	}
 #endif
 
 	pTexture->mIsCompressed = util_is_mtl_compressed_pixel_format(pTexture->mtlPixelFormat);
-	pTexture->mTextureSize = pTexture->mDesc.mArraySize * ImageFormat::GetMipMappedSize(
+	pTexture->mTextureSize = pTexture->mDesc.mArraySize * Image_GetMipMappedSize(
 		pTexture->mDesc.mWidth, pTexture->mDesc.mHeight, pTexture->mDesc.mDepth,
 		pTexture->mDesc.mMipLevels, pTexture->mDesc.mFormat);
 	if (pTexture->mDesc.mHostVisible)

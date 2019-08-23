@@ -85,13 +85,12 @@
 #define ENABLE_RAYTRACING
 #endif
 #include "al2o3_platform/platform.h"
-#include "../OS/Image/ImageEnums.h"
 #include "../ThirdParty/OpenSource/EASTL/string.h"
 #include "../ThirdParty/OpenSource/EASTL/vector.h"
 #include "../ThirdParty/OpenSource/EASTL/string_hash_map.h"
 #include "../OS/Interfaces/IOperatingSystem.h"
 #include "../OS/Interfaces/IThread.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
+#include "../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 
 #ifdef __cplusplus
 #ifndef MAKE_ENUM_FLAG
@@ -676,7 +675,7 @@ typedef struct BufferDesc
 	/// Set this to specify a counter buffer for this buffer (applicable to BUFFER_USAGE_STORAGE_SRV, BUFFER_USAGE_STORAGE_UAV)
 	struct Buffer* pCounterBuffer;
 	/// Format of the buffer (applicable to typed storage buffers (Buffer<T>)
-	ImageFormat::Enum mFormat;
+	TinyImageFormat mFormat;
 	/// Flags specifying the suitable usage of this buffer (Uniform buffer, Vertex Buffer, Index Buffer,...)
 	DescriptorType mDescriptors;
 	/// Debug name used in gpu profile
@@ -791,12 +790,8 @@ typedef struct TextureDesc
 	SampleCount mSampleCount;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
 	uint32_t mSampleQuality;
-	/// original TheForge image format
-	ImageFormat::Enum mFormat;
-	/// Set whether texture is srgb
-	bool mSrgb;
-	/// TinyImageFormat (wider range the TheForge image formats) used if mFormat == NONE
-	TinyImageFormat mTinyFormat;
+	///  image format
+	TinyImageFormat mFormat;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// What state will the texture get created in
@@ -887,10 +882,7 @@ typedef struct RenderTargetDesc
 	/// MSAA
 	SampleCount mSampleCount;
 	/// Internal image format
-	ImageFormat::Enum mFormat;
-    /// Set whether rendertarget is srgb
-    bool mSrgb;
-    TinyImageFormat mTinyFormat;
+	TinyImageFormat mFormat;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	ClearValue mClearValue;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
@@ -1509,7 +1501,7 @@ typedef struct VertexAttrib
 	ShaderSemantic    mSemantic;
 	uint32_t          mSemanticNameLength;
 	char              mSemanticName[MAX_SEMANTIC_NAME_LENGTH];
-	ImageFormat::Enum mFormat;
+	TinyImageFormat 	mFormat;
 	uint32_t          mBinding;
 	uint32_t          mLocation;
 	uint32_t          mOffset;
@@ -1563,12 +1555,11 @@ typedef struct GraphicsPipelineDesc
 	BlendState*        pBlendState;
 	DepthState*        pDepthState;
 	RasterizerState*   pRasterizerState;
-	ImageFormat::Enum* pColorFormats;
-	bool*              pSrgbValues;
+	TinyImageFormat* 	 pColorFormats;
 	uint32_t           mRenderTargetCount;
 	SampleCount        mSampleCount;
 	uint32_t           mSampleQuality;
-	ImageFormat::Enum  mDepthStencilFormat;
+	TinyImageFormat  	 mDepthStencilFormat;
 	PrimitiveTopology  mPrimitiveTopo;
 } GraphicsPipelineDesc;
 
@@ -1667,7 +1658,7 @@ typedef struct SwapChainDesc
 	/// Sample quality (DirectX12 only)
 	uint32_t mSampleQuality;
 	/// Color format of the swapchain
-	ImageFormat::Enum mColorFormat;
+	TinyImageFormat mColorFormat;
 	/// Clear value
 	ClearValue mColorClearValue;
 	/// Set whether this swapchain using srgb color space
@@ -1771,6 +1762,12 @@ typedef struct GPUVendorPreset
 	GPUPresetLevel mPresetLevel;
 	char           mGpuName[MAX_GPU_VENDOR_STRING_LENGTH];    //If GPU Name is missing then value will be empty string
 } GPUVendorPreset;
+
+typedef struct GPUCapBits {
+	bool canShaderReadFrom[TinyImageFormat_Count];
+	bool canShaderWriteTo[TinyImageFormat_Count];
+	bool canColorWriteTo[TinyImageFormat_Count];
+} GPUCapBits;
 
 typedef enum DefaultResourceAlignment
 {
@@ -1886,9 +1883,7 @@ typedef struct Renderer
 	DepthState*      pDefaultDepthState;
 	RasterizerState* pDefaultRasterizerState;
 
-	bool							canShaderReadFrom[TinyImageFormat_Count];
-	bool							canShaderWriteTo[TinyImageFormat_Count];
-	bool							canColorWriteTo[TinyImageFormat_Count];
+	GPUCapBits capBits;
 
 } Renderer;
 
@@ -2044,12 +2039,10 @@ API_INTERFACE void FORGE_CALLCONV getFenceStatus(Renderer* pRenderer, Fence* p_f
 API_INTERFACE void FORGE_CALLCONV waitForFences(Renderer* pRenderer, uint32_t fence_count, Fence** pp_fences);
 API_INTERFACE void FORGE_CALLCONV toggleVSync(Renderer* pRenderer, SwapChain** ppSwapchain);
 
-// image related functions
-API_INTERFACE bool FORGE_CALLCONV isImageFormatSupported(ImageFormat::Enum format);
 //Returns the recommended format for the swapchain.
 //If true is passed for the hintHDR parameter, it will return an HDR format IF the platform supports it
 //If false is passed or the platform does not support HDR a non HDR format is returned.
-API_INTERFACE ImageFormat::Enum FORGE_CALLCONV getRecommendedSwapchainFormat(bool hintHDR);
+API_INTERFACE TinyImageFormat FORGE_CALLCONV getRecommendedSwapchainFormat(bool hintHDR);
 
 //indirect Draw functions
 API_INTERFACE void FORGE_CALLCONV addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc* p_desc, CommandSignature** ppCommandSignature);

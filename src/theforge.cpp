@@ -2,7 +2,7 @@
 #include "gfx_theforge/theforge.h"
 #include "Renderer/IRenderer.h"
 #include "Renderer/ResourceLoader.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
+#include "Renderer/../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 
 static void API_CHECK();
 
@@ -297,7 +297,7 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 	if (!renderer)
 		return;
 
-	ImageFormat::Enum tfif = (ImageFormat::Enum) pDesc->format;
+	TinyImageFormat tfif = pDesc->format;
 	ClearValue cv;
 	memcpy(&cv, &pDesc->clearValue, sizeof(ClearValue));
 
@@ -310,9 +310,7 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 			pDesc->mipLevels,
 			(SampleCount) pDesc->sampleCount,
 			tfif,
-            pDesc->sRGB,
-			TinyImageFormat_UNDEFINED,
-            cv,
+			cv,
 			pDesc->sampleQuality,
 			(DescriptorType) pDesc->descriptors,
 			nullptr,
@@ -850,12 +848,8 @@ AL2O3_EXTERN_C void TheForge_ToggleVSync(TheForge_RendererHandle handle, TheForg
 	toggleVSync(renderer, (SwapChain **) pSwapchain);
 }
 
-AL2O3_EXTERN_C bool TheForge_IsImageFormatSupported(TheForge_ImageFormat format) {
-	return isImageFormatSupported((ImageFormat::Enum) format);
-}
-
-AL2O3_EXTERN_C TheForge_ImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR) {
-	return (TheForge_ImageFormat) getRecommendedSwapchainFormat(hintHDR);
+AL2O3_EXTERN_C TinyImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR) {
+	return getRecommendedSwapchainFormat(hintHDR);
 }
 AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle,
 																							TheForge_SwapChainHandle swapChain,
@@ -1032,20 +1026,20 @@ AL2O3_EXTERN_C bool TheForge_CanShaderReadFrom(TheForge_RendererHandle handle, T
 	if (!renderer)
 		return false;
 
-	return renderer->canShaderReadFrom[format];
+	return renderer->capBits.canShaderReadFrom[format];
 }
 AL2O3_EXTERN_C bool TheForge_CanColorWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return false;
-	return renderer->canShaderWriteTo[format];
+	return renderer->capBits.canShaderWriteTo[format];
 }
 
 AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
 	if (!renderer)
 		return false;
-	return renderer->canColorWriteTo[format];
+	return renderer->capBits.canColorWriteTo[format];
 }
 
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS
@@ -1074,7 +1068,6 @@ static void API_CHECK() {
 			offsetof(TheForge_GraphicsPipelineDesc, rasterizerState) == offsetof(GraphicsPipelineDesc, pRasterizerState));
 	API_CHK(
 			offsetof(TheForge_GraphicsPipelineDesc, pColorFormats) == offsetof(GraphicsPipelineDesc, pColorFormats));
-	API_CHK(offsetof(TheForge_GraphicsPipelineDesc, pSrgbValues) == offsetof(GraphicsPipelineDesc, pSrgbValues));
 	API_CHK(
 			offsetof(TheForge_GraphicsPipelineDesc, renderTargetCount) == offsetof(GraphicsPipelineDesc, mRenderTargetCount));
 	API_CHK(offsetof(TheForge_GraphicsPipelineDesc, sampleCount) == offsetof(GraphicsPipelineDesc, mSampleCount));
@@ -1276,7 +1269,7 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_RawImageData, depth) == offsetof(RawImageData, mDepth));
 	API_CHK(offsetof(TheForge_RawImageData, arraySize) == offsetof(RawImageData, mArraySize));
 	API_CHK(offsetof(TheForge_RawImageData, mipLevels) == offsetof(RawImageData, mMipLevels));
-	API_CHK(offsetof(TheForge_RawImageData, tinyFormat) == offsetof(RawImageData, mTinyFormat));
+	API_CHK(offsetof(TheForge_RawImageData, mipsAfterSlices) == offsetof(RawImageData, mMipsAfterSlices));
 
 	API_CHK(sizeof(TheForge_ShaderReflection) == sizeof(ShaderReflection));
 	API_CHK(sizeof(TheForge_ShaderVariable) == sizeof(ShaderVariable));
@@ -1303,7 +1296,6 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename) );
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mRoot) == offsetof(TextureLoadDesc, mRoot));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mNodeIndex) == offsetof(TextureLoadDesc, mNodeIndex));
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mSrgb) == offsetof(TextureLoadDesc, mSrgb));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pRawImageData) == offsetof(TextureLoadDesc, pRawImageData));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pBinaryImageData) == offsetof(TextureLoadDesc, pBinaryImageData));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mCreationFlag) == offsetof(TextureLoadDesc, mCreationFlag));
@@ -1318,8 +1310,6 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_TextureDesc, mSampleCount) == offsetof(TextureDesc, mSampleCount));
 	API_CHK(offsetof(TheForge_TextureDesc, mSampleQuality) == offsetof(TextureDesc, mSampleQuality));
 	API_CHK(offsetof(TheForge_TextureDesc, mFormat) == offsetof(TextureDesc, mFormat));
-	API_CHK(offsetof(TheForge_TextureDesc, mSrgb) == offsetof(TextureDesc, mSrgb));
-	API_CHK(offsetof(TheForge_TextureDesc, mTinyFormat) == offsetof(TextureDesc, mTinyFormat));
 	API_CHK(offsetof(TheForge_TextureDesc, mClearValue) == offsetof(TextureDesc, mClearValue));
 	API_CHK(offsetof(TheForge_TextureDesc, mStartState) == offsetof(TextureDesc, mStartState));
 	API_CHK(offsetof(TheForge_TextureDesc, mDescriptors) == offsetof(TextureDesc, mDescriptors));

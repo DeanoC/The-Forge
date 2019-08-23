@@ -6747,11 +6747,6 @@ ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR)
 		return ImageFormat::BGRA8;
 }
 
-bool isImageFormatSupported(ImageFormat::Enum format)
-{
-	//verifies that given image format is valid
-	return gDX12FormatTranslator[format] != DXGI_FORMAT_UNKNOWN;
-}
 /************************************************************************/
 // Execute Indirect Implementation
 /************************************************************************/

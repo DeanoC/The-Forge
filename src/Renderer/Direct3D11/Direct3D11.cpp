@@ -3978,14 +3978,6 @@ void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 	//toggle vsync present flag (this can go up to 4 but we don't need to refresh on nth vertical sync)
 	(*ppSwapChain)->mDxSyncInterval = ((*ppSwapChain)->mDxSyncInterval + 1) % 2;
 }
-/************************************************************************/
-// Utility functions
-/************************************************************************/
-bool isImageFormatSupported(ImageFormat::Enum format)
-{
-	//verifies that given image format is valid
-	return gFormatTranslator[format] != DXGI_FORMAT_UNKNOWN;
-}
 
 ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR) { return ImageFormat::RGBA8; }
 /************************************************************************/

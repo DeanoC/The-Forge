@@ -31,8 +31,8 @@
 
 #include "../Renderer/IRenderer.h"
 #include "../OS/Core/Atomics.h"
-#include "../OS/Image/ImageEnums.h"
 #include "../OS/Interfaces/IFileSystem.h"
+#include "tiny_imageformat/tinyimageformat_base.h"
 
 typedef struct BufferLoadDesc
 {
@@ -46,9 +46,9 @@ typedef struct BufferLoadDesc
 typedef struct RawImageData
 {
 	unsigned char* pRawData;
-	ImageFormat::Enum mFormat;
+	TinyImageFormat mFormat;
 	uint32_t mWidth, mHeight, mDepth, mArraySize, mMipLevels;
-	TinyImageFormat mTinyFormat; // if mFormat == ImageFormat::NONE use this
+	bool mMipsAfterSlices;
 } RawImageData;
 
 typedef struct BinaryImageData
@@ -68,7 +68,6 @@ typedef struct TextureLoadDesc
 	const char* pFilename;
 	FSRoot      mRoot;
 	uint32_t    mNodeIndex;
-	bool        mSrgb;
 	/// Load texture from raw data
 	RawImageData* pRawImageData = NULL;
 	/// Load texture from binary data (with header)

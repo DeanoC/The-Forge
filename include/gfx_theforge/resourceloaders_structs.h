@@ -17,13 +17,13 @@ typedef struct TheForge_BufferLoadDesc
 typedef struct TheForge_RawImageData
 {
 	unsigned char* pRawData;
-	TheForge_ImageFormat format;
+	TinyImageFormat format;
 	uint32_t width;
 	uint32_t height;
 	uint32_t depth;
 	uint32_t arraySize;
 	uint32_t mipLevels;
-	TinyImageFormat tinyFormat;
+	uint32_t mipsAfterSlices;
 } TheForge_RawImageData;
 
 typedef struct TheForge_BinaryImageData
@@ -43,7 +43,6 @@ typedef struct TheForge_TextureLoadDesc
 	const char* pFilename;
 	TheForge_ResourceFolders      mRoot;
 	uint32_t    mNodeIndex;
-	bool        mSrgb;
 	/// Load texture from raw data
 	TheForge_RawImageData const* pRawImageData = NULL;
 	/// Load texture from binary data (with header)

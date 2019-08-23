@@ -82,13 +82,8 @@ typedef struct TheForge_RenderTargetDesc
 	uint32_t mipLevels;
 	/// MSAA
 	TheForge_SampleCount sampleCount;
-
-    /// original TheForge image format
-    TheForge_ImageFormat format;
-    bool sRGB;
-    /// TinyImageFormat (wider range the TheForge image formats)
-    TinyImageFormat tinyFormat;
-
+	/// image format
+	TinyImageFormat format;
 	/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
 	TheForge_ClearValue clearValue;
 	/// The image quality level. The higher the quality, the lower the performance. The valid range is between zero and the value appropriate for mSampleCount
@@ -187,7 +182,7 @@ typedef struct TheForge_VertexAttrib
 	TheForge_ShaderSemantic    semantic;
 	uint32_t          semanticNameLength;
 	char              semanticName[TheForge_MAX_SEMANTIC_NAME_LENGTH];
-	TheForge_ImageFormat 	format;
+	TinyImageFormat 	format;
 	uint32_t          binding;
 	uint32_t          location;
 	uint32_t          offset;
@@ -229,12 +224,11 @@ typedef struct TheForge_GraphicsPipelineDesc
 	TheForge_BlendStateHandle        	blendState;
 	TheForge_DepthStateHandle        	depthState;
 	TheForge_RasterizerStateHandle   	rasterizerState;
-	TheForge_ImageFormat const* 			pColorFormats;
-	bool*															pSrgbValues;
+	TinyImageFormat const* 						pColorFormats;
 	uint32_t           								renderTargetCount;
 	TheForge_SampleCount        			sampleCount;
 	uint32_t           								sampleQuality;
-	TheForge_ImageFormat  						depthStencilFormat;
+	TinyImageFormat  									depthStencilFormat;
 	TheForge_PrimitiveTopology  			primitiveTopo;
 } TheForge_GraphicsPipelineDesc;
 
@@ -370,7 +364,7 @@ typedef struct TheForge_BufferDesc
 	uint64_t mElementCount;
 	uint64_t mStructStride;
 	TheForge_BufferHandle counterBuffer;
-	TheForge_ImageFormat mFormat;
+	TinyImageFormat mFormat;
 	TheForge_DescriptorType mDescriptors;
 	const char* pDebugName;
 	uint32_t*      pSharedNodeIndices;
@@ -388,9 +382,7 @@ typedef struct TheForge_TextureDesc
 	uint32_t mMipLevels;
 	TheForge_SampleCount mSampleCount;
 	uint32_t mSampleQuality;
-	TheForge_ImageFormat mFormat;
-	bool mSrgb;
-	TinyImageFormat mTinyFormat;
+	TinyImageFormat mFormat;
 	TheForge_ClearValue mClearValue;
 	TheForge_ResourceState mStartState;
 	TheForge_DescriptorType mDescriptors;
@@ -530,7 +522,7 @@ typedef struct TheForge_SwapChainDesc
 	/// Sample quality (DirectX12 only)
 	uint32_t sampleQuality;
 	/// Color format of the swapchain
-	TheForge_ImageFormat colorFormat;
+	TinyImageFormat colorFormat;
 	/// Clear value
 	TheForge_ClearValue colorClearValue;
 	/// Set whether this swapchain using srgb color space

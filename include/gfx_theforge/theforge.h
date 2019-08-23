@@ -226,8 +226,8 @@ AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForg
 AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle, const TheForge_SwapChainDesc* pDesc, TheForge_SwapChainHandle* pSwapChain);
 AL2O3_EXTERN_C void TheForge_RemoveSwapChain(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain);
 AL2O3_EXTERN_C void TheForge_ToggleVSync(TheForge_RendererHandle handle, TheForge_SwapChainHandle* pSwapchain);
-AL2O3_EXTERN_C bool TheForge_IsImageFormatSupported(TheForge_ImageFormat format);
-AL2O3_EXTERN_C TheForge_ImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR);
+AL2O3_EXTERN_C bool TheForge_IsImageFormatSupported(TinyImageFormat format);
+AL2O3_EXTERN_C TinyImageFormat TheForge_GetRecommendedSwapchainFormat(bool hintHDR);
 AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain, TheForge_SemaphoreHandle signalSemaphore, TheForge_FenceHandle fence, uint32_t* pImageIndex);
 AL2O3_EXTERN_C void TheForge_QueuePresent(TheForge_QueueHandle queue, TheForge_SwapChainHandle swapChain, uint32_t swapChainImageIndex, uint32_t waitSemaphoreCount, TheForge_SemaphoreHandle* pWaitSemaphores);
 

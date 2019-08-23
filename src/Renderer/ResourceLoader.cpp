@@ -365,7 +365,7 @@ public:
 		return (Image*) conf_placement_new<LocalImage>(img);
 	}
 
-	static Image* CreateImage(const ImageFormat::Enum fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData)
+	static Image* CreateImage(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData)
 	{
 		Image* pImage = AllocImage();
 		pImage->Create(fmt, w, h, d, mipMapCount, arraySize, rawData);
@@ -555,31 +555,18 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	}
 	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
 
-	ImageFormat::Enum fmt = img.GetFormat();
-	TinyImageFormat tinyFmt = TinyImageFormat_UNDEFINED;
+	TinyImageFormat fmt = img.GetFormat();
 	uint32_t blockSize;
 	uint3 pxBlockDim;
 	uint32_t	nSlices;
 	uint32_t	arrayCount;
 
-	if(fmt != ImageFormat::NONE) {
-		blockSize = ImageFormat::GetBytesPerBlock(fmt);
-		pxBlockDim = ImageFormat::GetBlockSize(fmt);
-		nSlices = img.IsCube() ? 6 : 1;
-		arrayCount = img.GetArrayCount() * nSlices;
-	} else {
-		tinyFmt = texUpdateDesc.pTexture->mDesc.mTinyFormat;
-		blockSize = TinyImageFormat_BitSizeOfBlock(tinyFmt) / 8;
-
-		pxBlockDim = { TinyImageFormat_WidthOfBlock(tinyFmt),
-									 TinyImageFormat_HeightOfBlock(tinyFmt),
-									 TinyImageFormat_DepthOfBlock(tinyFmt) };
-		// cubemaps slices are just normal slices for tinyimageformat images
-		// so nSlices == 1
-		nSlices = 1;
-		arrayCount = img.GetArrayCount();
-	}
-
+	blockSize = TinyImageFormat_BitSizeOfBlock(fmt) / 8;
+	pxBlockDim = { TinyImageFormat_WidthOfBlock(fmt),
+								 TinyImageFormat_HeightOfBlock(fmt),
+								 TinyImageFormat_DepthOfBlock(fmt) };
+	nSlices = img.IsCube() ? 6 : 1;
+	arrayCount = img.GetArrayCount() * nSlices;
 
 	const uint32 pxPerRow = max<uint32_t>(round_down(textureRowAlignment / blockSize, uploadGran.mWidth), uploadGran.mWidth);
 	const uint3 queueGranularity = {pxPerRow, uploadGran.mHeight, uploadGran.mDepth};
@@ -637,14 +624,15 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 			texData.mSlicePitch = uploadPitches.z;
 
 			uint8_t* pSrcData;
-			// tinyimageformat images arrays are laid out differently from TheForge images
-			// a slice is just another dimension (the 4th) that doesn't undergo mip map reduction
+			// there are two common formats for how slices and mipmaps are laid out in
+			// either a slice is just another dimension (the 4th) that doesn't undergo
+			// mip map reduction
 			// so images the top level is just w * h * d * s in size
 			// a mipmap level is w >> mml * h >> mml * d >> mml * s in size
-			if(fmt == ImageFormat::NONE) {
-				ASSERT(tinyFmt != TinyImageFormat_UNDEFINED);
+			// or DDS style where each slice is mipmapped as a seperate image
+			if(img.AreMipsAfterSlices()) {
 				pSrcData = (uint8_t *) img.GetPixels() +
-						GetMipMappedSizeUpto(fullSizeDim, i, arrayCount, tinyFmt) +
+						GetMipMappedSizeUpto(fullSizeDim, i, arrayCount, fmt) +
 						j * srcPitches.z;
 			} else {
 				uint32_t n = j / nSlices;
@@ -1128,10 +1116,8 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	else if (pTextureDesc->pRawImageData && !pTextureDesc->pBinaryImageData)
 	{
 		pImage = ResourceLoader::CreateImage(pTextureDesc->pRawImageData->mFormat, pTextureDesc->pRawImageData->mWidth, pTextureDesc->pRawImageData->mHeight, pTextureDesc->pRawImageData->mDepth, pTextureDesc->pRawImageData->mMipLevels, pTextureDesc->pRawImageData->mArraySize, pTextureDesc->pRawImageData->pRawData);
+		pImage->SetMipsAfterSlices(pTextureDesc->pRawImageData->mMipsAfterSlices);
 		freeImage = true;
-		if(pTextureDesc->pRawImageData->mFormat == ImageFormat::NONE) {
-			tinyFormat = pTextureDesc->pRawImageData->mTinyFormat;
-		}
 	}
 	else if (pTextureDesc->pBinaryImageData)
 	{
@@ -1158,16 +1144,12 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	desc.mSampleCount = SAMPLE_COUNT_1;
 	desc.mSampleQuality = 0;
 	desc.mFormat = pImage->GetFormat();
-	if(pImage->GetFormat() == ImageFormat::NONE) {
-		desc.mTinyFormat = tinyFormat;
-	}
 
 	desc.mClearValue = ClearValue();
 	desc.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	desc.mStartState = RESOURCE_STATE_COMMON;
 	desc.pNativeHandle = NULL;
 	desc.mHostVisible = false;
-	desc.mSrgb = pImage->IsSrgb() || pTextureDesc->mSrgb;
 	desc.mNodeIndex = pTextureDesc->mNodeIndex;
 
 	if (pImage->IsCube())
