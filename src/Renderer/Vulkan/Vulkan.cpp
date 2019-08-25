@@ -6161,9 +6161,9 @@ TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR)
 {
 	//TODO: figure out this properly. BGRA not supported on android
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
-	return TinyImageFormat_B8G8R8A8_UNORM;
+	return TinyImageFormat_B8G8R8A8_SRGB;
 #else
-	return TinyImageFormat_R8G8B8A8_UNORM;
+	return TinyImageFormat_R8G8B8A8_SRGB;
 #endif
 }
 
