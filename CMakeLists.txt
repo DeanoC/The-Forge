@@ -46,7 +46,6 @@ set(Src
 		OS/Core/Timer.cpp
 		OS/Image/Image.cpp
 		OS/Image/Image.h
-		OS/Image/ImageEnums.h
 		OS/Interfaces/IApp.h
 		OS/Interfaces/ICameraController.h
 		OS/Interfaces/IFileSystem.h

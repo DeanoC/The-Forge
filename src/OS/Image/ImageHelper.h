@@ -73,7 +73,7 @@ static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d
 		nMipMapLevels--;
 	}
 
-	size *=TinyImageFormat_BitSizeOfBlock(srcFormat);
+	size *= TinyImageFormat_BitSizeOfBlock(srcFormat) / 8;
 
 	return size;
 }

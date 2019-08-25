@@ -3,19 +3,21 @@
 #include "tiny_imageformat/tinyimageformat_apis.h"
 
 inline void utils_caps_builder(Renderer* pRenderer) {
-	memset(pRenderer->canShaderReadFrom, 0, sizeof(pRenderer->canShaderReadFrom));
-	memset(pRenderer->canShaderWriteTo, 0, sizeof(pRenderer->canShaderWriteTo));
-	memset(pRenderer->canColorWriteTo, 0, sizeof(pRenderer->canColorWriteTo));
+	memset(pRenderer->capBits.canShaderReadFrom, 0, sizeof(pRenderer->capBits.canShaderReadFrom));
+	memset(pRenderer->capBits.canShaderWriteTo, 0, sizeof(pRenderer->capBits.canShaderWriteTo));
+	memset(pRenderer->capBits.canColorWriteTo, 0, sizeof(pRenderer->capBits.canColorWriteTo));
 
 	for (uint32_t i = 0; i < TinyImageFormat_Count;++i) {
 		VkFormatProperties formatSupport;
-		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU,
-				(VkFormat) TinyImageFormat_ToVkFormat((TinyImageFormat)i), &formatSupport);
-		pRenderer->canShaderReadFrom[i] =
+		VkFormat fmt = (VkFormat) TinyImageFormat_ToVkFormat((TinyImageFormat)i);
+		if(fmt == VK_FORMAT_UNDEFINED) continue;
+
+		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, fmt, &formatSupport);
+		pRenderer->capBits.canShaderReadFrom[i] =
 				(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
-		pRenderer->canShaderWriteTo[i] =
+		pRenderer->capBits.canShaderWriteTo[i] =
 				(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-		pRenderer->canColorWriteTo[i] =
+		pRenderer->capBits.canColorWriteTo[i] =
 				(formatSupport.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
 	}
 

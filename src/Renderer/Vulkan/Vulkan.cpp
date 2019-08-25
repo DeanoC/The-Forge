@@ -64,7 +64,8 @@
 #include "../../ThirdParty/OpenSource/VulkanMemoryAllocator/VulkanMemoryAllocator.h"
 #include "../../OS/Core/Atomics.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "../../OS/Image/ImageEnums.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
 #include "VulkanCapsBuilder.h"
 
 #include "../../OS/Interfaces/IMemory.h"
@@ -424,7 +425,6 @@ PFN_vkCmdDrawIndexedIndirectCountKHR pfnVkCmdDrawIndexedIndirectCountKHR = NULL;
 
 // Internal utility functions (may become external one day)
 VkSampleCountFlagBits util_to_vk_sample_count(SampleCount sampleCount);
-VkFormat              util_to_vk_image_format(ImageFormat::Enum format, bool srgb);
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH) && !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
 // clang-format off
 API_INTERFACE void FORGE_CALLCONV addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer);
@@ -598,12 +598,12 @@ static const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature,
 /************************************************************************/
 typedef struct RenderPassDesc
 {
-	ImageFormat::Enum*    pColorFormats;
+	TinyImageFormat*    	pColorFormats;
 	const LoadActionType* pLoadActionsColor;
 	bool*                 pSrgbValues;
 	uint32_t              mRenderTargetCount;
 	SampleCount           mSampleCount;
-	ImageFormat::Enum     mDepthStencilFormat;
+	TinyImageFormat     	mDepthStencilFormat;
 	LoadActionType        mLoadActionDepth;
 	LoadActionType        mLoadActionStencil;
 } RenderPassDesc;
@@ -644,7 +644,7 @@ static void add_render_pass(Renderer* pRenderer, const RenderPassDesc* pDesc, Re
 	ASSERT(VK_NULL_HANDLE != pRenderer->pVkDevice);
 
 	uint32_t colorAttachmentCount = pDesc->mRenderTargetCount;
-	uint32_t depthAttachmentCount = (pDesc->mDepthStencilFormat != ImageFormat::NONE) ? 1 : 0;
+	uint32_t depthAttachmentCount = (pDesc->mDepthStencilFormat != TinyImageFormat_UNDEFINED) ? 1 : 0;
 
 	VkAttachmentDescription* attachments = NULL;
 	VkAttachmentReference*   color_attachment_refs = NULL;
@@ -675,7 +675,7 @@ static void add_render_pass(Renderer* pRenderer, const RenderPassDesc* pDesc, Re
 
 			// descriptions
 			attachments[ssidx].flags = 0;
-			attachments[ssidx].format = util_to_vk_image_format(pDesc->pColorFormats[i], pDesc->pSrgbValues[i]);
+			attachments[ssidx].format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->pColorFormats[i]);
 			attachments[ssidx].samples = sample_count;
 			attachments[ssidx].loadOp =
 				pDesc->pLoadActionsColor ? gVkAttachmentLoadOpTranslator[pDesc->pLoadActionsColor[i]] : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -696,7 +696,7 @@ static void add_render_pass(Renderer* pRenderer, const RenderPassDesc* pDesc, Re
 	{
 		uint32_t idx = colorAttachmentCount;
 		attachments[idx].flags = 0;
-		attachments[idx].format = util_to_vk_image_format(pDesc->mDepthStencilFormat, false);
+		attachments[idx].format = (VkFormat) TinyImageFormat_ToVkFormat(pDesc->mDepthStencilFormat);
 		attachments[idx].samples = sample_count;
 		attachments[idx].loadOp = gVkAttachmentLoadOpTranslator[pDesc->mLoadActionDepth];
 		attachments[idx].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -988,7 +988,7 @@ static void create_default_resources(Renderer* pRenderer)
 		textureDesc.mNodeIndex = i;
 		textureDesc.mArraySize = 1;
 		textureDesc.mDepth = 1;
-		textureDesc.mFormat = ImageFormat::RGBA8;
+		textureDesc.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
 		textureDesc.mHeight = 1;
 		textureDesc.mMipLevels = 1;
 		textureDesc.mSampleCount = SAMPLE_COUNT_1;
@@ -1061,7 +1061,7 @@ static void create_default_resources(Renderer* pRenderer)
 		bufferDesc.mFirstElement = 0;
 		bufferDesc.mElementCount = 1;
 		bufferDesc.mStructStride = sizeof(uint32_t);
-		bufferDesc.mFormat = ImageFormat::R32UI;
+		bufferDesc.mFormat = TinyImageFormat_R32_UINT;
 		addBuffer(pRenderer, &bufferDesc, &pRenderer->pDefaultBufferSRV[i]);
 		bufferDesc.mDescriptors = DESCRIPTOR_TYPE_RW_BUFFER;
 		addBuffer(pRenderer, &bufferDesc, &pRenderer->pDefaultBufferUAV[i]);
@@ -1208,101 +1208,6 @@ VkSamplerAddressMode util_to_vk_address_mode(AddressMode addressMode)
 	}
 }
 
-VkFormat util_to_vk_image_format(ImageFormat::Enum format, bool srgb)
-{
-	VkFormat result = VK_FORMAT_UNDEFINED;
-
-	if (format >= sizeof(gVkFormatTranslator) / sizeof(gVkFormatTranslator[0]))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gVulkanFormatTranslator");
-	}
-	else
-	{
-		result = gVkFormatTranslator[format];
-		if (srgb)
-		{
-			if (result == VK_FORMAT_R8G8B8A8_UNORM)
-				result = VK_FORMAT_R8G8B8A8_SRGB;
-			else if (result == VK_FORMAT_B8G8R8A8_UNORM)
-				result = VK_FORMAT_B8G8R8A8_SRGB;
-			else if (result == VK_FORMAT_B8G8R8_UNORM)
-				result = VK_FORMAT_B8G8R8_SRGB;
-			else if (result == VK_FORMAT_BC1_RGBA_UNORM_BLOCK)
-				result = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-			else if (result == VK_FORMAT_BC2_UNORM_BLOCK)
-				result = VK_FORMAT_BC2_SRGB_BLOCK;
-			else if (result == VK_FORMAT_BC3_UNORM_BLOCK)
-				result = VK_FORMAT_BC3_SRGB_BLOCK;
-			else if (result == VK_FORMAT_BC7_UNORM_BLOCK)
-				result = VK_FORMAT_BC7_SRGB_BLOCK;
-			// ASTC_XxY_SRGB_BLOCK = ASTC_XxY_UNORM_BLOCK + 1
-			else if (result >= VK_FORMAT_ASTC_4x4_UNORM_BLOCK && result <= VK_FORMAT_ASTC_12x12_UNORM_BLOCK)
-				result = (VkFormat)(result + 1);
-		}
-	}
-
-	return result;
-}
-
-ImageFormat::Enum util_to_internal_image_format(VkFormat format)
-{
-	ImageFormat::Enum result = ImageFormat::NONE;
-	switch (format)
-	{
-			// 1 channel
-		case VK_FORMAT_R8_UNORM: result = ImageFormat::R8; break;
-		case VK_FORMAT_R16_UNORM: result = ImageFormat::R16; break;
-		case VK_FORMAT_R16_SFLOAT: result = ImageFormat::R16F; break;
-		case VK_FORMAT_R32_UINT: result = ImageFormat::R32UI; break;
-		case VK_FORMAT_R32_SFLOAT:
-			result = ImageFormat::R32F;
-			break;
-			// 2 channel
-		case VK_FORMAT_R8G8_UNORM: result = ImageFormat::RG8; break;
-		case VK_FORMAT_R16G16_UNORM: result = ImageFormat::RG16; break;
-		case VK_FORMAT_R16G16_SFLOAT: result = ImageFormat::RG16F; break;
-		case VK_FORMAT_R32G32_UINT: result = ImageFormat::RG32UI; break;
-		case VK_FORMAT_R32G32_SFLOAT:
-			result = ImageFormat::RG32F;
-			break;
-			// 3 channel
-		case VK_FORMAT_R8G8B8_UNORM:
-		case VK_FORMAT_R8G8B8_SRGB: result = ImageFormat::RGB8; break;
-		case VK_FORMAT_R16G16B16_UNORM: result = ImageFormat::RGB16; break;
-		case VK_FORMAT_R16G16B16_SFLOAT: result = ImageFormat::RGB16F; break;
-		case VK_FORMAT_R32G32B32_UINT: result = ImageFormat::RGB32UI; break;
-		case VK_FORMAT_R32G32B32_SFLOAT:
-			result = ImageFormat::RGB32F;
-			break;
-			// 4 channel
-		case VK_FORMAT_B8G8R8A8_UNORM:
-		case VK_FORMAT_B8G8R8A8_SRGB: result = ImageFormat::BGRA8; break;
-		case VK_FORMAT_R8G8B8A8_UNORM:
-		case VK_FORMAT_R8G8B8A8_SRGB: result = ImageFormat::RGBA8; break;
-		case VK_FORMAT_R16G16B16A16_UNORM: result = ImageFormat::RGBA16; break;
-		case VK_FORMAT_R16G16B16A16_SFLOAT: result = ImageFormat::RGBA16F; break;
-		case VK_FORMAT_R32G32B32A32_UINT: result = ImageFormat::RGBA32UI; break;
-		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			result = ImageFormat::RGBA32F;
-			break;
-			// Depth/stencil
-		case VK_FORMAT_D16_UNORM: result = ImageFormat::D16; break;
-		case VK_FORMAT_X8_D24_UNORM_PACK32: result = ImageFormat::X8D24PAX32; break;
-		case VK_FORMAT_D32_SFLOAT: result = ImageFormat::D32F; break;
-		case VK_FORMAT_S8_UINT: result = ImageFormat::S8; break;
-		case VK_FORMAT_D16_UNORM_S8_UINT: result = ImageFormat::D16S8; break;
-		case VK_FORMAT_D24_UNORM_S8_UINT: result = ImageFormat::D24S8; break;
-		case VK_FORMAT_D32_SFLOAT_S8_UINT: result = ImageFormat::D32S8; break;
-		default:
-		{
-			result = ImageFormat::NONE;
-			ASSERT(false && "Image Format not supported!");
-			break;
-		}
-	}
-	return result;
-}
-
 VkShaderStageFlags util_to_vk_shader_stages(ShaderStage shader_stages)
 {
 	VkShaderStageFlags result = 0;
@@ -1338,67 +1243,6 @@ VkShaderStageFlags util_to_vk_shader_stages(ShaderStage shader_stages)
 		}
 	}
 	return result;
-}
-
-uint32_t util_vk_determine_image_channel_count(ImageFormat::Enum format)
-{
-	uint32_t result = 0;
-	switch (format)
-	{
-			// 1 channel
-		case ImageFormat::R8: result = 1; break;
-		case ImageFormat::R16: result = 1; break;
-		case ImageFormat::R16F: result = 1; break;
-		case ImageFormat::R32UI: result = 1; break;
-		case ImageFormat::R32F:
-			result = 1;
-			break;
-			// 2 channel
-		case ImageFormat::RG8: result = 2; break;
-		case ImageFormat::RG16: result = 2; break;
-		case ImageFormat::RG16F: result = 2; break;
-		case ImageFormat::RG32UI: result = 2; break;
-		case ImageFormat::RG32F:
-			result = 2;
-			break;
-			// 3 channel
-		case ImageFormat::RGB8: result = 3; break;
-		case ImageFormat::RGB16: result = 3; break;
-		case ImageFormat::RGB16F: result = 3; break;
-		case ImageFormat::RGB32UI: result = 3; break;
-		case ImageFormat::RGB32F:
-			result = 3;
-			break;
-			// 4 channel
-		case ImageFormat::BGRA8: result = 4; break;
-		case ImageFormat::RGBA8: result = 4; break;
-		case ImageFormat::RGBA16: result = 4; break;
-		case ImageFormat::RGBA16F: result = 4; break;
-		case ImageFormat::RGBA32UI: result = 4; break;
-		case ImageFormat::RGBA32F:
-			result = 4;
-			break;
-			// Depth/stencil
-		case ImageFormat::D16: result = 0; break;
-		case ImageFormat::X8D24PAX32: result = 0; break;
-		case ImageFormat::D32F: result = 0; break;
-		case ImageFormat::S8: result = 0; break;
-		case ImageFormat::D16S8: result = 0; break;
-		case ImageFormat::D24S8: result = 0; break;
-		case ImageFormat::D32S8: result = 0; break;
-		default:
-		{
-			result = ImageFormat::NONE;
-			ASSERT(false && "Image Format not supported!");
-			break;
-		}
-	}
-	return result;
-}
-
-bool util_vk_format_has_stencil(ImageFormat::Enum format)
-{
-	return format == ImageFormat::D16S8 || format == ImageFormat::D24S8 || format == ImageFormat::D32S8;
 }
 
 VkSampleCountFlagBits util_to_vk_sample_count(SampleCount sampleCount)
@@ -2924,7 +2768,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	}
 	else
 	{
-		VkFormat requested_format = util_to_vk_image_format(pSwapChain->mDesc.mColorFormat, pSwapChain->mDesc.mSrgb);
+		VkFormat requested_format = (VkFormat)TinyImageFormat_ToVkFormat(pSwapChain->mDesc.mColorFormat);
 		for (uint32_t i = 0; i < surfaceFormatCount; ++i)
 		{
 			if ((requested_format == formats[i].format) && (VK_COLOR_SPACE_SRGB_NONLINEAR_KHR == formats[i].colorSpace))
@@ -3075,7 +2919,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	vk_res = vkCreateSwapchainKHR(pRenderer->pVkDevice, &swapChainCreateInfo, NULL, &(pSwapChain->pSwapChain));
 	ASSERT(VK_SUCCESS == vk_res);
 
-	pSwapChain->mDesc.mColorFormat = util_to_internal_image_format(surface_format.format);
+	pSwapChain->mDesc.mColorFormat = TinyImageFormat_FromVkFormat((TinyImageFormat_VkFormat)surface_format.format);
 
 	// Create rendertargets from swapchain
 	uint32_t image_count = 0;
@@ -3096,7 +2940,6 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	descColor.mDepth = 1;
 	descColor.mArraySize = 1;
 	descColor.mFormat = pSwapChain->mDesc.mColorFormat;
-	descColor.mSrgb = pSwapChain->mDesc.mSrgb;
 	descColor.mClearValue = pSwapChain->mDesc.mColorClearValue;
 	descColor.mSampleCount = SAMPLE_COUNT_1;
 	descColor.mSampleQuality = 0;
@@ -3158,7 +3001,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	add_info.pNext = NULL;
 	add_info.flags = 0;
 	add_info.size = pBuffer->mDesc.mSize;
-	add_info.usage = util_to_vk_buffer_usage(pBuffer->mDesc.mDescriptors, pDesc->mFormat != ImageFormat::NONE);
+	add_info.usage = util_to_vk_buffer_usage(pBuffer->mDesc.mDescriptors, pDesc->mFormat != TinyImageFormat_UNDEFINED);
 	add_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	add_info.queueFamilyIndexCount = 0;
 	add_info.pQueueFamilyIndices = NULL;
@@ -3235,7 +3078,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		VkBufferViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, NULL };
 		viewInfo.buffer = pBuffer->pVkBuffer;
 		viewInfo.flags = 0;
-		viewInfo.format = util_to_vk_image_format(pDesc->mFormat, false);
+		viewInfo.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mFormat);
 		viewInfo.offset = pDesc->mFirstElement * pDesc->mStructStride;
 		viewInfo.range = pDesc->mElementCount * pDesc->mStructStride;
 		VkFormatProperties formatProps = {};
@@ -3254,7 +3097,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		VkBufferViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, NULL };
 		viewInfo.buffer = pBuffer->pVkBuffer;
 		viewInfo.flags = 0;
-		viewInfo.format = util_to_vk_image_format(pDesc->mFormat, false);
+		viewInfo.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mFormat);
 		viewInfo.offset = pDesc->mFirstElement * pDesc->mStructStride;
 		viewInfo.range = pDesc->mElementCount * pDesc->mStructStride;
 		VkFormatProperties formatProps = {};
@@ -3351,11 +3194,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		add_info.pNext = NULL;
 		add_info.flags = 0;
 		add_info.imageType = image_type;
-		if(pDesc->mFormat == ImageFormat::NONE) {
-			add_info.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mTinyFormat);
-		} else {
-			add_info.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
-		}
+		add_info.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mFormat);
 		add_info.extent.width = pDesc->mWidth;
 		add_info.extent.height = pDesc->mHeight;
 		add_info.extent.depth = pDesc->mDepth;
@@ -3381,27 +3220,24 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			add_info.usage |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		}
 
-		if(add_info.format == ImageFormat::NONE) {
-			// TODO host visible
-			ASSERT(pRenderer->canShaderReadFrom[pDesc->mTinyFormat]);
-		} else {
-			// Verify that GPU supports this format
-			DECLARE_ZERO(VkFormatProperties, format_props);
-			vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, add_info.format, &format_props);
-			VkFormatFeatureFlags format_features = util_vk_image_usage_to_format_features(add_info.usage);
+		ASSERT(pRenderer->capBits.canShaderReadFrom[pDesc->mFormat] && "GPU shader can't' read from this format");
 
-			if (pDesc->mHostVisible)
-			{
-				VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
-				ASSERT((0 != flags) && "Format is not supported for host visible images");
-			}
-			else
-			{
-				VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
-				ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
-			}
+		// TODO Deano move hostvisible flag to capbits structure
+		// Verify that GPU supports this format
+		DECLARE_ZERO(VkFormatProperties, format_props);
+		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, add_info.format, &format_props);
+		VkFormatFeatureFlags format_features = util_vk_image_usage_to_format_features(add_info.usage);
+
+		if (pDesc->mHostVisible)
+		{
+			VkFormatFeatureFlags flags = format_props.linearTilingFeatures & format_features;
+			ASSERT((0 != flags) && "Format is not supported for host visible images");
 		}
-
+		else
+		{
+			VkFormatFeatureFlags flags = format_props.optimalTilingFeatures & format_features;
+			ASSERT((0 != flags) && "Format is not supported for GPU local images (i.e. not host visible images)");
+		}
 
 		const bool linkedMultiGpu = (pRenderer->mSettings.mGpuMode == GPU_MODE_LINKED) && (pDesc->pSharedNodeIndices || pDesc->mNodeIndex);
 
@@ -3518,11 +3354,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	srvDesc.flags = 0;
 	srvDesc.image = pTexture->pVkImage;
 	srvDesc.viewType = view_type;
-	if(pDesc->mFormat == ImageFormat::NONE) {
-		srvDesc.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mTinyFormat);
-	} else {
-		srvDesc.format = util_to_vk_image_format(pDesc->mFormat, pDesc->mSrgb);
-	}
+	srvDesc.format = (VkFormat)TinyImageFormat_ToVkFormat(pDesc->mFormat);
 	srvDesc.components.r = VK_COMPONENT_SWIZZLE_R;
 	srvDesc.components.g = VK_COMPONENT_SWIZZLE_G;
 	srvDesc.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -3540,7 +3372,8 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	}
 
 	// SRV stencil
-	if (util_vk_format_has_stencil(pDesc->mFormat) && (descriptors & DESCRIPTOR_TYPE_TEXTURE))
+	if ((TinyImageFormat_IsStencilOnly(pDesc->mFormat)|| TinyImageFormat_IsDepthAndStencil(pDesc->mFormat))
+				&& (descriptors & DESCRIPTOR_TYPE_TEXTURE))
 	{
 		pTexture->pVkSRVStencilDescriptor = (VkImageView*)conf_malloc(sizeof(VkImageView));
 		srvDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -3610,7 +3443,8 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	ASSERT(pDesc);
 	ASSERT(ppRenderTarget);
 
-	bool isDepth = ImageFormat::IsDepthFormat(pDesc->mFormat);
+	bool const isDepth = TinyImageFormat_IsDepthOnly(pDesc->mFormat) ||
+			TinyImageFormat_IsDepthAndStencil(pDesc->mFormat);
 
 	ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
@@ -3631,7 +3465,6 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	textureDesc.mSampleQuality = pDesc->mSampleQuality;
 	textureDesc.mWidth = pDesc->mWidth;
 	textureDesc.pNativeHandle = pDesc->pNativeHandle;
-	textureDesc.mSrgb = pDesc->mSrgb;
 	textureDesc.mNodeIndex = pDesc->mNodeIndex;
 	textureDesc.pSharedNodeIndices = pDesc->pSharedNodeIndices;
 	textureDesc.mSharedNodeIndexCount = pDesc->mSharedNodeIndexCount;
@@ -3649,7 +3482,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	if (isDepth)
 	{
 		// Make sure depth/stencil format is supported - fall back to VK_FORMAT_D16_UNORM if not
-		VkFormat vk_depth_stencil_format = util_to_vk_image_format(pDesc->mFormat, false);
+		VkFormat vk_depth_stencil_format = (VkFormat) TinyImageFormat_ToVkFormat(pDesc->mFormat);
 		if (VK_FORMAT_UNDEFINED != vk_depth_stencil_format)
 		{
 			DECLARE_ZERO(VkImageFormatProperties, properties);
@@ -3659,7 +3492,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 			// Fall back to something that's guaranteed to work
 			if (VK_SUCCESS != vk_res)
 			{
-				textureDesc.mFormat = ImageFormat::D16;
+				textureDesc.mFormat = TinyImageFormat_D16_UNORM;
 				LOGWARNINGF("Depth stencil format (%u) not supported. Falling back to D16 format", pDesc->mFormat);
 			}
 		}
@@ -3681,7 +3514,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	rtvDesc.flags = 0;
 	rtvDesc.image = pRenderTarget->pTexture->pVkImage;
 	rtvDesc.viewType = viewType;
-	rtvDesc.format = util_to_vk_image_format(pRenderTarget->pTexture->mDesc.mFormat, pRenderTarget->pTexture->mDesc.mSrgb);
+	rtvDesc.format = (VkFormat)TinyImageFormat_ToVkFormat(pRenderTarget->pTexture->mDesc.mFormat);
 	rtvDesc.components.r = VK_COMPONENT_SWIZZLE_R;
 	rtvDesc.components.g = VK_COMPONENT_SWIZZLE_G;
 	rtvDesc.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -4639,7 +4472,6 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 	renderPassDesc.mRenderTargetCount = pDesc->mRenderTargetCount;
 	renderPassDesc.pColorFormats = pDesc->pColorFormats;
 	renderPassDesc.mSampleCount = pDesc->mSampleCount;
-	renderPassDesc.pSrgbValues = pDesc->pSrgbValues;
 	renderPassDesc.mDepthStencilFormat = pDesc->mDepthStencilFormat;
 	add_render_pass(pRenderer, &renderPassDesc, &pRenderPass);
 
@@ -4743,11 +4575,11 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 				{
 					input_bindings[input_binding_count - 1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 				}
-				input_bindings[input_binding_count - 1].stride += ImageFormat::GetImageFormatStride(attrib->mFormat);
+				input_bindings[input_binding_count - 1].stride += TinyImageFormat_BitSizeOfBlock(attrib->mFormat) / 8;
 
 				input_attributes[input_attribute_count].location = attrib->mLocation;
 				input_attributes[input_attribute_count].binding = attrib->mBinding;
-				input_attributes[input_attribute_count].format = util_to_vk_image_format(attrib->mFormat, false);
+				input_attributes[input_attribute_count].format = (VkFormat)TinyImageFormat_ToVkFormat(attrib->mFormat);
 				input_attributes[input_attribute_count].offset = attrib->mOffset;
 				++input_attribute_count;
 			}
@@ -5209,10 +5041,9 @@ void cmdBindRenderTargets(
 		uint32_t hashValues[] = {
 			(uint32_t)ppRenderTargets[i]->mDesc.mFormat,
 			(uint32_t)ppRenderTargets[i]->mDesc.mSampleCount,
-			(uint32_t)ppRenderTargets[i]->mDesc.mSrgb,
 			pLoadActions ? (uint32_t)pLoadActions->mLoadActionsColor[i] : 0,
 		};
-		renderPassHash = eastl::mem_hash<uint32_t>()(hashValues, 4, renderPassHash);
+		renderPassHash = eastl::mem_hash<uint32_t>()(hashValues, 3, renderPassHash);
 		frameBufferHash = eastl::mem_hash<uint64_t>()(&ppRenderTargets[i]->pTexture->mTextureId, 1, frameBufferHash);
 	}
 	if (pDepthStencil)
@@ -5220,11 +5051,10 @@ void cmdBindRenderTargets(
 		uint32_t hashValues[] = {
 			(uint32_t)pDepthStencil->mDesc.mFormat,
 			(uint32_t)pDepthStencil->mDesc.mSampleCount,
-			(uint32_t)pDepthStencil->mDesc.mSrgb,
 			pLoadActions ? (uint32_t)pLoadActions->mLoadActionDepth : 0,
 			pLoadActions ? (uint32_t)pLoadActions->mLoadActionStencil : 0,
 		};
-		renderPassHash = eastl::mem_hash<uint32_t>()(hashValues, 5, renderPassHash);
+		renderPassHash = eastl::mem_hash<uint32_t>()(hashValues, 4, renderPassHash);
 		frameBufferHash = eastl::mem_hash<uint64_t>()(&pDepthStencil->pTexture->mTextureId, 1, frameBufferHash);
 	}
 	if (pColorArraySlices)
@@ -5254,13 +5084,11 @@ void cmdBindRenderTargets(
 	}
 	else
 	{
-		ImageFormat::Enum colorFormats[MAX_RENDER_TARGET_ATTACHMENTS] = {};
-		bool              srgbValues[MAX_RENDER_TARGET_ATTACHMENTS] = {};
-		ImageFormat::Enum depthStencilFormat = ImageFormat::NONE;
+		TinyImageFormat colorFormats[MAX_RENDER_TARGET_ATTACHMENTS] = {};
+		TinyImageFormat depthStencilFormat = TinyImageFormat_UNDEFINED;
 		for (uint32_t i = 0; i < renderTargetCount; ++i)
 		{
 			colorFormats[i] = ppRenderTargets[i]->mDesc.mFormat;
-			srgbValues[i] = ppRenderTargets[i]->mDesc.mSrgb;
 		}
 		if (pDepthStencil)
 		{
@@ -5271,7 +5099,6 @@ void cmdBindRenderTargets(
 		renderPassDesc.mRenderTargetCount = renderTargetCount;
 		renderPassDesc.mSampleCount = sampleCount;
 		renderPassDesc.pColorFormats = colorFormats;
-		renderPassDesc.pSrgbValues = srgbValues;
 		renderPassDesc.mDepthStencilFormat = depthStencilFormat;
 		renderPassDesc.pLoadActionsColor = pLoadActions ? pLoadActions->mLoadActionsColor : NULL;
 		renderPassDesc.mLoadActionDepth = pLoadActions ? pLoadActions->mLoadActionDepth : LOAD_ACTION_DONTCARE;
@@ -6330,13 +6157,13 @@ void getFenceStatus(Renderer* pRenderer, Fence* pFence, FenceStatus* pFenceStatu
 /************************************************************************/
 // Utility functions
 /************************************************************************/
-ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR)
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR)
 {
 	//TODO: figure out this properly. BGRA not supported on android
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
-	return ImageFormat::BGRA8;
+	return TinyImageFormat_B8G8R8A8_UNORM;
 #else
-	return ImageFormat::RGBA8;
+	return TinyImageFormat_R8G8B8A8_UNORM;
 #endif
 }
 
