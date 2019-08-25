@@ -525,8 +525,6 @@ typedef struct TheForge_SwapChainDesc
 	TinyImageFormat colorFormat;
 	/// Clear value
 	TheForge_ClearValue colorClearValue;
-	/// Set whether this swapchain using srgb color space
-	bool srgb;
 	/// Set whether swap chain will be presented using vsync
 	bool enableVsync;
 } TheForge_SwapChainDesc;

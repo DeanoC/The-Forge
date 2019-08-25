@@ -16,7 +16,7 @@ endif ()
 
 #currnet vulkan only on windows
 if (WIN32)
-	set(USE_VULKAN TRUE)
+#	set(USE_VULKAN TRUE)
 endif()
 
 SET_MIN_VERSIONS()

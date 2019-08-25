@@ -108,7 +108,7 @@ void iDecodeColorBlock(
 	colors[1][1] = ((c1 >> 5) & 0x3F) << 2;
 	colors[1][2] = (c1 & 0x1F) << 3;
 
-	if (c0 > c1 || (format == TinyImageFormat_DXBC3_UNORM | format == TinyImageFormat_DXBC3_SRGB))
+	if (c0 > c1 || (format == TinyImageFormat_DXBC3_UNORM || format == TinyImageFormat_DXBC3_SRGB))
 	{
 		for (int i = 0; i < 3; i++)
 		{
@@ -499,7 +499,7 @@ bool Image::GetColorRange(float& min, float& max)
 
 	float minVal = FLT_MAX;
 	float maxVal = -FLT_MAX;
-	for (int i = 0; i < nElements; i++)
+	for (uint32_t i = 0; i < nElements; i++)
 	{
 		float d = ((float*)pData)[i];
 		if (d > maxVal)
@@ -526,7 +526,7 @@ bool Image::Normalize()
 
 	float s = 1.0f / (max - min);
 	float b = -min * s;
-	for (int i = 0; i < nElements; i++)
+	for (uint32_t i = 0; i < nElements; i++)
 	{
 		float d = ((float*)pData)[i];
 		((float*)pData)[i] = d * s + b;
@@ -747,11 +747,11 @@ static void tinyktxddsCallbackFree(void *user, void *data) {
 }
 static size_t tinyktxddsCallbackRead(void *user, void* data, size_t size) {
 	auto file = (MemoryBuffer*) user;
-	return file->Read(data, size);
+	return file->Read(data, (unsigned int)size);
 }
 static bool tinyktxddsCallbackSeek(void *user, int64_t offset) {
 	auto file = (MemoryBuffer*) user;
-	return file->Seek(offset, SeekDir::SEEK_DIR_BEGIN);
+	return file->Seek((unsigned int)offset, SeekDir::SEEK_DIR_BEGIN);
 
 }
 static int64_t tinyktxddsCallbackTell(void *user) {

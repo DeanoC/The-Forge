@@ -1258,7 +1258,6 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_SwapChainDesc, sampleQuality) == offsetof(SwapChainDesc, mSampleQuality));
 	API_CHK(offsetof(TheForge_SwapChainDesc, colorFormat) == offsetof(SwapChainDesc, mColorFormat));
 	API_CHK(offsetof(TheForge_SwapChainDesc, colorClearValue) == offsetof(SwapChainDesc, mColorClearValue));
-	API_CHK(offsetof(TheForge_SwapChainDesc, srgb) == offsetof(SwapChainDesc, mSrgb));
 	API_CHK(offsetof(TheForge_SwapChainDesc, enableVsync) == offsetof(SwapChainDesc, mEnableVsync));
 
 	API_CHK(sizeof(TheForge_RawImageData) == sizeof(RawImageData));

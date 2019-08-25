@@ -1661,8 +1661,6 @@ typedef struct SwapChainDesc
 	TinyImageFormat mColorFormat;
 	/// Clear value
 	ClearValue mColorClearValue;
-	/// Set whether this swapchain using srgb color space
-	bool mSrgb;
 	/// Set whether swap chain will be presented using vsync
 	bool mEnableVsync;
 } SwapChainDesc;

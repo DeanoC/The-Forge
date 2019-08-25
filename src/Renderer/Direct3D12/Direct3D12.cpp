@@ -415,13 +415,11 @@ const D3D12_COMMAND_QUEUE_PRIORITY gDx12QueuePriorityTranslator[QueuePriority::M
 
 // Internal utility functions (may become external one day)
 uint64_t                    util_dx_determine_storage_counter_offset(uint64_t buffer_size);
-DXGI_FORMAT                 util_to_dx_image_format_typeless(ImageFormat::Enum format);
 DXGI_FORMAT                 util_to_dx_uav_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT                 util_to_dx_dsv_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT                 util_to_dx_srv_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT                 util_to_dx_stencil_format(DXGI_FORMAT defaultFormat);
-DXGI_FORMAT                 util_to_dx_image_format(ImageFormat::Enum format, bool srgb);
-DXGI_FORMAT                 util_to_dx_swapchain_format(ImageFormat::Enum format);
+DXGI_FORMAT                 util_to_dx_swapchain_format(TinyImageFormat format);
 D3D12_SHADER_VISIBILITY     util_to_dx_shader_visibility(ShaderStage stages);
 D3D12_DESCRIPTOR_RANGE_TYPE util_to_dx_descriptor_range(DescriptorType type);
 D3D12_RESOURCE_STATES       util_to_dx_resource_state(ResourceState state);
@@ -1471,17 +1469,17 @@ DXGI_FORMAT util_to_dx_stencil_format(DXGI_FORMAT defaultFormat)
 	}
 }
 
-DXGI_FORMAT util_to_dx_swapchain_format(ImageFormat::Enum format)
+DXGI_FORMAT util_to_dx_swapchain_format(TinyImageFormat const format)
 {
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 
 	// FLIP_DISCARD and FLIP_SEQEUNTIAL swapchain buffers only support these formats
 	switch (format)
 	{
-		case ImageFormat::RGBA16F: result = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		case ImageFormat::BGRA8: result = DXGI_FORMAT_B8G8R8A8_UNORM; break;
-		case ImageFormat::RGBA8: result = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-		case ImageFormat::RGB10A2: result = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+		case TinyImageFormat_R16G16B16A16_SFLOAT: result = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case TinyImageFormat_B8G8R8A8_UNORM: result = DXGI_FORMAT_B8G8R8A8_UNORM; break;
+		case TinyImageFormat_R8G8B8A8_UNORM: result = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+		case TinyImageFormat_R10G10B10A2_UNORM: result = DXGI_FORMAT_R10G10B10A2_UNORM; break;
 		default: break;
 	}
 
@@ -1493,52 +1491,6 @@ DXGI_FORMAT util_to_dx_swapchain_format(ImageFormat::Enum format)
 	return result;
 }
 
-DXGI_FORMAT util_to_dx_image_format_typeless(ImageFormat::Enum format)
-{
-	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
-	if (format >= sizeof(gDX12FormatTranslatorTypeless) / sizeof(DXGI_FORMAT))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
-	}
-	else
-	{
-		result = gDX12FormatTranslatorTypeless[format];
-	}
-
-	return result;
-}
-
-DXGI_FORMAT util_to_dx_image_format(ImageFormat::Enum format, bool srgb)
-{
-	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
-	if (format >= sizeof(gDX12FormatTranslator) / sizeof(DXGI_FORMAT))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
-	}
-	else
-	{
-		result = gDX12FormatTranslator[format];
-		if (srgb)
-		{
-			if (result == DXGI_FORMAT_R8G8B8A8_UNORM)
-				result = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_B8G8R8A8_UNORM)
-				result = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_B8G8R8X8_UNORM)
-				result = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC1_UNORM)
-				result = DXGI_FORMAT_BC1_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC2_UNORM)
-				result = DXGI_FORMAT_BC2_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC3_UNORM)
-				result = DXGI_FORMAT_BC3_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC7_UNORM)
-				result = DXGI_FORMAT_BC7_UNORM_SRGB;
-		}
-	}
-
-	return result;
-}
 
 D3D12_SHADER_VISIBILITY util_to_dx_shader_visibility(ShaderStage stages)
 {
@@ -2700,7 +2652,6 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	descColor.mClearValue = pSwapChain->mDesc.mColorClearValue;
 	descColor.mSampleCount = SAMPLE_COUNT_1;
 	descColor.mSampleQuality = 0;
-	descColor.mSrgb = pSwapChain->mDesc.mSrgb;
 
 	pSwapChain->ppSwapchainRenderTargets =
 		(RenderTarget**)conf_calloc(pSwapChain->mDesc.mImageCount, sizeof(*pSwapChain->ppSwapchainRenderTargets));
@@ -2846,11 +2797,12 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		srvDesc.Buffer.NumElements = (UINT)(pBuffer->mDesc.mElementCount);
 		srvDesc.Buffer.StructureByteStride = (UINT)(pBuffer->mDesc.mStructStride);
 		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-		srvDesc.Format = util_to_dx_image_format(pDesc->mFormat, false);
+		srvDesc.Format = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 		if (DESCRIPTOR_TYPE_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER_RAW))
 		{
-			if (pDesc->mFormat != ImageFormat::NONE)
+			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
+
 			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			srvDesc.Buffer.Flags |= D3D12_BUFFER_SRV_FLAG_RAW;
 		}
@@ -2876,14 +2828,14 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 		if (DESCRIPTOR_TYPE_RW_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER_RAW))
 		{
-			if (pDesc->mFormat != ImageFormat::NONE)
+			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
 			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			uavDesc.Buffer.Flags |= D3D12_BUFFER_UAV_FLAG_RAW;
 		}
-		else if (pDesc->mFormat != ImageFormat::NONE)
+		else if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 		{
-			uavDesc.Format = util_to_dx_image_format(pDesc->mFormat, false);
+			uavDesc.Format = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 			D3D12_FEATURE_DATA_FORMAT_SUPPORT FormatSupport = { uavDesc.Format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
 			HRESULT hr = pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &FormatSupport, sizeof(FormatSupport));
 			if (!SUCCEEDED(hr) || !(FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) ||
@@ -2993,12 +2945,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	//add to gpu
 	D3D12_RESOURCE_DESC desc = {};
 
-	DXGI_FORMAT dxFormat = DXGI_FORMAT_UNKNOWN;
-	if(pDesc->mFormat == ImageFormat::NONE) {
-		dxFormat = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mTinyFormat);
-	} else {
-		dxFormat = util_to_dx_image_format(pDesc->mFormat, pDesc->mSrgb);
-	}
+	DXGI_FORMAT dxFormat = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 
 	DescriptorType      descriptors = pDesc->mDescriptors;
 
@@ -3022,11 +2969,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		desc.Height = pDesc->mHeight;
 		desc.DepthOrArraySize = (UINT16)(pDesc->mArraySize != 1 ? pDesc->mArraySize : pDesc->mDepth);
 		desc.MipLevels = (UINT16)pDesc->mMipLevels;
-		if(pDesc->mFormat == ImageFormat::NONE) {
-			desc.Format = (DXGI_FORMAT) TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
-		} else {
-			desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
-		}
+		desc.Format = (DXGI_FORMAT) TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
 		desc.SampleDesc.Count = (UINT)pDesc->mSampleCount;
 		desc.SampleDesc.Quality = (UINT)pDesc->mSampleQuality;
 		desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -3630,7 +3573,8 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	ASSERT(pDesc);
 	ASSERT(ppRenderTarget);
 
-	bool isDepth = ImageFormat::IsDepthFormat(pDesc->mFormat);
+	bool const isDepth = 	TinyImageFormat_IsDepthAndStencil(pDesc->mFormat) ||
+												TinyImageFormat_IsDepthOnly(pDesc->mFormat);
 
 	ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
@@ -3640,7 +3584,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	pRenderTarget->mDesc = *pDesc;
 
 	//add to gpu
-	DXGI_FORMAT dxFormat = util_to_dx_image_format(pRenderTarget->mDesc.mFormat, pDesc->mSrgb);
+	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pRenderTarget->mDesc.mFormat);
 	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	TextureDesc textureDesc = {};
@@ -3662,7 +3606,6 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	// Set this by default to be able to sample the rendertarget in shader
 	textureDesc.mWidth = pDesc->mWidth;
 	textureDesc.pNativeHandle = pDesc->pNativeHandle;
-	textureDesc.mSrgb = pDesc->mSrgb;
 	textureDesc.pDebugName = pDesc->pDebugName;
 	textureDesc.mNodeIndex = pDesc->mNodeIndex;
 	textureDesc.pSharedNodeIndices = pDesc->pSharedNodeIndices;
@@ -3681,9 +3624,12 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		numRTVs *= desc.DepthOrArraySize;
 
 	pRenderTarget->pDxDescriptors = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(numRTVs + 1, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-	!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-		? add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDescriptors[0])
-		: add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDescriptors[0]);
+
+	if(isDepth)	{
+		add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDescriptors[0]);
+	}	else {
+		add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDescriptors[0]);
+	}
 
 	for (uint32_t i = 0; i < desc.MipLevels; ++i)
 	{
@@ -3692,20 +3638,24 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		{
 			for (uint32_t j = 0; j < desc.DepthOrArraySize; ++j)
 			{
-				!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-					? add_rtv(
-						  pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
-						  &pRenderTarget->pDxDescriptors[1 + i * desc.DepthOrArraySize + j])
-					: add_dsv(
-						  pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
-						  &pRenderTarget->pDxDescriptors[1 + i * desc.DepthOrArraySize + j]);
+				if(isDepth) {
+					add_dsv(
+							pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
+							&pRenderTarget->pDxDescriptors[1 + i * desc.DepthOrArraySize + j]);
+				} else {
+					add_rtv(
+							pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
+							&pRenderTarget->pDxDescriptors[1 + i * desc.DepthOrArraySize + j]);
+				}
 			}
 		}
 		else
 		{
-			!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-				? add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDescriptors[1 + i])
-				: add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDescriptors[1 + i]);
+			if(isDepth) {
+				add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDescriptors[1 + i]);
+			} else {
+				add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDescriptors[1 + i]);
+			}
 		}
 	}
 
@@ -3714,10 +3664,16 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 
 void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 {
+	bool const isDepth = 	TinyImageFormat_IsDepthAndStencil(pRenderTarget->mDesc.mFormat) ||
+												TinyImageFormat_IsDepthOnly(pRenderTarget->mDesc.mFormat);
+
 	removeTexture(pRenderer, pRenderTarget->pTexture);
 
-	!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat) ? remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[0])
-															  : remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[0]);
+	if(isDepth) {
+		remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[0]);
+	} else  {
+		remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[0]);
+	}
 
 	const uint32_t depthOrArraySize = pRenderTarget->mDesc.mArraySize * pRenderTarget->mDesc.mDepth;
 	if ((pRenderTarget->mDesc.mDescriptors & DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES) ||
@@ -3725,15 +3681,20 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
 			for (uint32_t j = 0; j < depthOrArraySize; ++j)
-				!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-					? remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j])
-					: remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
+				if(isDepth) {
+					remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
+				} else {
+					remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
+				}
 	}
 	else
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
-			!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat) ? remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i])
-																	  : remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i]);
+			if(isDepth) {
+				remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i]);
+			} else {
+				remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i]);
+			}
 	}
 
 	SAFE_FREE(pRenderTarget->pDxDescriptors);
@@ -4889,7 +4850,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 			input_elements[input_elementCount].SemanticName = semantic_names[attrib_index];
 			input_elements[input_elementCount].SemanticIndex = semantic_index;
 
-			input_elements[input_elementCount].Format = util_to_dx_image_format(attrib->mFormat, false);
+			input_elements[input_elementCount].Format = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(attrib->mFormat);
 			input_elements[input_elementCount].InputSlot = attrib->mBinding;
 			input_elements[input_elementCount].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 			if (attrib->mRate == VERTEX_ATTRIB_RATE_INSTANCE)
@@ -4944,7 +4905,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 	pipeline_state_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 	pipeline_state_desc.PrimitiveTopologyType = util_to_dx_primitive_topology_type(pDesc->mPrimitiveTopo);
 	pipeline_state_desc.NumRenderTargets = render_target_count;
-	pipeline_state_desc.DSVFormat = util_to_dx_image_format(pDesc->mDepthStencilFormat, false);
+	pipeline_state_desc.DSVFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mDepthStencilFormat);
 
 	pipeline_state_desc.SampleDesc = sample_desc;
 	pipeline_state_desc.CachedPSO = cached_pso_desc;
@@ -4952,8 +4913,8 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 	for (uint32_t attrib_index = 0; attrib_index < render_target_count; ++attrib_index)
 	{
-		pipeline_state_desc.RTVFormats[attrib_index] =
-			util_to_dx_image_format(pDesc->pColorFormats[attrib_index], pDesc->pSrgbValues[attrib_index]);
+		pipeline_state_desc.RTVFormats[attrib_index] = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(
+				pDesc->pColorFormats[attrib_index]);
 	}
 
 	// If running Linked Mode (SLI) create pipeline for all nodes
@@ -6739,12 +6700,12 @@ bool fenceSetEventOnCompletion(Fence* fence, uint64_t value, HANDLE fenceEvent)
 /************************************************************************/
 // Utility functions
 /************************************************************************/
-ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR)
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR)
 {
 	if (fnHookGetRecommendedSwapChainFormat)
 		return fnHookGetRecommendedSwapChainFormat(hintHDR);
 	else
-		return ImageFormat::BGRA8;
+		return TinyImageFormat_B8G8R8A8_UNORM;
 }
 
 /************************************************************************/
