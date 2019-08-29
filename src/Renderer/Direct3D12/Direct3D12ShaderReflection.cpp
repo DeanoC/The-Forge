@@ -27,7 +27,7 @@
 #include "../../OS/Interfaces/ILog.h"
 
 #ifdef _DURANGO
-#include "..\..\..\Xbox\CommonXBOXOne_3\OS\XBoxPrivateHeaders.h"
+#include "../../../Xbox/CommonXBOXOne_3/OS/XBoxPrivateHeaders.h"
 #else
 #include <d3dcompiler.h>
 #include "../../ThirdParty/OpenSource/DirectXShaderCompiler/dxcapi.use.h"
@@ -313,17 +313,17 @@ void d3d12_createShaderReflection(const uint8_t* shaderCode, uint32_t shaderSize
 	//Check to see if parameters are valid
 	if (shaderCode == NULL)
 	{
-		LOGERRORF( "Parameter 'shaderCode' was NULL.");
+		LOGF(LogLevel::eERROR, "Parameter 'shaderCode' was NULL.");
 		return;
 	}
 	if (shaderSize == 0)
 	{
-		LOGERRORF( "Parameter 'shaderSize' was 0.");
+		LOGF(LogLevel::eERROR, "Parameter 'shaderSize' was 0.");
 		return;
 	}
 	if (pOutReflection == NULL)
 	{
-		LOGERRORF( "Paramater 'pOutReflection' was NULL.");
+		LOGF(LogLevel::eERROR, "Paramater 'pOutReflection' was NULL.");
 		return;
 	}
 

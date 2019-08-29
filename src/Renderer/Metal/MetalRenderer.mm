@@ -43,10 +43,10 @@
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Interfaces/IMemory.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
-#include "tiny_imageformat/tinyimageformat_apis.h"
-#include "tiny_imageformat/tinyimageformat_query.h"
-#import "OS/Image/ImageHelper.h" // for GetMipMappedSize
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_apis.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
+#include "../../OS/Image/ImageHelper.h" // for GetMipMappedSize
 
 #include "MetalCapBuilder.h"
 
@@ -309,7 +309,7 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 	else
 	{
-        LOGERRORF( "Invalid descriptor param (%s)", pResName);
+        LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -447,7 +447,7 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGERRORF( "Name of Descriptor at index (%u) is NULL", paramIdx);
+			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", paramIdx);
 			return;
 		}
 
@@ -467,21 +467,21 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 			case DESCRIPTOR_TYPE_RW_TEXTURE:
 			case DESCRIPTOR_TYPE_TEXTURE:
 				if (!pParam->ppTextures) {
-					LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppTextures = pParam->ppTextures;
 				break;
 			case DESCRIPTOR_TYPE_SAMPLER:
 				if (!pParam->ppSamplers) {
-					LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppSamplers = pParam->ppSamplers;
 				break;
 			case DESCRIPTOR_TYPE_ROOT_CONSTANT:
 				if (!pParam->pRootConstant) {
-					LOGERRORF( "RootConstant array (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "RootConstant array (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].pRootConstant = pParam->pRootConstant;
@@ -490,7 +490,7 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 			case DESCRIPTOR_TYPE_RW_BUFFER:
 			case DESCRIPTOR_TYPE_BUFFER:
 				if (!pParam->ppBuffers) {
-					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppBuffers = pParam->ppBuffers;
@@ -524,7 +524,7 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 					{
 						if(!descriptorData->ppTextures[j] || !descriptorData->ppTextures[j]->mtlTexture)
 						{
-							LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -548,7 +548,7 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 					{
 						if(!descriptorData->ppTextures[j] || !descriptorData->ppTextures[j]->mtlTexture)
 						{
-							LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -572,7 +572,7 @@ void cmdBindLocalDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, Roo
 					{
 						if(!descriptorData->ppSamplers[j] || !descriptorData->ppSamplers[j]->mtlSamplerState)
 						{
-							LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -758,7 +758,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGERRORF( "Name of Descriptor at index (%u) is NULL", paramIdx);
+			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", paramIdx);
 			return;
 		}
 
@@ -779,7 +779,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			case DESCRIPTOR_TYPE_TEXTURE:
 				if (!pParam->ppTextures)
 				{
-					LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppTextures = pParam->ppTextures;
@@ -787,7 +787,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			case DESCRIPTOR_TYPE_SAMPLER:
 				if (!pParam->ppSamplers)
 				{
-					LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppSamplers = pParam->ppSamplers;
@@ -795,7 +795,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			case DESCRIPTOR_TYPE_ROOT_CONSTANT:
 				if (!pParam->pRootConstant)
 				{
-					LOGERRORF( "RootConstant array (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "RootConstant array (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].pRootConstant = pParam->pRootConstant;
@@ -805,7 +805,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			case DESCRIPTOR_TYPE_BUFFER:
 				if (!pParam->ppBuffers)
 				{
-					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				node.pDescriptorDataArray[descIndex].ppBuffers = pParam->ppBuffers;
@@ -848,7 +848,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 					{
 						if (!descriptorData->ppTextures[j] || !descriptorData->ppTextures[j]->mtlTexture)
 						{
-							LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -878,7 +878,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 					{
 						if (!descriptorData->ppTextures[j] || !descriptorData->ppTextures[j]->mtlTexture)
 						{
-							LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -905,7 +905,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 					{
 						if (!descriptorData->ppSamplers[j] || !descriptorData->ppSamplers[j]->mtlSamplerState)
 						{
-							LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
+							LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", descriptorData->pName, j);
 							return;
 						}
 
@@ -998,10 +998,10 @@ static void internal_log(LogType type, const char* msg, const char* component)
 {
 	switch (type)
 	{
-		case LOG_TYPE_INFO: LOGINFOF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_WARN: LOGWARNINGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_DEBUG: LOGDEBUGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
+		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -1180,7 +1180,7 @@ void retrieveSystemProfilerInformation(eastl::string& outVendorId)
 	pclose(sys_profile);
         if (bytesRead == 0)
         {
-            LOGERRORF( "Couldn't read SPDisplaysData from system_profiler");
+            LOGF(LogLevel::eERROR, "Couldn't read SPDisplaysData from system_profiler");
             outVendorId = eastl::string("0x0000");
             return;
         }
@@ -1316,7 +1316,7 @@ uint32_t queryThreadExecutionWidth(Renderer* pRenderer)
 
 	if (error != nil)
 	{
-		LOGWARNINGF("Could not create library for simple compute shader: %s", [[error localizedDescription] UTF8String]);
+		LOGF(LogLevel::eWARNING, "Could not create library for simple compute shader: %s", [[error localizedDescription] UTF8String]);
 		return 0;
 	}
 
@@ -1327,13 +1327,12 @@ uint32_t queryThreadExecutionWidth(Renderer* pRenderer)
 	id<MTLComputePipelineState> computePipelineState = [pRenderer->pDevice newComputePipelineStateWithFunction:kernelFunction error:&error];
 	if (error != nil)
 	{
-		LOGWARNINGF("Could not create compute pipeline state for simple compute shader: %s", [[error localizedDescription] UTF8String]);
+		LOGF(LogLevel::eWARNING, "Could not create compute pipeline state for simple compute shader: %s", [[error localizedDescription] UTF8String]);
 		return 0;
 	}
 
 	return (uint32_t)computePipelineState.threadExecutionWidth;
 }
-
 
 void initRenderer(const char* appName, const RendererDesc* settings, Renderer** ppRenderer)
 {
@@ -1363,9 +1362,9 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		displayGraphicsInfo(pRenderer->pDevice.registryID, outModelId, gpuVendor);
 		eastl::string mDeviceName = [pRenderer->pDevice.name UTF8String];
 		strncpy(gpuVendor.mGpuName, mDeviceName.c_str(), MAX_GPU_VENDOR_STRING_LENGTH);
-		LOGINFOF("Current Gpu Name: %s", gpuVendor.mGpuName);
-		LOGINFOF("Current Gpu Vendor ID: %s", gpuVendor.mVendorId);
-		LOGINFOF("Current Gpu Model ID: %s", gpuVendor.mModelId);
+		LOGF(LogLevel::eINFO, "Current Gpu Name: %s", gpuVendor.mGpuName);
+		LOGF(LogLevel::eINFO, "Current Gpu Vendor ID: %s", gpuVendor.mVendorId);
+		LOGF(LogLevel::eINFO, "Current Gpu Model ID: %s", gpuVendor.mModelId);
 #else
 		strncpy(gpuVendor.mVendorId, "Apple", MAX_GPU_VENDOR_STRING_LENGTH);
 		strncpy(gpuVendor.mModelId, "iOS", MAX_GPU_VENDOR_STRING_LENGTH);
@@ -1399,8 +1398,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			//remove allocated renderer
 			SAFE_FREE(pRenderer);
 
-			LOGERRORF( "Selected GPU has an office Preset in gpu.cfg");
-			LOGERRORF( "Office Preset is not supported by the Forge");
+			LOGF(LogLevel::eERROR, "Selected GPU has an office Preset in gpu.cfg");
+			LOGF(LogLevel::eERROR, "Office Preset is not supported by the Forge");
 
 			ppRenderer = NULL;
 #ifdef AUTOMATED_TESTING
@@ -1927,14 +1926,14 @@ void addShader(Renderer* pRenderer, const ShaderDesc* pDesc, Shader** ppShaderPr
 			{
 				if (lib)
 				{
-					LOGWARNINGF(
+					LOGF(LogLevel::eWARNING,
 						"Loaded shader %s with the following warnings:\n %s", shader_name, [[error localizedDescription] UTF8String]);
 					error = 0;    //  error string is an autorelease object.
 				}
 				// Error
 				else
 				{
-					LOGERRORF(
+					LOGF(LogLevel::eERROR,
 						"Couldn't load shader %s with the following error:\n %s", shader_name, [[error localizedDescription] UTF8String]);
 					error = 0;    //  error string is an autorelease object.
 				}
@@ -2086,7 +2085,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 					if (pNode != staticSamplerMap.end())
 					{
-						LOGINFOF("Descriptor (%s) : User specified Static Sampler", pRes->name);
+						LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pRes->name);
 						staticSamplers.push_back({ pRes, pNode->second });
 					}
 					else
@@ -2107,7 +2106,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[pNode->second].reg != pRes->reg)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 							 "\nFailed to create root signature\n"
 							 "Shared shader resource %s has mismatching register. All shader resources "
 							 "shared by multiple shaders specified in addRootSignature "
@@ -2117,7 +2116,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[pNode->second].set != pRes->set)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 							 "\nFailed to create root signature\n"
 							 "Shared shader resource %s has mismatching space. All shader resources "
 							 "shared by multiple shaders specified in addRootSignature "
@@ -2341,7 +2340,7 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 																						   error:&error];
 	if (!pPipeline->mtlRenderPipelineState)
 	{
-		LOGERRORF( "Failed to create render pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
+		LOGF(LogLevel::eERROR, "Failed to create render pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
 		return;
 	}
 
@@ -2367,7 +2366,7 @@ void addComputePipelineImpl(Renderer* pRenderer, const ComputePipelineDesc* pDes
 	pPipeline->mtlComputePipelineState = [pRenderer->pDevice newComputePipelineStateWithFunction:pDesc->pShaderProgram->mtlComputeShader error:&error];
 	if (!pPipeline->mtlComputePipelineState)
 	{
-		LOGERRORF( "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
+		LOGF(LogLevel::eERROR, "Failed to create compute pipeline state, error:\n%s", [[error localizedDescription] UTF8String]);
 		SAFE_FREE(pPipeline);
 		return;
 	}
@@ -2492,7 +2491,8 @@ void addDepthState(Renderer* pRenderer, const DepthStateDesc* pDesc, DepthState*
 	ASSERT(pDesc->mStencilBackPass < StencilOp::MAX_STENCIL_OPS);
 
 	MTLDepthStencilDescriptor* descriptor = [[MTLDepthStencilDescriptor alloc] init];
-	descriptor.depthCompareFunction = gMtlComparisonFunctionTranslator[pDesc->mDepthFunc];
+	// Set comparison function to always if depth test is disabled
+	descriptor.depthCompareFunction = pDesc->mDepthTest ? gMtlComparisonFunctionTranslator[pDesc->mDepthFunc] : MTLCompareFunctionAlways;
 	descriptor.depthWriteEnabled = pDesc->mDepthWrite;
 	descriptor.backFaceStencil.stencilCompareFunction = gMtlComparisonFunctionTranslator[pDesc->mStencilBackFunc];
 	descriptor.backFaceStencil.depthFailureOperation = gMtlStencilOpTranslator[pDesc->mDepthBackFail];
@@ -2665,7 +2665,7 @@ void cmdBindRenderTargets(
 		}
 		else
 		{
-			LOGERRORF("Render pass is active but no root signature is bound!");
+			LOGF(LogLevel::eWARNING, "Render pass is active but no root signature is bound!");
 		}
 
 		@autoreleasepool
@@ -3022,7 +3022,7 @@ void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_
 #ifdef TARGET_IOS
 		else
 		{
-			LOGERRORF( "Current device does not support ios gpuFamily 3_v1 feature set.");
+			LOGF(LogLevel::eERROR, "Current device does not support ios gpuFamily 3_v1 feature set.");
 			return;
 		}
 #endif
@@ -3303,10 +3303,7 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pIntermediate, S
 #ifndef TARGET_IOS
 	MTLBlitOption blitOptions = MTLBlitOptionNone;
 #else
-	bool isPvrtc = (pTexture->mDesc.mFormat >= ImageFormat::PVR_2BPP && pTexture->mDesc.mFormat <= ImageFormat::PVR_4BPPA);
-	if(pTexture->mDesc.mFormat == ImageFormat::NONE) {
-		isPvrtc = ImageFormat_IsPvr(pTexture->mDesc.mTinyFormat);
-	}
+	bool isPvrtc = TinyImageFormat_IsPvr(pTexture->mDesc.mFormat);
 	MTLBlitOption blitOptions = isPvrtc ? MTLBlitOptionRowLinearPVRTC : MTLBlitOptionNone;
 #endif
 
@@ -3638,7 +3635,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
     memcpy(&data[0], &pQueryHeap->gpuTimestampStart, sizeof(uint64_t));
     memcpy(&data[1], &pQueryHeap->gpuTimestampEnd, sizeof(uint64_t));
 }
-
+    
 // -------------------------------------------------------------------------------------------------
 // Utility functions
 // -------------------------------------------------------------------------------------------------
@@ -3724,7 +3721,7 @@ MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format)
 //		case TinyImageFormat_RGB10A2: return MTLVertexFormatUInt1010102Normalized;
 		default: break;
 	}
-	LOGERRORF( "Unknown vertex format: %d", format);
+	LOGF(LogLevel::eERROR, "Unknown vertex format: %d", format);
 	return MTLVertexFormatInvalid;
 }
 
@@ -4079,12 +4076,35 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 		textureDesc.arrayLength = pTexture->mDesc.mArraySize;
 		textureDesc.storageMode = forceNonPrivate ? MTLStorageModeShared : MTLStorageModePrivate;
 		textureDesc.cpuCacheMode = MTLCPUCacheModeDefaultCache;
+		
+		MTLTextureType textureType = {};
+		if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D)
+		{
+			ASSERT(pDesc->mDepth == 1);
+			textureType = MTLTextureType2D;
+		}
+		else if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D)
+		{
+			textureType = MTLTextureType3D;
+		}
+		else
+		{
+			if (pDesc->mDepth > 1)
+				textureType = MTLTextureType3D;
+			else if (pDesc->mHeight > 1)
+				textureType = MTLTextureType2D;
+			else
+				textureType = MTLTextureType1D;
+		}
 
-		if (pDesc->mDepth > 1)
+		switch(textureType)
+		{
+		case MTLTextureType3D:
 		{
 			textureDesc.textureType = MTLTextureType3D;
+			break;
 		}
-		else if (pDesc->mHeight > 1)
+		case MTLTextureType2D:
 		{
 			if (DESCRIPTOR_TYPE_TEXTURE_CUBE == (pDesc->mDescriptors & DESCRIPTOR_TYPE_TEXTURE_CUBE))
 			{
@@ -4120,13 +4140,20 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 				else
 					textureDesc.textureType = MTLTextureType2D;
 			}
+			
+			break;
 		}
-		else
+		case MTLTextureType1D:
 		{
 			if (pDesc->mArraySize > 1)
 				textureDesc.textureType = MTLTextureType1DArray;
 			else
 				textureDesc.textureType = MTLTextureType1D;
+			
+			break;
+		}
+		default:
+			break;
 		}
 
 		bool isDepthBuffer = util_is_mtl_depth_pixel_format(pTexture->mtlPixelFormat);

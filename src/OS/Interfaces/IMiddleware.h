@@ -28,6 +28,8 @@ struct Renderer;
 struct RenderTarget;
 struct Cmd;
 
+#include "IOperatingSystem.h"
+
 class IMiddleware
 {
 	public:

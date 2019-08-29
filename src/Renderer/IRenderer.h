@@ -562,6 +562,10 @@ typedef enum TextureCreationFlags
 	TEXTURE_CREATION_FLAG_ON_TILE = 0x20,
 	/// Prevent compression meta data from generating (XBox)
 	TEXTURE_CREATION_FLAG_NO_COMPRESSION = 0x40,
+	/// Force 2D instead of automatically determining dimension based on width, height, depth
+	TEXTURE_CREATION_FLAG_FORCE_2D = 0x80,
+	/// Force 3D instead of automatically determining dimension based on width, height, depth
+	TEXTURE_CREATION_FLAG_FORCE_3D = 0x100,
 } TextureCreationFlags;
 MAKE_ENUM_FLAG(uint32_t, TextureCreationFlags)
 
@@ -1501,7 +1505,7 @@ typedef struct VertexAttrib
 	ShaderSemantic    mSemantic;
 	uint32_t          mSemanticNameLength;
 	char              mSemanticName[MAX_SEMANTIC_NAME_LENGTH];
-	TinyImageFormat 	mFormat;
+	TinyImageFormat	  mFormat;
 	uint32_t          mBinding;
 	uint32_t          mLocation;
 	uint32_t          mOffset;
@@ -1745,7 +1749,7 @@ typedef struct RendererDesc
 	eastl::vector<eastl::string> mDeviceExtensions;
 #endif
 #if defined(DIRECT3D12)
-	D3D_FEATURE_LEVEL mDxFeatureLevel;
+	D3D_FEATURE_LEVEL            mDxFeatureLevel;
 #endif
 	/// This results in new validation not possible during API calls on the CPU, by creating patched shaders that have validation added directly to the shader.
 	/// However, it can slow things down a lot, especially for applications with numerous PSOs. Time to see the first render frame may take several minutes
@@ -1783,6 +1787,7 @@ typedef struct GPUSettings
 	GPUVendorPreset mGpuVendorPreset;
 	bool            mMultiDrawIndirect;
 	bool            mROVsSupported;
+	bool			mPartialUpdateConstantBufferSupported;
 } GPUSettings;
 
 typedef struct Renderer

@@ -21,7 +21,6 @@
  * specific language governing permissions and limitations
  * under the License.
 */
-
 //this is needed for unix as PATH_MAX is defined instead of MAX_PATH
 #ifndef _WIN32
 #include <limits.h>
@@ -65,7 +64,6 @@
 #define TINYKTX_IMPLEMENTATION
 #include "../../ThirdParty/OpenSource/tinyktx/tinyktx.h"
 
-#define IMEMORY_FROM_HEADER
 #include "../Interfaces/IMemory.h"
 
 // Describes the header of a PVR header-texture
@@ -247,18 +245,6 @@ void iDecodeCompressedImage(unsigned char* dest, unsigned char* src, const int w
 	}
 }
 
-template <typename T>
-inline void swapPixelChannels(T* pixels, int num_pixels, const int channels, const int ch0, const int ch1)
-{
-	for (int i = 0; i < num_pixels; i++)
-	{
-		T tmp = pixels[ch1];
-		pixels[ch1] = pixels[ch0];
-		pixels[ch0] = tmp;
-		pixels += channels;
-	}
-}
-
 Image::Image()
 {
 	pData = NULL;
@@ -398,10 +384,18 @@ unsigned char* Image::GetPixels(const uint mipMapLevel) const
 
 unsigned char* Image::GetPixels(const uint mipMapLevel, const uint arraySlice) const
 {
-	if (mipMapLevel >= mMipMapCount || arraySlice >= mArrayCount)
+	if (mipMapLevel > mMipMapCount || arraySlice > mArrayCount)
 		return NULL;
+    
+    // two ways of storing slices and mipmaps
+    // 1. Old Image way. memory slices * ((w*h*d)*mipmaps)
+    // 2. Mips after slices way. There are w*h*d*s*mipmaps where slices stays constant(doesn't reduce)
+    if(!mMipsAfterSlices) {
+        return pData + GetMipMappedSize(0, mMipMapCount) * arraySlice + GetMipMappedSize(0, mipMapLevel);
+    } else {
+        return pData + GetMipMappedSize(0, mipMapLevel) + arraySlice * GetArraySliceSize(mipMapLevel);
+    }
 
-	return pData + GetMipMappedSize(0, mMipMapCount) * arraySlice + GetMipMappedSize(0, mipMapLevel);
 }
 
 uint32_t Image::GetWidth(const int mipMapLevel) const
@@ -441,21 +435,20 @@ uint Image::GetArraySliceSize(const uint mipMapLevel, TinyImageFormat srcFormat)
 {
 	uint32_t w = GetWidth(mipMapLevel);
 	uint32_t h = GetHeight(mipMapLevel);
+    uint32_t d = GetDepth(mipMapLevel);
+    if(d == 0) d = 1;
 
-	if (srcFormat == TinyImageFormat_UNDEFINED)
-		srcFormat = mFormat;
+    if (srcFormat == TinyImageFormat_UNDEFINED)
+        srcFormat = mFormat;
 
-	uint32_t size;
-	if (TinyImageFormat_IsCompressed(srcFormat))
-	{
-		size = (((w + 3U) >> 2U) * ((h + 3U) >> 2U) * TinyImageFormat_BitSizeOfBlock(srcFormat)) / 8U;
-	}
-	else
-	{
-		size = (w * h * TinyImageFormat_BitSizeOfBlock(srcFormat)) / 8U;
-	}
+    uint32_t const bw = TinyImageFormat_WidthOfBlock(srcFormat);
+    uint32_t const bh = TinyImageFormat_HeightOfBlock(srcFormat);
+    uint32_t const bd = TinyImageFormat_DepthOfBlock(srcFormat);
+    w = (w + (bw-1)) / bw;
+    h = (h + (bh-1)) / bh;
+    d = (d + (bd-1)) / bd;
 
-	return size;
+	return (w * h * d * TinyImageFormat_BitSizeOfBlock(srcFormat)) / 8U;
 }
 
 uint Image::GetNumberOfPixels(const uint firstMipMapLevel, uint nMipMapLevels) const
@@ -656,23 +649,27 @@ bool Image::Unpack()
 	return Convert(destFormat);
 }
 
-uint Image::GetMipMappedSize(const uint firstMipMapLevel, uint nMipMapLevels, TinyImageFormat srcFormat) const
+uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLevels, TinyImageFormat srcFormat) const
 {
-	uint w = GetWidth(firstMipMapLevel);
-	uint h = GetHeight(firstMipMapLevel);
-	uint d = GetDepth(firstMipMapLevel);
+	uint32_t w = GetWidth(firstMipMapLevel);
+	uint32_t h = GetHeight(firstMipMapLevel);
+	uint32_t d = GetDepth(firstMipMapLevel);
+    d = d ? d : 1; // if a cube map treats a 2D texture for calculations
+    uint32_t const s = GetArrayCount();
 
 	if (srcFormat == TinyImageFormat_UNDEFINED)
 		srcFormat = mFormat;
 	
 	// PVR formats get special case
 	uint64_t const tifname = (TinyImageFormat_Code(mFormat) & TinyImageFormat_NAMESPACE_REQUIRED_BITS);
-	if( tifname != TinyImageFormat_NAMESPACE_PVRTC)
+	if( tifname == TinyImageFormat_NAMESPACE_PVRTC)
 	{
-		uint totalSize = 0;
-		uint sizeX = w;
-		uint sizeY = h;
-		uint sizeD = d;
+        // AFAIK pvr isn't supported for arrays
+        ASSERT(s == 1);
+		uint32_t totalSize = 0;
+		uint32_t sizeX = w;
+		uint32_t sizeY = h;
+		uint32_t sizeD = d;
 		int level = nMipMapLevels;
 		
 		uint minWidth = 8;
@@ -732,12 +729,14 @@ uint Image::GetMipMappedSize(const uint firstMipMapLevel, uint nMipMapLevels, Ti
 	}
 
 	size *= TinyImageFormat_BitSizeOfBlock(srcFormat) / 8;
-
-	return (mDepth == 0) ? 6 * size : size;
+    // mips after slices means the slice count is included in mipsize but slices doesn't reduce
+    // as slices are included, cubemaps also just fall out
+    if(mMipsAfterSlices) return size * s;
+    else return (mDepth == 0) ? 6 * size : size;
 }
 
 static void tinyktxddsCallbackError(void *user, char const *msg) {
-	LOGERRORF("Tiny_ ERROR: %s", msg);
+	LOGF(LogLevel::eERROR, "Tiny_ ERROR: %s", msg);
 }
 static void *tinyktxddsCallbackAlloc(void *user, size_t size) {
 	return conf_malloc(size);
@@ -798,8 +797,11 @@ bool iLoadDDSFromMemory(Image* pImage,
 
 	// TheForge Image uses d = 0 as cubemap marker
 	if(TinyDDS_IsCubemap(ctx)) d = 0;
+    else d = d ? d : 1;
+    s = s ? s : 1;
 
 	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
+    pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
 
 	int size = pImage->GetMipMappedSize();
 
@@ -812,25 +814,16 @@ bool iLoadDDSFromMemory(Image* pImage,
 		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * size), true);
 	}
 
-	if (pImage->IsCube())
-	{
-		for (int face = 0; face < 6; face++)
-		{
-			for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
-			{
-				int            faceSize = pImage->GetMipMappedSize(mipMapLevel, 1) / 6;
-				unsigned char* dst = pImage->GetPixels(mipMapLevel, 0) + face * faceSize;
-				memcpy( dst, TinyDDS_ImageRawData(ctx, mipMapLevel), faceSize);
-			}
-		}
-	}
-	else {
-		for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
-			int mmSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-			unsigned char *dst = pImage->GetPixels(mipMapLevel, mipMapLevel);
-			memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), mmSize);
-		}
-	}
+    for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
+        size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
+        size_t const fileSize = TinyDDS_ImageSize(ctx, mipMapLevel);
+        if (expectedSize != fileSize) {
+            LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(),mipMapLevel, expectedSize, fileSize);
+            return false;
+        }
+        unsigned char *dst = pImage->GetPixels(mipMapLevel, 0);
+        memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), fileSize);
+    }
 
 	return true;
 }
@@ -838,7 +831,7 @@ bool iLoadDDSFromMemory(Image* pImage,
 bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memoryAllocationFunc pAllocator, void* pUserData)
 {
 #ifndef TARGET_IOS
-	LOGERRORF("Load PVR failed: Only supported on iOS targets.");
+	LOGF(LogLevel::eERROR, "Load PVR failed: Only supported on iOS targets.");
 	return false;
 #else
 	
@@ -855,19 +848,19 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 
 	if (psPVRHeader->mVersion != gPvrtexV3HeaderVersion)
 	{
-		LOGERRORF( "Load PVR failed: Not a valid PVR V3 header.");
+		LOGF(LogLevel::eERROR, "Load PVR failed: Not a valid PVR V3 header.");
 		return 0;
 	}
 	
 	if (psPVRHeader->mPixelFormat > 3)
 	{
-		LOGERRORF( "Load PVR failed: Not a supported PVR pixel format.  Only PVRTC is supported at the moment.");
+		LOGF(LogLevel::eERROR, "Load PVR failed: Not a supported PVR pixel format.  Only PVRTC is supported at the moment.");
 		return 0;
 	}
 	
 	if (psPVRHeader->mNumSurfaces > 1 && psPVRHeader->mNumFaces > 1)
 	{
-		LOGERRORF( "Load PVR failed: Loading arrays of cubemaps isn't supported.");
+		LOGF(LogLevel::eERROR, "Load PVR failed: Loading arrays of cubemaps isn't supported.");
 		return 0;
 	}
 
@@ -894,7 +887,7 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 		imageFormat = ImageFormat::PVR_4BPPA;
 		break;
 	default:    // NOT SUPPORTED
-		LOGERRORF( "Load PVR failed: pixel type not supported. ");
+		LOGF(LogLevel::eERROR, "Load PVR failed: pixel type not supported. ");
 		ASSERT(0);
 		return false;
 	}
@@ -955,10 +948,13 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 		return false;
 	}
 
-	// TheForge Image uses d = 0 as cubemap marker
-	if(TinyKtx_IsCubemap(ctx)) d = 0;
+    // TheForge Image uses d = 0 as cubemap marker
+    if(TinyKtx_IsCubemap(ctx)) d = 0;
+    else d = d ? d : 1;
+    s = s ? s : 1;
 
 	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
+    pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
 
 	int size = pImage->GetMipMappedSize();
 
@@ -970,59 +966,36 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 	{
 		pImage->SetPixels((uint8_t*)conf_malloc(sizeof(uint8_t) * size), true);
 	}
+    
+    for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
+    {
+        uint8_t const* src = (uint8_t const*) TinyKtx_ImageRawData(ctx, mipMapLevel);
+        uint8_t *dst = pImage->GetPixels(mipMapLevel, 0);
 
-	if (pImage->IsCube())
-	{
-		for (int face = 0; face < 6; face++)
-		{
-			for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
-			{
-				uint32_t const faceSize = pImage->GetMipMappedSize(mipMapLevel, 1) / 6;
-				uint8_t const* src = (uint8_t const*) TinyKtx_ImageRawData(ctx, mipMapLevel);
-				uint8_t * dst = pImage->GetPixels(mipMapLevel, 0) + face * faceSize;
+        if(TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
+            uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
+            uint32_t const dstStride = (pImage->GetWidth(mipMapLevel) * TinyImageFormat_BitSizeOfBlock(fmt)) /
+                                        (TinyImageFormat_PixelCountOfBlock(fmt) * 8);
 
-				if(TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
-					uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
-					uint32_t const dstStride = faceSize / pImage->GetHeight(mipMapLevel);
-
-					for (uint32_t ww = 0u; ww < pImage->GetArrayCount(); ++ww) {
-						for (uint32_t zz = 0; zz < pImage->GetDepth(); ++zz) {
-							for (uint32_t yy = 0; yy < pImage->GetHeight(); ++yy) {
-								memcpy(dst, src, dstStride);
-								src += srcStride;
-								dst += dstStride;
-							}
-						}
-					}
-				} else {
-					memcpy(dst, src, faceSize);
-				}
-			}
-		}
-	}
-	else {
-		for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
-			uint32_t const mmSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-			uint8_t const* src = (uint8_t const*) TinyKtx_ImageRawData(ctx, mipMapLevel);
-			uint8_t *dst = pImage->GetPixels(mipMapLevel, mipMapLevel);
-
-			if(TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
-				uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
-				uint32_t const dstStride =  mmSize / pImage->GetHeight(mipMapLevel);
-
-				for (uint32_t ww = 0u; ww < pImage->GetArrayCount(); ++ww) {
-					for (uint32_t zz = 0; zz < pImage->GetDepth(); ++zz) {
-						for (uint32_t yy = 0; yy < pImage->GetHeight(); ++yy) {
-							memcpy(dst, src, dstStride);
-							src += srcStride;
-							dst += dstStride;
-						}
-					}
-				}
-			} else {
-				memcpy(dst, src, mmSize);
-			}
-		}
+            for (uint32_t ww = 0u; ww < TinyKtx_ArraySlices(ctx); ++ww) {
+                for (uint32_t zz = 0; zz < TinyKtx_Depth(ctx); ++zz) {
+                    for (uint32_t yy = 0; yy < TinyKtx_Height(ctx); ++yy) {
+                        memcpy(dst, src, dstStride);
+                        src += srcStride;
+                        dst += dstStride;
+                    }
+                }
+            }
+        } else {
+            // fast path data is packed we can just copy
+            size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
+            size_t const fileSize = TinyKtx_ImageSize(ctx, mipMapLevel);
+            if (expectedSize != fileSize) {
+                LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(),mipMapLevel, expectedSize, fileSize);
+                return false;
+            }
+            memcpy(dst, src, fileSize);
+        }
 	}
 	return true;
 }
@@ -1158,7 +1131,7 @@ bool Image::iLoadGNFFromMemory(const char* memory, size_t memSize, const bool us
 		mFormat = ImageFormat::GNF_BC7;
 	else
 	{
-		LOGERRORF( "Couldn't find the data format of the texture");
+		LOGF(LogLevel::eERROR, "Couldn't find the data format of the texture");
 		return false;
 	}
 
@@ -1305,7 +1278,7 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 	file.Open(fileName, FM_ReadBinary, root);
 	if (!file.IsOpen())
 	{
-		LOGERRORF( "\"%s\": Image file not found.", fileName);
+		LOGF(LogLevel::eERROR, "\"%s\": Image file not found.", fileName);
 		return false;
 	}
 
@@ -1315,7 +1288,7 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 	{
 		//char output[256];
 		//sprintf(output, "\"%s\": Image file is empty.", fileName);
-		LOGERRORF( "\"%s\": Image is an empty file.", fileName);
+		LOGF(LogLevel::eERROR, "\"%s\": Image is an empty file.", fileName);
 		file.Close();
 		return false;
 	}
@@ -1342,7 +1315,7 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 	}
 	if (!support)
 	{
-		LOGERRORF( "Can't load this file format for image  :  %s", fileName);
+		LOGF(LogLevel::eERROR, "Can't load this file format for image  :  %s", fileName);
 	}
 	else
 	{
@@ -1641,7 +1614,7 @@ bool Image::Save(const char* fileName)
 	}
 	if (!support)
 	{
-		LOGERRORF( "Can't save this file format for image  :  %s", fileName);
+		LOGF(LogLevel::eERROR, "Can't save this file format for image  :  %s", fileName);
 	}
 
 	return false;

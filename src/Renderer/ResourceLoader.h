@@ -32,7 +32,7 @@
 #include "../Renderer/IRenderer.h"
 #include "../OS/Core/Atomics.h"
 #include "../OS/Interfaces/IFileSystem.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
+#include "../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 
 typedef struct BufferLoadDesc
 {
@@ -45,7 +45,7 @@ typedef struct BufferLoadDesc
 
 typedef struct RawImageData
 {
-	unsigned char* pRawData;
+	uint8_t* pRawData;
 	TinyImageFormat mFormat;
 	uint32_t mWidth, mHeight, mDepth, mArraySize, mMipLevels;
 	bool mMipsAfterSlices;

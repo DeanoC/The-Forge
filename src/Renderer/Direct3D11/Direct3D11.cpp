@@ -40,7 +40,11 @@
 #include "../../ThirdParty/OpenSource/EASTL/functional.h"
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "../../OS/Image/ImageEnums.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_apis.h"
+#include "../../OS/Image/ImageHelper.h"
+#include "Direct3D11CapBuilder.h"
 #include "Direct3D11Commands.h"
 
 #if !defined(_WIN32)
@@ -137,191 +141,6 @@ D3D11_FILL_MODE gFillModeTranslator[MAX_FILL_MODES] =
 	D3D11_FILL_WIREFRAME,
 };
 
-const DXGI_FORMAT gFormatTranslatorTypeless[] = {
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R8_TYPELESS,
-	DXGI_FORMAT_R8G8_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R8G8B8A8_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R8_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8S not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16S not directly supported
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16F not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16I not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16UI not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGBE8 not directly supported
-	DXGI_FORMAT_R9G9B9E5_SHAREDEXP,
-	DXGI_FORMAT_R11G11B10_FLOAT,
-	DXGI_FORMAT_B5G6R5_UNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGBA4 not directly supported
-	DXGI_FORMAT_R10G10B10A2_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R24G8_TYPELESS,
-	DXGI_FORMAT_R24G8_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,  //D32F
-	DXGI_FORMAT_BC1_TYPELESS,
-	DXGI_FORMAT_BC2_TYPELESS,
-	DXGI_FORMAT_BC3_TYPELESS,
-	DXGI_FORMAT_BC4_TYPELESS, //ATI2N
-	DXGI_FORMAT_BC5_TYPELESS, //ATI2N
-	// PVR formats
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPP = 56,
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPPA = 57,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPP = 58,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPPA = 59,
-	DXGI_FORMAT_UNKNOWN, // INTZ = 60,  //  NVidia hack. Supported on all DX10+ HW
-	//  XBox 360 specific fron buffer formats. NOt listed in other renderers. Please, add them when extend this structure.
-	DXGI_FORMAT_UNKNOWN, // LE_XRGB8 = 61,
-	DXGI_FORMAT_UNKNOWN, // LE_ARGB8 = 62,
-	DXGI_FORMAT_UNKNOWN, // LE_X2RGB10 = 63,
-	DXGI_FORMAT_UNKNOWN, // LE_A2RGB10 = 64,
-	// compressed mobile forms
-	DXGI_FORMAT_UNKNOWN, // ETC1 = 65,  //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATC = 66,   //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATCA = 67,  //  RGBA, explicit alpha
-	DXGI_FORMAT_UNKNOWN, // ATCI = 68,  //  RGBA, interpolated alpha
-	DXGI_FORMAT_UNKNOWN, // RAWZ = 69, //depth only, Nvidia (requires recombination of data) //FIX IT: PS3 as well?
-	DXGI_FORMAT_UNKNOWN, // DF16 = 70, //depth only, Intel/AMD
-	DXGI_FORMAT_UNKNOWN, // STENCILONLY = 71, // stencil ony usage
-	DXGI_FORMAT_UNKNOWN, // GNF_BC1 = 72,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC2 = 73,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC3 = 74,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC4 = 75,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC5 = 76,
-	DXGI_FORMAT_BC6H_TYPELESS, // GNF_BC6HUF = 77,
-	DXGI_FORMAT_BC6H_TYPELESS, // GNF_BC6HSF = 78,
-	DXGI_FORMAT_BC7_UNORM, // GNF_BC7 = 79,
-	// Reveser Form
-	DXGI_FORMAT_B8G8R8A8_UNORM, // BGRA8 = 80,
-	// Extend for DXGI
-	DXGI_FORMAT_UNKNOWN, // X8D24PAX32 = 81,
-	DXGI_FORMAT_UNKNOWN, // S8 = 82,
-	DXGI_FORMAT_UNKNOWN, // D16S8 = 83,
-	DXGI_FORMAT_UNKNOWN, // D32S8 = 84,
-};
-
-const DXGI_FORMAT gFormatTranslator[] = {
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::NONE
-	DXGI_FORMAT_R8_UNORM,						   // ImageFormat::R8
-	DXGI_FORMAT_R8G8_UNORM,						 // ImageFormat::RG8
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8 not directly supported
-	DXGI_FORMAT_R8G8B8A8_UNORM,					 // ImageFormat::RGBA8
-	DXGI_FORMAT_R16_UNORM,						  // ImageFormat::R16
-	DXGI_FORMAT_R16G16_UNORM,					   // ImageFormat::RG16
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB16 not directly supported
-	DXGI_FORMAT_R16G16B16A16_UNORM,				 // ImageFormat::RGBA16
-	DXGI_FORMAT_R8_SNORM,						   // ImageFormat::R8S
-	DXGI_FORMAT_R8G8_SNORM,						 // ImageFormat::RG8S
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8S not directly supported
-	DXGI_FORMAT_R8G8B8A8_SNORM,
-	DXGI_FORMAT_R16_SNORM,
-	DXGI_FORMAT_R16G16_SNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGB16S not directly supported
-	DXGI_FORMAT_R16G16B16A16_SNORM,
-	DXGI_FORMAT_R16_FLOAT,
-	DXGI_FORMAT_R16G16_FLOAT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16F not directly supported
-	DXGI_FORMAT_R16G16B16A16_FLOAT,
-	DXGI_FORMAT_R32_FLOAT,
-	DXGI_FORMAT_R32G32_FLOAT,
-	DXGI_FORMAT_R32G32B32_FLOAT,
-	DXGI_FORMAT_R32G32B32A32_FLOAT,
-	DXGI_FORMAT_R16_SINT,
-	DXGI_FORMAT_R16G16_SINT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16I not directly supported
-	DXGI_FORMAT_R16G16B16A16_SINT,
-	DXGI_FORMAT_R32_SINT,
-	DXGI_FORMAT_R32G32_SINT,
-	DXGI_FORMAT_R32G32B32_SINT,
-	DXGI_FORMAT_R32G32B32A32_SINT,
-	DXGI_FORMAT_R16_UINT,
-	DXGI_FORMAT_R16G16_UINT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16UI not directly supported
-	DXGI_FORMAT_R16G16B16A16_UINT,
-	DXGI_FORMAT_R32_UINT,
-	DXGI_FORMAT_R32G32_UINT,
-	DXGI_FORMAT_R32G32B32_UINT,
-	DXGI_FORMAT_R32G32B32A32_UINT,
-	DXGI_FORMAT_UNKNOWN,  // RGBE8 not directly supported
-	DXGI_FORMAT_R9G9B9E5_SHAREDEXP,
-	DXGI_FORMAT_R11G11B10_FLOAT,
-	DXGI_FORMAT_B5G6R5_UNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGBA4 not directly supported
-	DXGI_FORMAT_R10G10B10A2_UNORM,
-	DXGI_FORMAT_D16_UNORM,
-	DXGI_FORMAT_D24_UNORM_S8_UINT,
-	DXGI_FORMAT_D24_UNORM_S8_UINT,
-	DXGI_FORMAT_D32_FLOAT,  //D32F
-	DXGI_FORMAT_BC1_UNORM,
-	DXGI_FORMAT_BC2_UNORM,
-	DXGI_FORMAT_BC3_UNORM,
-	DXGI_FORMAT_BC4_UNORM, //ATI2N
-	DXGI_FORMAT_BC5_UNORM, //ATI2N
-	// PVR formats
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPP = 56,
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPPA = 57,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPP = 58,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPPA = 59,
-	DXGI_FORMAT_UNKNOWN, // INTZ = 60,  //  NVidia hack. Supported on all DX10+ HW
-	//  XBox 360 specific fron buffer formats. NOt listed in other renderers. Please, add them when extend this structure.
-	DXGI_FORMAT_UNKNOWN, // LE_XRGB8 = 61,
-	DXGI_FORMAT_UNKNOWN, // LE_ARGB8 = 62,
-	DXGI_FORMAT_UNKNOWN, // LE_X2RGB10 = 63,
-	DXGI_FORMAT_UNKNOWN, // LE_A2RGB10 = 64,
-	// compressed mobile forms
-	DXGI_FORMAT_UNKNOWN, // ETC1 = 65,  //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATC = 66,   //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATCA = 67,  //  RGBA, explicit alpha
-	DXGI_FORMAT_UNKNOWN, // ATCI = 68,  //  RGBA, interpolated alpha
-	DXGI_FORMAT_UNKNOWN, // RAWZ = 69, //depth only, Nvidia (requires recombination of data) //FIX IT: PS3 as well?
-	DXGI_FORMAT_UNKNOWN, // DF16 = 70, //depth only, Intel/AMD
-	DXGI_FORMAT_UNKNOWN, // STENCILONLY = 71, // stencil ony usage
-	DXGI_FORMAT_UNKNOWN, // GNF_BC1 = 72,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC2 = 73,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC3 = 74,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC4 = 75,
-	DXGI_FORMAT_UNKNOWN, // GNF_BC5 = 76,
-	DXGI_FORMAT_BC6H_UF16, // GNF_BC6 = 77,
-	DXGI_FORMAT_BC6H_SF16, // GNF_BC6 = 78,
-	DXGI_FORMAT_BC7_UNORM, // GNF_BC7 = 79,
-	// Reveser Form
-	DXGI_FORMAT_B8G8R8A8_UNORM, // BGRA8 = 80,
-	// Extend for DXGI
-	DXGI_FORMAT_UNKNOWN, // X8D24PAX32 = 81,
-	DXGI_FORMAT_UNKNOWN, // S8 = 82,
-	DXGI_FORMAT_UNKNOWN, // D16S8 = 83,
-	DXGI_FORMAT_UNKNOWN, // D32S8 = 84,
-};
 // clang-format on
 
 // DX Commands cache which gets processed on queue submission.
@@ -362,12 +181,10 @@ eastl::unordered_map<Cmd*, eastl::vector<CachedCmd> >         gCachedCmds;
 
 // Internal utility functions (may become external one day)
 //uint64_t					  util_dx_determine_storage_counter_offset(uint64_t buffer_size);
-DXGI_FORMAT util_to_dx_image_format_typeless(ImageFormat::Enum format);
 DXGI_FORMAT util_to_dx_uav_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT util_to_dx_dsv_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT util_to_dx_srv_format(DXGI_FORMAT defaultFormat);
 DXGI_FORMAT util_to_dx_stencil_format(DXGI_FORMAT defaultFormat);
-DXGI_FORMAT util_to_dx_image_format(ImageFormat::Enum format, bool srgb);
 //DXGI_FORMAT					   util_to_dx_swapchain_format(ImageFormat::Enum format);
 //D3D12_SHADER_VISIBILITY		   util_to_dx_shader_visibility(ShaderStage stages);
 //D3D12_DESCRIPTOR_RANGE_TYPE	   util_to_dx_descriptor_range(DescriptorType type);
@@ -527,74 +344,30 @@ DXGI_FORMAT util_to_dx_stencil_format(DXGI_FORMAT defaultFormat)
 	}
 }
 
-DXGI_FORMAT util_to_dx_swapchain_format(ImageFormat::Enum format)
+DXGI_FORMAT util_to_dx_swapchain_format(TinyImageFormat format)
 {
 	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
 
 	// FLIP_DISCARD and FLIP_SEQEUNTIAL swapchain buffers only support these formats
 	switch (format)
 	{
-		case ImageFormat::RGBA16F: result = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		case ImageFormat::BGRA8: result = DXGI_FORMAT_B8G8R8A8_UNORM; break;
-		case ImageFormat::RGBA8: result = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-		case ImageFormat::RGB10A2: result = DXGI_FORMAT_R10G10B10A2_UNORM; break;
-		default: break;
+	case TinyImageFormat_R16G16B16A16_SFLOAT: result = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case TinyImageFormat_B8G8R8A8_UNORM: result = DXGI_FORMAT_B8G8R8A8_UNORM; break;
+	case TinyImageFormat_R8G8B8A8_UNORM: result = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+	case TinyImageFormat_B8G8R8A8_SRGB: result = DXGI_FORMAT_B8G8R8A8_UNORM; break;
+	case TinyImageFormat_R8G8B8A8_SRGB: result = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+	case TinyImageFormat_R10G10B10A2_UNORM: result = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+	default: break;
 	}
 
 	if (result == DXGI_FORMAT_UNKNOWN)
 	{
-		LOGERRORF( "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
+		LOGF(LogLevel::eERROR, "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
 	}
 
 	return result;
 }
 
-DXGI_FORMAT util_to_dx_image_format_typeless(ImageFormat::Enum format)
-{
-	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
-	if (format >= sizeof(gFormatTranslatorTypeless) / sizeof(DXGI_FORMAT))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
-	}
-	else
-	{
-		result = gFormatTranslatorTypeless[format];
-	}
-
-	return result;
-}
-
-DXGI_FORMAT util_to_dx_image_format(ImageFormat::Enum format, bool srgb)
-{
-	DXGI_FORMAT result = DXGI_FORMAT_UNKNOWN;
-	if (format >= sizeof(gFormatTranslator) / sizeof(DXGI_FORMAT))
-	{
-		LOGERRORF( "Failed to Map from ConfettilFileFromat to DXGI format, should add map method in gDX12FormatTranslator");
-	}
-	else
-	{
-		result = gFormatTranslator[format];
-		if (srgb)
-		{
-			if (result == DXGI_FORMAT_R8G8B8A8_UNORM)
-				result = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_B8G8R8A8_UNORM)
-				result = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_B8G8R8X8_UNORM)
-				result = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC1_UNORM)
-				result = DXGI_FORMAT_BC1_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC2_UNORM)
-				result = DXGI_FORMAT_BC2_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC3_UNORM)
-				result = DXGI_FORMAT_BC3_UNORM_SRGB;
-			else if (result == DXGI_FORMAT_BC7_UNORM)
-				result = DXGI_FORMAT_BC7_UNORM_SRGB;
-		}
-	}
-
-	return result;
-}
 /************************************************************************/
 // Gloabals
 /************************************************************************/
@@ -614,7 +387,7 @@ static void internal_log(LogType type, const char* msg, const char* component)
 		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
 		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -882,7 +655,7 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -910,7 +683,7 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, Subr
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -941,7 +714,7 @@ static void AddDevice(Renderer* pRenderer)
 
 	if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pRenderer->pDXGIFactory)))
 	{
-		LOGERRORF( "Could not create DXGI factory.");
+		LOGF(LogLevel::eERROR, "Could not create DXGI factory.");
 		return;
 	}
 	ASSERT(pRenderer->pDXGIFactory);
@@ -951,6 +724,7 @@ static void AddDevice(Renderer* pRenderer)
 	{
 		IDXGIAdapter1*                    pGpu = NULL;
 		D3D_FEATURE_LEVEL                 mMaxSupportedFeatureLevel = (D3D_FEATURE_LEVEL)0;
+		D3D11_FEATURE_DATA_D3D11_OPTIONS  mFeatureDataOptions = {};
 		D3D11_FEATURE_DATA_D3D11_OPTIONS2 mFeatureDataOptions2 = {};
 		SIZE_T                            mDedicatedVideoMemory = 0;
 		char                              mVendorId[MAX_GPU_VENDOR_STRING_LENGTH];
@@ -982,11 +756,21 @@ static void AddDevice(Renderer* pRenderer)
 						adapter, D3D_DRIVER_TYPE_UNKNOWN, (HMODULE)0, 0, feature_levels, 2, D3D11_SDK_VERSION, &pRenderer->pDxDevice,
 						&featLevelOut, NULL);
 
+
+					D3D11_FEATURE_DATA_D3D11_OPTIONS featureData = {};
+					hr = pRenderer->pDxDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS, &featureData, sizeof(featureData));
+					if (FAILED(hr)) {
+						LOGF(LogLevel::eINFO, "D3D11 CheckFeatureSupport D3D11_FEATURE_D3D11_OPTIONS error 0x%x", hr);
+					}
 					D3D11_FEATURE_DATA_D3D11_OPTIONS2 featureData2 = {};
-					pRenderer->pDxDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &featureData2, sizeof(featureData2));
+					hr = pRenderer->pDxDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS2, &featureData2, sizeof(featureData2));
+					if (FAILED(hr)) {
+						LOGF(LogLevel::eINFO, "D3D11 CheckFeatureSupport D3D11_FEATURE_D3D11_OPTIONS2 error 0x%x", hr);
+					}
 
 					gpuDesc[pRenderer->mNumOfGPUs].mMaxSupportedFeatureLevel = featLevelOut;
 					gpuDesc[pRenderer->mNumOfGPUs].mDedicatedVideoMemory = desc.DedicatedVideoMemory;
+					gpuDesc[pRenderer->mNumOfGPUs].mFeatureDataOptions = featureData;
 					gpuDesc[pRenderer->mNumOfGPUs].mFeatureDataOptions2 = featureData2;
 
 					//save vendor and model Id as string
@@ -1061,6 +845,7 @@ static void AddDevice(Renderer* pRenderer)
 		// Determine root signature size for this gpu driver
 		pRenderer->mGpuSettings[i].mMaxRootSignatureDWORDS = 0U;    // no such thing
 		pRenderer->mGpuSettings[i].mROVsSupported = gpuDesc[i].mFeatureDataOptions2.ROVsSupported ? true : false;
+		pRenderer->mGpuSettings[i].mPartialUpdateConstantBufferSupported = gpuDesc[i].mFeatureDataOptions.ConstantBufferPartialUpdate ? true : false;
 	}
 
 	uint32_t gpuIndex = 0;
@@ -1114,7 +899,7 @@ static void AddDevice(Renderer* pRenderer)
 		&pRenderer->pDxContext);
 	ASSERT(SUCCEEDED(hr));
 	if (FAILED(hr))
-		LOGERRORF( "Failed to create D3D11 device and context.");
+		LOGF(LogLevel::eERROR, "Failed to create D3D11 device and context.");
 }
 
 static void RemoveDevice(Renderer* pRenderer)
@@ -1206,8 +991,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			//when initializing the forge
 			RemoveDevice(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGERRORF( "Office preset is not supported by The Forge.");
+			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -1215,6 +1000,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			return;
 		}
 	}
+
+	utils_caps_builder(pRenderer);
 
 	create_default_resources(pRenderer);
 
@@ -1385,7 +1172,6 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	descColor.mClearValue = pSwapChain->mDesc.mColorClearValue;
 	descColor.mSampleCount = SAMPLE_COUNT_1;
 	descColor.mSampleQuality = 0;
-	descColor.mSrgb = pSwapChain->mDesc.mSrgb;
 
 	pSwapChain->ppSwapchainRenderTargets =
 		(RenderTarget**)conf_calloc(pSwapChain->mDesc.mImageCount, sizeof(*pSwapChain->ppSwapchainRenderTargets));
@@ -1533,7 +1319,8 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	ASSERT(pDesc);
 	ASSERT(ppRenderTarget);
 
-	bool isDepth = ImageFormat::IsDepthFormat(pDesc->mFormat);
+	bool const isDepth = TinyImageFormat_IsDepthAndStencil(pDesc->mFormat) ||
+		TinyImageFormat_IsDepthOnly(pDesc->mFormat);
 
 	ASSERT(!((isDepth) && (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_TEXTURE)) && "Cannot use depth stencil as UAV");
 
@@ -1543,7 +1330,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	pRenderTarget->mDesc = *pDesc;
 
 	//add to gpu
-	DXGI_FORMAT dxFormat = util_to_dx_image_format(pRenderTarget->mDesc.mFormat, pDesc->mSrgb);
+	DXGI_FORMAT dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pRenderTarget->mDesc.mFormat);
 	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	TextureDesc textureDesc = {};
@@ -1565,7 +1352,6 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 	// Set this by default to be able to sample the rendertarget in shader
 	textureDesc.mWidth = pDesc->mWidth;
 	textureDesc.pNativeHandle = pDesc->pNativeHandle;
-	textureDesc.mSrgb = pDesc->mSrgb;
 	textureDesc.pDebugName = pDesc->pDebugName;
 	textureDesc.mNodeIndex = pDesc->mNodeIndex;
 	textureDesc.pSharedNodeIndices = pDesc->pSharedNodeIndices;
@@ -1590,9 +1376,12 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		pRenderTarget->pDxRtvDescriptors = (ID3D11RenderTargetView**)conf_calloc(numRTVs + 1, sizeof(ID3D11RenderTargetView*));
 	}
 
-	!isDepth ? add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxRtvDescriptors[0])
-			 : add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDsvDescriptors[0]);
-
+	if (isDepth) {
+		add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxDsvDescriptors[0]);
+	}
+	else {
+		add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, 0, -1, &pRenderTarget->pDxRtvDescriptors[0]);
+	}
 	for (uint32_t i = 0; i < pDesc->mMipLevels; ++i)
 	{
 		const uint32_t depthOrArraySize = pDesc->mDepth * pDesc->mArraySize;
@@ -1601,20 +1390,26 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 		{
 			for (uint32_t j = 0; j < depthOrArraySize; ++j)
 			{
-				!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-					? add_rtv(
-						  pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
-						  &pRenderTarget->pDxRtvDescriptors[1 + i * depthOrArraySize + j])
-					: add_dsv(
-						  pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
-						  &pRenderTarget->pDxDsvDescriptors[1 + i * depthOrArraySize + j]);
+				if (isDepth) {
+					add_dsv(
+						pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
+						&pRenderTarget->pDxDsvDescriptors[1 + i * depthOrArraySize + j]);
+				}
+				else {
+					add_rtv(
+						pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, j,
+						&pRenderTarget->pDxRtvDescriptors[1 + i * depthOrArraySize + j]);
+				}
 			}
 		}
 		else
 		{
-			!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat)
-				? add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxRtvDescriptors[1 + i])
-				: add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDsvDescriptors[1 + i]);
+			if (isDepth) {
+				add_dsv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxDsvDescriptors[1 + i]);
+			}
+			else {
+				add_rtv(pRenderer, pRenderTarget->pTexture->pDxResource, dxFormat, i, -1, &pRenderTarget->pDxRtvDescriptors[1 + i]);
+			}
 		}
 	}
 
@@ -1623,15 +1418,18 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 
 void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 {
+	bool const isDepth = TinyImageFormat_IsDepthAndStencil(pRenderTarget->mDesc.mFormat) ||
+		TinyImageFormat_IsDepthOnly(pRenderTarget->mDesc.mFormat);
+
 	removeTexture(pRenderer, pRenderTarget->pTexture);
 
-	if (!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat))
+	if (isDepth)
 	{
-		SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[0]);
+		SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[0]);
 	}
 	else
 	{
-		SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[0]);
+		SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[0]);
 	}
 
 	const uint32_t depthOrArraySize = pRenderTarget->mDesc.mArraySize * pRenderTarget->mDesc.mDepth;
@@ -1640,25 +1438,25 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
 			for (uint32_t j = 0; j < depthOrArraySize; ++j)
-				if (!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat))
+				if (isDepth)
 				{
-					SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[1 + i * depthOrArraySize + j]);
+					SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[1 + i * depthOrArraySize + j]);
 				}
 				else
 				{
-					SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[1 + i * depthOrArraySize + j]);
+					SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[1 + i * depthOrArraySize + j]);
 				}
 	}
 	else
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
-			if (!ImageFormat::IsDepthFormat(pRenderTarget->mDesc.mFormat))
+			if (isDepth)
 			{
-				SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[1 + i]);
+				SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[1 + i]);
 			}
 			else
 			{
-				SAFE_RELEASE(pRenderTarget->pDxDsvDescriptors[1 + i]);
+				SAFE_RELEASE(pRenderTarget->pDxRtvDescriptors[1 + i]);
 			}
 	}
 
@@ -1684,7 +1482,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	desc.AddressU = util_to_dx_texture_address_mode(pDesc->mAddressU);
 	desc.AddressV = util_to_dx_texture_address_mode(pDesc->mAddressV);
 	desc.AddressW = util_to_dx_texture_address_mode(pDesc->mAddressW);
-	desc.MipLODBias = pDesc->mMipLosBias;
+	desc.MipLODBias = pDesc->mMipLodBias;
 	desc.MaxAnisotropy = max((UINT)pDesc->mMaxAnisotropy, 1U);
 	desc.ComparisonFunc = gComparisonFuncTranslator[pDesc->mCompareFunc];
 	desc.BorderColor[0] = 0.0f;
@@ -1692,10 +1490,10 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	desc.BorderColor[2] = 0.0f;
 	desc.BorderColor[3] = 0.0f;
 	desc.MinLOD = 0.0f;
-	desc.MaxLOD = ((pDesc->mMipMapMode == MIPMAP_MODE_LINEAR) ? D3D11_FLOAT32_MAX : 0.0f);
+	desc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	if (FAILED(pRenderer->pDxDevice->CreateSamplerState(&desc, &pSampler->pSamplerState)))
-		LOGERRORF( "Failed to create sampler state.");
+		LOGF(LogLevel::eERROR, "Failed to create sampler state.");
 
 	*ppSampler = pSampler;
 }
@@ -1937,7 +1735,7 @@ D3D11_CPU_ACCESS_FLAG util_determine_dx_cpu_access_flags(ResourceMemoryUsage mem
 	}
 }
 
-D3D11_RESOURCE_MISC_FLAG util_determine_dx_resource_misc_flags(DescriptorType type, ImageFormat::Enum format)
+D3D11_RESOURCE_MISC_FLAG util_determine_dx_resource_misc_flags(DescriptorType type, TinyImageFormat format)
 {
 	uint32_t ret = {};
 	if (DESCRIPTOR_TYPE_TEXTURE_CUBE == (type & DESCRIPTOR_TYPE_TEXTURE_CUBE))
@@ -1947,11 +1745,11 @@ D3D11_RESOURCE_MISC_FLAG util_determine_dx_resource_misc_flags(DescriptorType ty
 
 	if (DESCRIPTOR_TYPE_BUFFER_RAW == (type & DESCRIPTOR_TYPE_BUFFER_RAW))
 		ret |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-	else if ((type & DESCRIPTOR_TYPE_BUFFER) && format == ImageFormat::NONE)
+	else if ((type & DESCRIPTOR_TYPE_BUFFER) && format == TinyImageFormat_UNDEFINED)
 		ret |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	if (DESCRIPTOR_TYPE_RW_BUFFER_RAW == (type & DESCRIPTOR_TYPE_RW_BUFFER_RAW))
 		ret |= D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
-	else if ((type & DESCRIPTOR_TYPE_RW_BUFFER) && format == ImageFormat::NONE)
+	else if ((type & DESCRIPTOR_TYPE_RW_BUFFER) && format == TinyImageFormat_UNDEFINED)
 		ret |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
 	return (D3D11_RESOURCE_MISC_FLAG)ret;
@@ -2020,7 +1818,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	{
 		if (pBuffer->mDesc.mVertexStride == 0)
 		{
-			LOGERRORF( "Vertex Stride must be a non zero value");
+			LOGF(LogLevel::eERROR, "Vertex Stride must be a non zero value");
 			ASSERT(false);
 		}
 	}
@@ -2035,10 +1833,10 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		srvDesc.Buffer.NumElements = (UINT)(pBuffer->mDesc.mElementCount);
 		srvDesc.Buffer.ElementWidth = (UINT)(pBuffer->mDesc.mStructStride);
 		srvDesc.Buffer.ElementOffset = 0;
-		srvDesc.Format = util_to_dx_image_format(pDesc->mFormat, false);
+		srvDesc.Format = (DXGI_FORMAT) TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 		if (DESCRIPTOR_TYPE_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER_RAW))
 		{
-			if (pDesc->mFormat != ImageFormat::NONE)
+			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 		}
@@ -2062,14 +1860,14 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		uavDesc.Buffer.Flags = 0;
 		if (DESCRIPTOR_TYPE_RW_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER_RAW))
 		{
-			if (pDesc->mFormat != ImageFormat::NONE)
+			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			uavDesc.Buffer.Flags |= D3D11_BUFFER_UAV_FLAG_RAW;
 		}
-		else if (pDesc->mFormat != ImageFormat::NONE)
+		else if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
 		{
-			uavDesc.Format = util_to_dx_image_format(pDesc->mFormat, false);
+			uavDesc.Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 		}
 
 		pRenderer->pDxDevice->CreateUnorderedAccessView(pBuffer->pDxResource, &uavDesc, &pBuffer->pDxUavHandle);
@@ -2099,7 +1897,27 @@ void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange)
 	switch (mem)
 	{
 		case RESOURCE_MEMORY_USAGE_CPU_ONLY: mapType = D3D11_MAP_READ_WRITE; break;
-		case RESOURCE_MEMORY_USAGE_CPU_TO_GPU: mapType = D3D11_MAP_WRITE_NO_OVERWRITE; break;
+		case RESOURCE_MEMORY_USAGE_CPU_TO_GPU: 
+			// its possible a driver doesn't support partial updates to constant buffers
+			// this errors out in that case if a partial update is asked for
+			// To maintain API compatibility on these devices, a cpu buffer
+			// should shadow and upload when all updates are finished but thats not
+			// an easy thing as its not on Unmap but first usage...
+			if (pBuffer->mDesc.mDescriptors == DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+				if (pRange == NULL) {
+					mapType = D3D11_MAP_WRITE_DISCARD;
+				}
+				else if (pRenderer->mGpuSettings->mPartialUpdateConstantBufferSupported) {
+					mapType = D3D11_MAP_WRITE_NO_OVERWRITE;
+				}
+				else {
+					LOGF(LogLevel::eERROR, "Device doesn't support partial uniform buffer updates");
+				}
+			}
+			else {
+				mapType = D3D11_MAP_WRITE_NO_OVERWRITE;
+			}
+			break;
 		case RESOURCE_MEMORY_USAGE_GPU_TO_CPU: mapType = D3D11_MAP_READ; break;
 		default: break;
 	}
@@ -2120,7 +1938,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
+		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -2143,21 +1961,42 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	}
 
 	//add to gpu
-	DXGI_FORMAT    dxFormat = util_to_dx_image_format(pDesc->mFormat, pDesc->mSrgb);
+	DXGI_FORMAT    dxFormat = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(pDesc->mFormat);
 	DescriptorType descriptors = pDesc->mDescriptors;
+	D3D11_RESOURCE_DIMENSION res_dim = {};
+	if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D)
+	{
+		ASSERT(pDesc->mDepth == 1);
+		res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE2D;
+	}
+	else if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D)
+	{
+		res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE3D;
+	}
+	else
+	{
+		if (pDesc->mDepth > 1)
+			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE3D;
+		else if (pDesc->mHeight > 1)
+			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE2D;
+		else
+			res_dim = D3D11_RESOURCE_DIMENSION_TEXTURE1D;
+	}
 
 	ASSERT(DXGI_FORMAT_UNKNOWN != dxFormat);
 
 	if (NULL == pTexture->pDxResource)
 	{
-		if (pDesc->mDepth > 1)
+		switch (res_dim)
+		{
+		case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
 		{
 			ID3D11Texture3D*     pTex2D;
 			D3D11_TEXTURE3D_DESC desc = {};
 			desc.BindFlags = util_determine_dx_bind_flags(pDesc->mDescriptors, pDesc->mStartState);
 			desc.CPUAccessFlags = 0;
 			desc.Depth = pDesc->mDepth;
-			desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
+			desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
 			desc.Height = pDesc->mHeight;
 			desc.MipLevels = pDesc->mMipLevels;
 			desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
@@ -2167,15 +2006,16 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			desc.Width = pDesc->mWidth;
 			pRenderer->pDxDevice->CreateTexture3D(&desc, NULL, &pTex2D);
 			pTexture->pDxResource = pTex2D;
+			break;
 		}
-		else if (pDesc->mHeight > 1)
+		case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
 		{
 			ID3D11Texture2D*     pTex2D;
 			D3D11_TEXTURE2D_DESC desc = {};
 			desc.ArraySize = pDesc->mArraySize;
 			desc.BindFlags = util_determine_dx_bind_flags(pDesc->mDescriptors, pDesc->mStartState);
 			desc.CPUAccessFlags = 0;
-			desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
+			desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
 			desc.Height = pDesc->mHeight;
 			desc.MipLevels = pDesc->mMipLevels;
 			desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
@@ -2185,21 +2025,26 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 			desc.Width = pDesc->mWidth;
 			pRenderer->pDxDevice->CreateTexture2D(&desc, NULL, &pTex2D);
 			pTexture->pDxResource = pTex2D;
+			break;
 		}
-		else
+		case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
 		{
 			ID3D11Texture1D*     pTex1D;
 			D3D11_TEXTURE1D_DESC desc = {};
 			desc.ArraySize = pDesc->mArraySize;
 			desc.BindFlags = util_determine_dx_bind_flags(pDesc->mDescriptors, pDesc->mStartState);
 			desc.CPUAccessFlags = 0;
-			desc.Format = util_to_dx_image_format_typeless(pDesc->mFormat);
+			desc.Format = (DXGI_FORMAT)TinyImageFormat_DXGI_FORMATToTypeless((TinyImageFormat_DXGI_FORMAT)dxFormat);
 			desc.MipLevels = pDesc->mMipLevels;
 			desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
 			desc.Usage = util_to_dx_usage(RESOURCE_MEMORY_USAGE_GPU_ONLY);
 			desc.Width = pDesc->mWidth;
 			pRenderer->pDxDevice->CreateTexture1D(&desc, NULL, &pTex1D);
 			pTexture->pDxResource = pTex1D;
+			break;
+		}
+		default:
+			break;
 		}
 
 		pTexture->mCurrentState = pDesc->mStartState;
@@ -2236,7 +2081,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	}
 
 	// Compute texture size
-	pTexture->mTextureSize = pTexture->mDesc.mArraySize * ImageFormat::GetMipMappedSize(
+	pTexture->mTextureSize = pTexture->mDesc.mArraySize * Image_GetMipMappedSize(
 		pTexture->mDesc.mWidth, pTexture->mDesc.mHeight, pTexture->mDesc.mDepth,
 		pTexture->mDesc.mMipLevels, pTexture->mDesc.mFormat);
 
@@ -2754,7 +2599,7 @@ void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipelin
 
 			input_elements[input_elementCount].SemanticName = semantic_names[attrib_index];
 			input_elements[input_elementCount].SemanticIndex = semantic_index;
-			input_elements[input_elementCount].Format = util_to_dx_image_format(attrib->mFormat, false);
+			input_elements[input_elementCount].Format = (DXGI_FORMAT)TinyImageFormat_ToDXGI_FORMAT(attrib->mFormat);
 			input_elements[input_elementCount].InputSlot = attrib->mBinding;
 			input_elements[input_elementCount].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 			if (attrib->mRate == VERTEX_ATTRIB_RATE_INSTANCE)
@@ -2920,7 +2765,7 @@ void addBlendState(Renderer* pRenderer, const BlendStateDesc* pDesc, BlendState*
 	}
 
 	if (FAILED(pRenderer->pDxDevice->CreateBlendState(&desc, &pBlendState->pBlendState)))
-		LOGERRORF( "Failed to create blend state.");
+		LOGF(LogLevel::eERROR, "Failed to create blend state.");
 
 	*ppBlendState = pBlendState;
 }
@@ -2964,7 +2809,7 @@ void addDepthState(Renderer* pRenderer, const DepthStateDesc* pDesc, DepthState*
 	desc.FrontFace.StencilPassOp = gStencilOpTranslator[pDesc->mStencilBackPass];
 
 	if (FAILED(pRenderer->pDxDevice->CreateDepthStencilState(&desc, &pDepthState->pDxDepthStencilState)))
-		LOGERRORF( "Failed to create depth state.");
+		LOGF(LogLevel::eERROR, "Failed to create depth state.");
 
 	*ppDepthState = pDepthState;
 }
@@ -2997,7 +2842,7 @@ void addRasterizerState(Renderer* pRenderer, const RasterizerStateDesc* pDesc, R
 	desc.AntialiasedLineEnable = FALSE;
 
 	if (FAILED(pRenderer->pDxDevice->CreateRasterizerState(&desc, &pRasterizerState->pDxRasterizerState)))
-		LOGERRORF( "Failed to create depth state.");
+		LOGF(LogLevel::eERROR, "Failed to create depth state.");
 
 	*ppRasterizerState = pRasterizerState;
 }
@@ -3068,7 +2913,7 @@ void cmdBindRenderTargets(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3121,7 +2966,7 @@ void cmdSetViewport(Cmd* pCmd, float x, float y, float width, float height, floa
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3146,7 +2991,7 @@ void cmdSetScissor(Cmd* pCmd, uint32_t x, uint32_t y, uint32_t width, uint32_t h
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3170,7 +3015,7 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3192,7 +3037,7 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 	else
 	{
-		LOGERRORF( "Invalid descriptor param (%s)", pResName);
+		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -3207,7 +3052,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3293,7 +3138,7 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t offset)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3316,7 +3161,7 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3345,7 +3190,7 @@ void cmdDraw(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3366,7 +3211,7 @@ void cmdDrawInstanced(Cmd* pCmd, uint32_t vertexCount, uint32_t firstVertex, uin
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3389,7 +3234,7 @@ void cmdDrawIndexed(Cmd* pCmd, uint32_t indexCount, uint32_t firstIndex, uint32_
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3412,7 +3257,7 @@ void cmdDrawIndexedInstanced(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3436,7 +3281,7 @@ void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3462,7 +3307,7 @@ void cmdResourceBarrier(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3486,7 +3331,7 @@ void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers,
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3510,7 +3355,7 @@ void cmdFlushBarriers(Cmd* pCmd)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -3716,7 +3561,7 @@ void queueSubmit(
 						ASSERT(pParam);
 						if (!pParam->pName)
 						{
-							LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
+							LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
 							return;
 						}
 
@@ -3978,8 +3823,14 @@ void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 	//toggle vsync present flag (this can go up to 4 but we don't need to refresh on nth vertical sync)
 	(*ppSwapChain)->mDxSyncInterval = ((*ppSwapChain)->mDxSyncInterval + 1) % 2;
 }
+/************************************************************************/
+// Utility functions
+/************************************************************************/
 
-ImageFormat::Enum getRecommendedSwapchainFormat(bool hintHDR) { return ImageFormat::RGBA8; }
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR) { 
+	return TinyImageFormat_B8G8R8A8_SRGB; 
+}
+
 /************************************************************************/
 // Indirect Draw functions
 /************************************************************************/
@@ -3999,7 +3850,7 @@ void cmdExecuteIndirect(
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4095,7 +3946,7 @@ void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4117,7 +3968,7 @@ void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4139,7 +3990,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4171,7 +4022,7 @@ void cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4194,7 +4045,7 @@ void cmdEndDebugMarker(Cmd* pCmd)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 
@@ -4214,7 +4065,7 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 	ASSERT(cachedCmdsIter != gCachedCmds.end());
 	if (cachedCmdsIter == gCachedCmds.end())
 	{
-		LOGERRORF( "beginCmd was never called for that specific Cmd buffer!");
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
 		return;
 	}
 

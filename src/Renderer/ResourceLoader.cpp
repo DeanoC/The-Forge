@@ -1337,7 +1337,7 @@ void vk_compileShader(
 		shaderc_compile_into_spv(compiler, code, codeSize, getShadercShaderType(stage), "shaderc_error", pEntryPoint ? pEntryPoint : "main", options);
 	if (shaderc_result_get_compilation_status(spvShader) != shaderc_compilation_status_success)
 	{
-		LOGERRORF( "Shader compiling failed! with status");
+		LOGF(LogLevel::eERROR, "Shader compiling failed! with status");
 		abort();
 	}
 
@@ -1422,15 +1422,14 @@ void vk_compileShader(
 		// If for some reason the error file could not be created just log error msg
 		if (!errorFile.IsOpen())
 		{
-			LOGERRORF("Failed to compile shader %s", fileName.c_str());
+			LOGF( LogLevel::eERROR, "Failed to compile shader %s", fileName.c_str());
 		}
 		else
 		{
 			eastl::string errorLog = errorFile.ReadText();
-			errorFile.Close();
-			LOGERRORF("Failed to compile shader %s with error\n%s", fileName.c_str(), errorLog.c_str());
-			errorFile.Close();
+			LOGF( LogLevel::eERROR, "Failed to compile shader %s with error\n%s", fileName.c_str(), errorLog.c_str());
 		}
+		errorFile.Close();
 	}
 }
 #endif
@@ -1464,8 +1463,8 @@ void mtl_compileShader(
 	args.push_back(intermediateFile.c_str());
 
 	//enable the 2 below for shader debugging on xcode
-//	args.push_back("-MO");
-//	args.push_back("-gline-tables-only");
+	//args.push_back("-MO");
+	//args.push_back("-gline-tables-only");
 	args.push_back("-D");
 	args.push_back("MTL_SHADER=1");    // Add MTL_SHADER macro to differentiate structs in headers shared by app/shader code.
 	// Add user defined macros to the command line
@@ -1506,10 +1505,11 @@ void mtl_compileShader(
 			file.Close();
 		}
 		else
-			LOGERRORF("Failed to assemble shader's %s .metallib file", fileName.c_str());
+			LOGF( LogLevel::eERROR, "Failed to assemble shader's %s .metallib file", fileName.c_str());
 	}
-	else
-		LOGERRORF("Failed to compile shader %s", fileName.c_str());
+	else {
+		LOGF( LogLevel::eERROR,"Failed to compile shader %s", fileName.c_str());
+	}
 }
 #endif
 #if (defined(DIRECT3D12) || defined(DIRECT3D11)) && !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
@@ -1574,7 +1574,7 @@ static bool process_source_file(File* original, File* file, time_t& outTimeStamp
 			includeFile.Open(includeFileName, FM_ReadBinary, FSR_Absolute);
 			if (!includeFile.IsOpen())
 			{
-				LOGERRORF( "Cannot open #include file: %s", includeFileName.c_str());
+				LOGF(LogLevel::eERROR, "Cannot open #include file: %s", includeFileName.c_str());
 				return false;
 			}
 
@@ -1630,7 +1630,7 @@ bool check_for_byte_code(const eastl::string& binaryShaderName, time_t sourceTim
 	file.Open(binaryShaderName, FM_ReadBinary, FSR_Absolute);
 	if (!file.IsOpen())
 	{
-		LOGERRORF( (binaryShaderName + " is not a valid shader bytecode file").c_str());
+		LOGF(LogLevel::eERROR, (binaryShaderName + " is not a valid shader bytecode file").c_str());
 		return false;
 	}
 
@@ -1748,13 +1748,13 @@ bool load_shader_stage_byte_code(
 			if (!save_byte_code(binaryShaderName, byteCode))
 			{
 				const char* shaderName = shaderSource.GetName().c_str();
-				LOGWARNINGF("Failed to save byte code for file %s", shaderName);
+				LOGF(LogLevel::eWARNING, "Failed to save byte code for file %s", shaderName);
 			}
 #endif
 		}
 		if (!byteCode.size())
 		{
-			LOGERRORF("Error while generating bytecode for shader %s", fileName);
+			LOGF( LogLevel::eERROR, "Error while generating bytecode for shader %s", fileName);
 			shaderSource.Close();
 			return false;
 		}
@@ -1882,7 +1882,7 @@ void addShader(Renderer* pRenderer, const ShaderLoadDesc* pDesc, Shader** ppShad
 	{
 		eastl::string error = eastl::string().sprintf("Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
 			(uint32_t)pDesc->mTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
-		LOGERROR( error.c_str());
+		LOGF( LogLevel::eERROR, error.c_str());
 		return;
 	}
 

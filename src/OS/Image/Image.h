@@ -60,17 +60,18 @@ private:
 	// The following Create function will use passed in data as reference without allocating memory for internal pData (meaning the Image object will not own the data)
 	unsigned char* Create(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData);
 
-	//load image
-	bool LoadFromFile(
-		const char* fileName, memoryAllocationFunc pAllocator = NULL, void* pUserData = NULL, FSRoot root = FSR_Textures);
-	bool LoadFromMemory(
-		void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator = NULL,
-		void* pUserData = NULL);
-
 	void Clear();
 
+    //load image
+    bool LoadFromFile(
+                      const char* fileName, memoryAllocationFunc pAllocator = NULL, void* pUserData = NULL, FSRoot root = FSR_Textures);
+    bool LoadFromMemory(
+                        void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator = NULL,
+                        void* pUserData = NULL);
+
 public:
-	void RedefineDimensions(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize = 1);
+
+    void RedefineDimensions(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize = 1);
 
 	unsigned char* GetPixels() const { return pData; }
 	unsigned char* GetPixels(const uint mipMapLevel) const;
@@ -119,7 +120,7 @@ public:
 	bool                 Convert(const TinyImageFormat newFormat);
 	bool                 GenerateMipMaps(const uint32_t mipMaps = ALL_MIPLEVELS);
 
-	bool iSwap(const int c0, const int c1);
+	bool                 iSwap(const int c0, const int c1);
 
 	// Image Format Saving
 	bool                 iSaveDDS(const char* fileName);

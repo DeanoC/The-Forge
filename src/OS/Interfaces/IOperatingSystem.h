@@ -65,6 +65,10 @@ typedef uint64_t uint64;
 #include <time.h>
 #include <ctime>
 
+#include <float.h>
+#include <limits.h>
+#include <stddef.h>
+
 #ifndef _WIN32
 #define stricmp(a, b) strcasecmp(a, b)
 #define vsprintf_s vsnprintf
@@ -156,9 +160,6 @@ typedef struct MonitorDesc
 	uint32_t    resolutionCount;
 } MonitorDesc;
 
-#include <float.h>
-#include <limits.h>
-
 // Define some sized types
 typedef uint8_t uint8;
 typedef int8_t  int8;
@@ -169,7 +170,6 @@ typedef int16_t  int16;
 typedef uint32_t uint32;
 typedef int32_t  int32;
 
-#include <stddef.h>
 typedef ptrdiff_t intptr;
 
 #ifdef _WIN32

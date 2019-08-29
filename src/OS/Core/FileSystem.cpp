@@ -92,7 +92,7 @@ extern const char* pszRoots[];
 // Remove device, on the other hand, can only access files within project root dir.
 // When we run on remote device, we ignore pszbase.
 extern const char* pszBases[];
-#if defined(__ANDROID__) || defined(_DURANGO) || defined(TARGET_IOS)
+#if defined(__ANDROID__) || defined(_DURANGO) || defined(TARGET_IOS) || defined(FORGE_IGNORE_PSZBASE)
 #define __IGNORE_PSZBASE 1
 #else
 #define __IGNORE_PSZBASE 0
@@ -354,7 +354,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 
 	if (fileName.size() == 0)
 	{
-		LOGERRORF("Could not open file with empty name");
+		LOGF(LogLevel::eERROR, "Could not open file with empty name");
 		return false;
 	}
 
@@ -364,7 +364,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 
 	if (!pHandle)
 	{
-		LOGERRORF("Could not open file %s", fileName.c_str());
+		LOGF(LogLevel::eERROR, "Could not open file %s", fileName.c_str());
 		return false;
 	}
 
@@ -379,7 +379,7 @@ bool File::Open(const eastl::string& _fileName, FileMode mode, FSRoot root)
 	size_t size = FileSystem::GetFileSize(pHandle);
 	if (size > UINT_MAX)
 	{
-		LOGERRORF("Could not open file %s which is larger than 4GB", fileName.c_str());
+		LOGF(LogLevel::eERROR, "Could not open file %s which is larger than 4GB", fileName.c_str());
 		Close();
 		mSize = 0;
 		return false;
@@ -420,7 +420,7 @@ unsigned File::Read(void* dest, unsigned size)
 
 	if (IsWriteOnly())
 	{
-		LOGERRORF("File not opened for reading");
+		LOGF(LogLevel::eERROR, "File not opened for reading");
 		return 0;
 	}
 
@@ -488,7 +488,7 @@ unsigned File::Write(const void* data, unsigned size)
 
 	if (IsReadOnly())
 	{
-		LOGERRORF("File not opened for writing");
+		LOGF(LogLevel::eERROR, "File not opened for writing");
 		return 0;
 	}
 
@@ -508,7 +508,7 @@ unsigned File::Write(const void* data, unsigned size)
 	{
 		// Return to the position where the write began
 		seek_file(pHandle, mPosition + mOffset, SEEK_SET);
-		LOGERRORF("Error while writing to file %s", GetName().c_str());
+		LOGF(LogLevel::eERROR, ("Error while writing to file " + GetName()).c_str());
 		return 0;
 	}
 
@@ -944,9 +944,9 @@ bool FileSystem::CreateDir(const eastl::string& pathName)
 #endif
 
 	if (success)
-		LOGERRORF("Created directory %s", pathName.c_str());
+		LOGF(LogLevel::eDEBUG, ("Created directory " + pathName).c_str());
 	else
-		LOGERRORF("Failed to create directory %s" ,pathName.c_str());
+		LOGF(LogLevel::eERROR, ("Failed to create directory " + pathName).c_str());
 
 	return success;
 }

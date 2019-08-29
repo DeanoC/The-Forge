@@ -68,6 +68,10 @@
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
 #include "VulkanCapsBuilder.h"
 
+#if defined(VK_USE_DISPATCH_TABLES)
+#include "../../../Common_3/ThirdParty/OpenSource/volk/volkForgeExt.h"
+#endif
+
 #include "../../OS/Interfaces/IMemory.h"
 
 extern void vk_createShaderReflection(const uint8_t* shaderCode, uint32_t shaderSize, ShaderStage shaderStage, ShaderReflection* pOutReflection);
@@ -407,8 +411,10 @@ PFN_vkCmdDrawIndexedIndirectCountKHR pfnVkCmdDrawIndexedIndirectCountKHR = NULL;
 /************************************************************************/
 #if defined(RENDERER_IMPLEMENTATION)
 
+#if !defined(VK_USE_DISPATCH_TABLES)
 #ifdef _MSC_VER
 #pragma comment(lib, "vulkan-1.lib")
+#endif
 #endif
 
 #define SAFE_FREE(p_var)         \
@@ -589,7 +595,7 @@ static const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature,
 	}
 	else
 	{
-		LOGERRORF( "Invalid descriptor param (%s)", pResName);
+		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -908,10 +914,10 @@ static void internal_log(LogType type, const char* msg, const char* component)
 {
 	switch (type)
 	{
-		case LOG_TYPE_INFO: LOGINFOF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_WARN: LOGWARNINGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_DEBUG: LOGDEBUGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
+		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -941,7 +947,7 @@ static VkBool32 VKAPI_PTR internal_debug_report_callback(
 	}
 	else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 	{
-		LOGERRORF( "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGF(LogLevel::eERROR, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 
 	return VK_FALSE;
@@ -953,7 +959,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL internal_debug_report_callback(
 {
 	if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
 	{
-		LOGINFOF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGF(LogLevel::eINFO, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 	{
@@ -962,15 +968,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL internal_debug_report_callback(
 		// Disable warnings for bind memory for dedicated allocations extension
 		if (gDedicatedAllocationExtension && messageCode != 11 && messageCode != 12)
 #endif
-			LOGWARNINGF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+			LOGF(LogLevel::eWARNING, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 	{
-		LOGWARNINGF("[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGF(LogLevel::eWARNING, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	else if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 	{
-		LOGERRORF( "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
+		LOGF(LogLevel::eERROR, "[%s] : %s (%i)", pLayerPrefix, pMessage, messageCode);
 	}
 	
 	return VK_FALSE;
@@ -2012,6 +2018,18 @@ static void AddDevice(Renderer* pRenderer)
 	}
 #endif
 
+	// If we don't own the instance or device, then we need to set the gpuIndex to the correct physical device
+#if defined(VK_USE_DISPATCH_TABLES)
+	gpuIndex = UINT32_MAX;
+	for (uint32_t i = 0; i < pRenderer->mNumOfGPUs; i++)
+	{
+		if (pRenderer->pVkGPUs[i] == pRenderer->pVkActiveGPU)
+		{
+			gpuIndex = i;
+		}
+	}
+#endif
+
 	ASSERT(gpuIndex != UINT32_MAX);
 	pRenderer->mActiveGPUIndex = gpuIndex;
 	pRenderer->pVkActiveGPU = pRenderer->pVkGPUs[gpuIndex];
@@ -2023,9 +2041,9 @@ static void AddDevice(Renderer* pRenderer)
 #endif
 	ASSERT(VK_NULL_HANDLE != pRenderer->pVkActiveGPU);
 
-	LOGINFOF("Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
-	LOGINFOF("Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
-	LOGINFOF("Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
+	LOGF(LogLevel::eINFO, "Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
+	LOGF(LogLevel::eINFO, "Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
+	LOGF(LogLevel::eINFO, "Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
 
 	uint32_t              count = 0;
 	VkLayerProperties     layers[100];
@@ -2121,6 +2139,7 @@ static void AddDevice(Renderer* pRenderer)
 		}
 	}
 
+#if !defined(VK_USE_DISPATCH_TABLES)
 	// Add more extensions here
 #if VK_EXT_fragment_shader_interlock
 	VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentShaderInterlockFeatures = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT };
@@ -2186,6 +2205,7 @@ static void AddDevice(Renderer* pRenderer)
 	volkLoadDevice(pRenderer->pVkDevice);
 
 	queue_priorities.clear();
+#endif
 
 	gDedicatedAllocationExtension = dedicatedAllocationExtension && memoryReq2Extension;
 
@@ -2195,12 +2215,12 @@ static void AddDevice(Renderer* pRenderer)
 
 	if (gDedicatedAllocationExtension)
 	{
-		LOGINFOF("Successfully loaded Dedicated Allocation extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded Dedicated Allocation extension");
 	}
 
 	if (gExternalMemoryExtension)
 	{
-		LOGINFOF("Successfully loaded External Memory extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded External Memory extension");
 	}
 
 #ifdef VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME
@@ -2208,29 +2228,29 @@ static void AddDevice(Renderer* pRenderer)
 	{
 		pfnVkCmdDrawIndirectCountKHR = vkCmdDrawIndirectCountKHR;
 		pfnVkCmdDrawIndexedIndirectCountKHR = vkCmdDrawIndexedIndirectCountKHR;
-		LOGINFOF("Successfully loaded Draw Indirect extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded Draw Indirect extension");
 	}
 	else if (gAMDDrawIndirectCountExtension)
 #endif
 	{
 		pfnVkCmdDrawIndirectCountKHR = vkCmdDrawIndirectCountAMD;
 		pfnVkCmdDrawIndexedIndirectCountKHR = vkCmdDrawIndexedIndirectCountAMD;
-		LOGINFOF("Successfully loaded AMD Draw Indirect extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded AMD Draw Indirect extension");
 	}
 
 	if (gAMDGCNShaderExtension)
 	{
-		LOGINFOF("Successfully loaded AMD GCN Shader extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded AMD GCN Shader extension");
 	}
 
 	if (gDescriptorIndexingExtension)
 	{
-		LOGINFOF("Successfully loaded Descriptor Indexing extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded Descriptor Indexing extension");
 	}
 
 	if (gNVRayTracingExtension)
 	{
-		LOGINFOF("Successfully loaded Nvidia Ray Tracing extension");
+		LOGF(LogLevel::eINFO, "Successfully loaded Nvidia Ray Tracing extension");
 	}
 
 #ifdef USE_DEBUG_UTILS_EXTENSION
@@ -2283,6 +2303,14 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 
 	// Initialize the Vulkan internal bits
 	{
+#if defined(VK_USE_DISPATCH_TABLES)
+		VkResult vkRes = volkInitializeWithDispatchTables(pRenderer);
+		if (vkRes != VK_SUCCESS)
+		{
+			LOGF(LogLevel::eERROR, "Failed to initialize Vulkan");
+			return;
+		}
+#else
 #if defined(_DEBUG)
 		// this turns on all validation layers
 		pRenderer->mInstanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
@@ -2300,11 +2328,12 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 		VkResult vkRes = volkInitialize();
 		if (vkRes != VK_SUCCESS)
 		{
-			LOGERRORF( "Failed to initialize Vulkan");
+			LOGF(LogLevel::eERROR, "Failed to initialize Vulkan");
 			return;
 		}
 
 		CreateInstance(app_name, pRenderer);
+#endif
 		AddDevice(pRenderer);
 		//anything below LOW preset is not supported and we will exit
 		if (pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel < GPU_PRESET_LOW)
@@ -2317,11 +2346,13 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 
 			//remove device and any memory we allocated in just above as this is the first function called
 			//when initializing the forge
+#if !defined(VK_USE_DISPATCH_TABLES)
 			RemoveDevice(pRenderer);
 			RemoveInstance(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGERRORF( "Office preset is not supported by The Forge.");
+			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
+#endif
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -2395,8 +2426,15 @@ void removeRenderer(Renderer* pRenderer)
 	// Destroy the Vulkan bits
 	vmaDestroyAllocator(pRenderer->pVmaAllocator);
 
+#if defined(VK_USE_DISPATCH_TABLES)
+	for (uint32_t i = 0; i < pRenderer->mNumOfGPUs; ++i)
+	{
+		SAFE_FREE(pRenderer->mVkQueueFamilyProperties[i]);
+	}
+#else
 	RemoveDevice(pRenderer);
 	RemoveInstance(pRenderer);
+#endif
 
 	pRenderer->mInstanceLayers.~vector();
 
@@ -2518,7 +2556,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 		queueFamilyIndex = 0;
 		queueIndex = 0;
 
-		LOGWARNINGF("Could not find queue of type %u. Using default queue", (uint32_t)pDesc->mType);
+		LOGF(LogLevel::eWARNING, "Could not find queue of type %u. Using default queue", (uint32_t)pDesc->mType);
 	}
 
 	if (found)
@@ -2541,7 +2579,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pDesc, Queue** ppQueue)
 	}
 	else
 	{
-		LOGERRORF( "Cannot create queue of type (%u)", pDesc->mType);
+		LOGF(LogLevel::eERROR, "Cannot create queue of type (%u)", pDesc->mType);
 	}
 }
 
@@ -2613,6 +2651,11 @@ void addCmd(CmdPool* pCmdPool, bool secondary, Cmd** ppCmd)
 	alloc_info.commandBufferCount = 1;
 	VkResult vk_res = vkAllocateCommandBuffers(pCmd->pRenderer->pVkDevice, &alloc_info, &(pCmd->pVkCmdBuf));
 	ASSERT(VK_SUCCESS == vk_res);
+
+#if defined(VK_USE_DISPATCH_TABLES)
+	vk_res = wrapDispatchableVkObject((const void**)pCmd->pVkCmdBuf);
+	ASSERT(VK_SUCCESS == vk_res);
+#endif
 
 	*ppCmd = pCmd;
 }
@@ -3085,7 +3128,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, viewInfo.format, &formatProps);
 		if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))
 		{
-			LOGWARNINGF("Failed to create uniform texel buffer view for format %u", (uint32_t)pDesc->mFormat);
+			LOGF(LogLevel::eWARNING, "Failed to create uniform texel buffer view for format %u", (uint32_t)pDesc->mFormat);
 		}
 		else
 		{
@@ -3104,7 +3147,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		vkGetPhysicalDeviceFormatProperties(pRenderer->pVkActiveGPU, viewInfo.format, &formatProps);
 		if (!(formatProps.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT))
 		{
-			LOGWARNINGF("Failed to create storage texel buffer view for format %u", (uint32_t)pDesc->mFormat);
+			LOGF(LogLevel::eWARNING, "Failed to create storage texel buffer view for format %u", (uint32_t)pDesc->mFormat);
 		}
 		else
 		{
@@ -3147,7 +3190,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
+		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -3176,12 +3219,24 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		additionalFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VkImageType image_type = VK_IMAGE_TYPE_MAX_ENUM;
-	if (pDesc->mDepth > 1)
-		image_type = VK_IMAGE_TYPE_3D;
-	else if (pDesc->mHeight > 1)
+	if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D)
+	{
+		ASSERT(pDesc->mDepth == 1);
 		image_type = VK_IMAGE_TYPE_2D;
+	}
+	else if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D)
+	{
+		image_type = VK_IMAGE_TYPE_3D;
+	}
 	else
-		image_type = VK_IMAGE_TYPE_1D;
+	{
+		if (pDesc->mDepth > 1)
+			image_type = VK_IMAGE_TYPE_3D;
+		else if (pDesc->mHeight > 1)
+			image_type = VK_IMAGE_TYPE_2D;
+		else
+			image_type = VK_IMAGE_TYPE_1D;
+	}
 
 	DescriptorType descriptors = pDesc->mDescriptors;
 	bool           cubemapRequired = (DESCRIPTOR_TYPE_TEXTURE_CUBE == (descriptors & DESCRIPTOR_TYPE_TEXTURE_CUBE));
@@ -3337,7 +3392,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		case VK_IMAGE_TYPE_3D:
 			if (pDesc->mArraySize > 1)
 			{
-				LOGERRORF( "Cannot support 3D Texture Array in Vulkan");
+				LOGF(LogLevel::eERROR, "Cannot support 3D Texture Array in Vulkan");
 				ASSERT(false);
 			}
 			view_type = VK_IMAGE_VIEW_TYPE_3D;
@@ -3493,7 +3548,7 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 			if (VK_SUCCESS != vk_res)
 			{
 				textureDesc.mFormat = TinyImageFormat_D16_UNORM;
-				LOGWARNINGF("Depth stencil format (%u) not supported. Falling back to D16 format", pDesc->mFormat);
+				LOGF(LogLevel::eWARNING, "Depth stencil format (%u) not supported. Falling back to D16 format", pDesc->mFormat);
 			}
 		}
 	}
@@ -3607,7 +3662,7 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** pp_samp
 	add_info.compareEnable = (gVkComparisonFuncTranslator[pDesc->mCompareFunc] != VK_COMPARE_OP_NEVER) ? VK_TRUE : VK_FALSE;
 	add_info.compareOp = gVkComparisonFuncTranslator[pDesc->mCompareFunc];
 	add_info.minLod = 0.0f;
-	add_info.maxLod = FLT_MAX; //pDesc->mMagFilter >= FILTER_LINEAR ? FLT_MAX : 0.0f;
+	add_info.maxLod = FLT_MAX;
 	add_info.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 	add_info.unnormalizedCoordinates = VK_FALSE;
 
@@ -3827,13 +3882,13 @@ void addDescriptorBinder(Renderer* pRenderer, uint32_t gpuIndex, uint32_t descCo
 					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
 					{
 						if (TEXTURE_DIM_2DMS == pDesc->mDesc.dim)
-							LOGWARNINGF("Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGF(LogLevel::eWARNING, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_2DMS_ARRAY == pDesc->mDesc.dim)
-							LOGWARNINGF("Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGF(LogLevel::eWARNING, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_CUBE == pDesc->mDesc.dim)
-							LOGWARNINGF("TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGF(LogLevel::eWARNING, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
 						else if (TEXTURE_DIM_CUBE_ARRAY == pDesc->mDesc.dim)
-							LOGWARNINGF("TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
+							LOGF(LogLevel::eWARNING, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
 
 						VkImageView uavDescriptor = pRenderer->pDefaultTextureUAV[gpuIndex][pDesc->mDesc.dim]->pVkUAVDescriptors[0];
 
@@ -4189,7 +4244,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[it->second].reg != pRes->reg)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching binding. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4199,7 +4254,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[it->second].set != pRes->set)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching set. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4260,12 +4315,13 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (pDesc->mDesc.size == 1)
 				{
-					LOGINFOF("Descriptor (%s) : User specified VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC", pDesc->mDesc.name);
+					LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC", pDesc->mDesc.name);
 					binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 				}
 				else
 				{
-					LOGWARNINGF("Descriptor (%s) : Cannot use VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC for arrays",
+					LOGF(
+						LogLevel::eWARNING, "Descriptor (%s) : Cannot use VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC for arrays",
 						pDesc->mDesc.name);
 				}
 			}
@@ -4286,7 +4342,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			decltype(staticSamplerMap)::iterator it = staticSamplerMap.find(pDesc->mDesc.name);
 			if (it != staticSamplerMap.end())
 			{
-				LOGINFOF("Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
+				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
 
 				// Set the index to an invalid value so we can use this later for error checking if user tries to update a static sampler
 				pDesc->mIndexInParent = -1;
@@ -5358,7 +5414,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
+			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
 			return;
 		}
 
@@ -5384,7 +5440,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (pDesc->mIndexInParent == -1)
 			{
-				LOGERRORF(
+				LOGF(LogLevel::eERROR, 
 					"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
 					"RootSignatureDesc::mStaticSamplers",
 					pParam->pName);
@@ -5392,14 +5448,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			}
 			if (!pParam->ppSamplers)
 			{
-				LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppSamplers[i])
 				{
-					LOGERRORF( "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[i]->mSamplerId, 1, pHash[setIndex]);
@@ -5410,7 +5466,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppTextures)
 			{
-				LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 
@@ -5418,7 +5474,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			{
 				if (!pParam->ppTextures[i])
 				{
-					LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 
@@ -5439,7 +5495,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppTextures)
 			{
-				LOGERRORF( "RW Texture descriptor (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 
@@ -5450,7 +5506,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 			{
 				if (!pParam->ppTextures[i])
 				{
-					LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 
@@ -5467,14 +5523,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		{
 			if (!pParam->ppBuffers)
 			{
-				LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppBuffers[i])
 				{
-					LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
@@ -5548,14 +5604,14 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 
 			if (!pParam->ppBuffers)
 			{
-				LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 				return;
 			}
 			for (uint32_t i = 0; i < arrayCount; ++i)
 			{
 				if (!pParam->ppBuffers[i])
 				{
-					LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
 					return;
 				}
 				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
@@ -5620,7 +5676,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 				descriptorSetSlotToUse = node->mUpdateCount[frameIdx][setIndex]++;
 				if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 				{
-					LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex); ASSERT(0);
+					LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex); ASSERT(0);
 					return;
 				}
 
@@ -6194,7 +6250,7 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 				pCommandSignature->mDrawType = INDIRECT_DISPATCH;
 				pCommandSignature->mDrawCommandStride += sizeof(IndirectDispatchArguments);
 				break;
-			default: LOGERRORF( "Vulkan runtime only supports IndirectDraw, IndirectDrawIndex and IndirectDispatch at this point"); break;
+			default: LOGF(LogLevel::eERROR, "Vulkan runtime only supports IndirectDraw, IndirectDrawIndex and IndirectDispatch at this point"); break;
 		}
 	}
 
@@ -6453,5 +6509,8 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 #if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
 }    // namespace RENDERER_CPP_NAMESPACE
 #endif
-#include "../../ThirdParty/OpenSource/volk/volk.c"
+#include "../../../Common_3/ThirdParty/OpenSource/volk/volk.c"
+#if defined(VK_USE_DISPATCH_TABLES)
+#include "../../../Common_3/ThirdParty/OpenSource/volk/volkForgeExt.c"
+#endif
 #endif

@@ -183,12 +183,12 @@ void loadProfiler(RenderTarget* pRenderTarget)
 	VertexLayout vertex_layout{};
 	vertex_layout.mAttribCount = 2;
 	vertex_layout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertex_layout.mAttribs[0].mFormat = ImageFormat::RG32F;
+	vertex_layout.mAttribs[0].mFormat = TinyImageFormat_R32G32_SFLOAT;
 	vertex_layout.mAttribs[0].mBinding = 0;
 	vertex_layout.mAttribs[0].mLocation = 0;
 	vertex_layout.mAttribs[0].mOffset = 0;
 	vertex_layout.mAttribs[1].mSemantic = SEMANTIC_COLOR;
-	vertex_layout.mAttribs[1].mFormat = ImageFormat::RGBA8;
+	vertex_layout.mAttribs[1].mFormat = TinyImageFormat_R8G8B8A8_SNORM;
 	vertex_layout.mAttribs[1].mBinding = 0;
 	vertex_layout.mAttribs[1].mLocation = 1;
 	vertex_layout.mAttribs[1].mOffset = sizeof(float) * 2;
@@ -200,10 +200,9 @@ void loadProfiler(RenderTarget* pRenderTarget)
 	pipeline_settings.mRenderTargetCount = 1;
 	pipeline_settings.pDepthState = pDepthState;
 	pipeline_settings.pColorFormats = &pRenderTarget->mDesc.mFormat;
-	pipeline_settings.pSrgbValues = &pRenderTarget->mDesc.mSrgb;
 	pipeline_settings.mSampleCount = pRenderTarget->mDesc.mSampleCount;
 	pipeline_settings.mSampleQuality = pRenderTarget->mDesc.mSampleQuality;
-	pipeline_settings.mDepthStencilFormat = ImageFormat::NONE;
+	pipeline_settings.mDepthStencilFormat = TinyImageFormat_UNDEFINED;
 	pipeline_settings.pRootSignature = pProfileRootSignature;
 	pipeline_settings.pShaderProgram = pProfileShader;
 	pipeline_settings.pVertexLayout = &vertex_layout;
@@ -325,48 +324,30 @@ uint2 ProfileGetDrawDimensions()
 	return gDimensions;
 }
 
-#if defined(_DURANGO)
-
-static bool draw_mouse = false;
-static int32_t mouse_x = 0;
-static int32_t mouse_y = 0;
-
-void DrawMouse(bool bEnabled)
-{
-    draw_mouse = bEnabled;
-}
-
-void DrawMousePosition(int32_t x, int32_t y)
-{
-    mouse_x = x;
-    mouse_y = y;
-}
-
-#endif
-
 void ProfileEndDraw(Cmd * pCmd)
 {
-#if defined(_DURANGO)
-    if(draw_mouse)
-    {
-        DrawCommands.emplace_back(ProfileDrawCommand{ ProfileDrawCommand::BOX, 6u });
-        float left = ConvertToNDCX(mouse_x - 5);
-        float right = ConvertToNDCX(mouse_x + 5);
-        float top = ConvertToNDCY(mouse_y - 5);
-        float bot = ConvertToNDCY(mouse_y + 5);
-        uint32_t nColor = 0xff000000;
-        
-        // Create box
-        ProfileVertices.emplace_back(ProfileVertex{ left, top, nColor/*, 0*/ });
-        ProfileVertices.emplace_back(ProfileVertex{ left, bot, nColor/*, 0*/ });
-        ProfileVertices.emplace_back(ProfileVertex{ right, bot, nColor/*, 0*/ });
-        ProfileVertices.emplace_back(ProfileVertex{ left, top, nColor/*, 0*/ });
-        ProfileVertices.emplace_back(ProfileVertex{ right, bot, nColor/*, 0*/ });
-        ProfileVertices.emplace_back(ProfileVertex{ right, top, nColor/*, 0*/ });
-    }
-#endif
-        
-    
+	if (DrawCommands.size())
+	{
+		uint32_t mouseX = 0;
+		uint32_t mouseY = 0;
+		ProfileGetMousePosition(&mouseX, &mouseY);
+
+		DrawCommands.emplace_back(ProfileDrawCommand{ ProfileDrawCommand::BOX, 6u });
+		float left = ConvertToNDCX((int32_t)mouseX - 5);
+		float right = ConvertToNDCX((int32_t)mouseX + 5);
+		float top = ConvertToNDCY((int32_t)mouseY - 5);
+		float bot = ConvertToNDCY((int32_t)mouseY + 5);
+		uint32_t nColor = 0xffffffff;
+
+		// Create box
+		ProfileVertices.emplace_back(ProfileVertex{ left, top, nColor/*, 0*/ });
+		ProfileVertices.emplace_back(ProfileVertex{ left, bot, nColor/*, 0*/ });
+		ProfileVertices.emplace_back(ProfileVertex{ right, bot, nColor/*, 0*/ });
+		ProfileVertices.emplace_back(ProfileVertex{ left, top, nColor/*, 0*/ });
+		ProfileVertices.emplace_back(ProfileVertex{ right, bot, nColor/*, 0*/ });
+		ProfileVertices.emplace_back(ProfileVertex{ right, top, nColor/*, 0*/ });
+	}
+
 	// Update buffer
 	Buffer * frame_buffer = pProfileBuffers[pCmd->pRenderer->mCurrentFrameIdx];
 	BufferUpdateDesc update_desc{ frame_buffer, ProfileVertices.data(), 0, 0, ProfileVertices.size() * sizeof(ProfileVertex) };

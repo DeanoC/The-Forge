@@ -167,195 +167,6 @@ D3D12_FILL_MODE gDx12FillModeTranslator[MAX_FILL_MODES] =
 	D3D12_FILL_MODE_WIREFRAME,
 };
 
-const DXGI_FORMAT gDX12FormatTranslatorTypeless[] = {
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R8_TYPELESS,
-	DXGI_FORMAT_R8G8_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R8G8B8A8_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R8_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8S not directly supported
-	DXGI_FORMAT_R8G8B8A8_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16S not directly supported
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16F not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16I not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R16G16_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGB16UI not directly supported
-	DXGI_FORMAT_R16G16B16A16_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,
-	DXGI_FORMAT_R32G32_TYPELESS,
-	DXGI_FORMAT_R32G32B32_TYPELESS,
-	DXGI_FORMAT_R32G32B32A32_TYPELESS,
-	DXGI_FORMAT_UNKNOWN,  // RGBE8 not directly supported
-	DXGI_FORMAT_R9G9B9E5_SHAREDEXP,
-	DXGI_FORMAT_R11G11B10_FLOAT,
-	DXGI_FORMAT_B5G6R5_UNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGBA4 not directly supported
-	DXGI_FORMAT_R10G10B10A2_TYPELESS,
-	DXGI_FORMAT_R16_TYPELESS,
-	DXGI_FORMAT_R24G8_TYPELESS,
-	DXGI_FORMAT_R24G8_TYPELESS,
-	DXGI_FORMAT_R32_TYPELESS,  //D32F
-	// DXT formats
-	DXGI_FORMAT_BC1_TYPELESS,
-	DXGI_FORMAT_BC2_TYPELESS,
-	DXGI_FORMAT_BC3_TYPELESS,
-	DXGI_FORMAT_BC4_TYPELESS, //ATI2N
-	DXGI_FORMAT_BC5_TYPELESS, //ATI2N
-	// PVR formats
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPP = 56,
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPPA = 57,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPP = 58,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPPA = 59,
-	DXGI_FORMAT_UNKNOWN, // INTZ = 60,  //  NVidia hack. Supported on all DX10+ HW
-	//  XBox 360 specific fron buffer formats. NOt listed in other renderers. Please, add them when extend this structure.
-	DXGI_FORMAT_UNKNOWN, // LE_XRGB8 = 61,
-	DXGI_FORMAT_UNKNOWN, // LE_ARGB8 = 62,
-	DXGI_FORMAT_UNKNOWN, // LE_X2RGB10 = 63,
-	DXGI_FORMAT_UNKNOWN, // LE_A2RGB10 = 64,
-	// compressed mobile formats
-	DXGI_FORMAT_UNKNOWN, // ETC1 = 65,  //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATC = 66,   //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATCA = 67,  //  RGBA, explicit alpha
-	DXGI_FORMAT_UNKNOWN, // ATCI = 68,  //  RGBA, interpolated alpha
-	DXGI_FORMAT_UNKNOWN, // RAWZ = 69, //depth only, Nvidia (requires recombination of data) //FIX IT: PS3 as well?
-	DXGI_FORMAT_UNKNOWN, // DF16 = 70, //depth only, Intel/AMD
-	DXGI_FORMAT_UNKNOWN, // STENCILONLY = 71, // stencil ony usage
-	// BC formats
-	DXGI_FORMAT_BC1_TYPELESS, // GNF_BC1 = 72,
-	DXGI_FORMAT_BC2_TYPELESS, // GNF_BC2 = 73,
-	DXGI_FORMAT_BC3_TYPELESS, // GNF_BC3 = 74,
-	DXGI_FORMAT_BC4_TYPELESS, // GNF_BC4 = 75,
-	DXGI_FORMAT_BC5_TYPELESS, // GNF_BC5 = 76,
-	DXGI_FORMAT_BC6H_TYPELESS, // GNF_BC6HUF = 77,
-	DXGI_FORMAT_BC6H_TYPELESS, // GNF_BC6HSF = 78,
-	DXGI_FORMAT_BC7_TYPELESS, // GNF_BC7 = 79,
-	// Reveser Form
-	DXGI_FORMAT_B8G8R8A8_UNORM, // BGRA8 = 80,
-	// Extend for DXGI
-	DXGI_FORMAT_UNKNOWN, // X8D24PAX32 = 81,
-	DXGI_FORMAT_UNKNOWN, // S8 = 82,
-	DXGI_FORMAT_UNKNOWN, // D16S8 = 83,
-	DXGI_FORMAT_UNKNOWN, // D32S8 = 84,
-};
-const DXGI_FORMAT gDX12FormatTranslator[] = {
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::NONE
-	DXGI_FORMAT_R8_UNORM,						   // ImageFormat::R8
-	DXGI_FORMAT_R8G8_UNORM,						 // ImageFormat::RG8
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8 not directly supported
-	DXGI_FORMAT_R8G8B8A8_UNORM,					 // ImageFormat::RGBA8
-	DXGI_FORMAT_R16_UNORM,						  // ImageFormat::R16
-	DXGI_FORMAT_R16G16_UNORM,					   // ImageFormat::RG16
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB16 not directly supported
-	DXGI_FORMAT_R16G16B16A16_UNORM,				 // ImageFormat::RGBA16
-	DXGI_FORMAT_R8_SNORM,						   // ImageFormat::R8S
-	DXGI_FORMAT_R8G8_SNORM,						 // ImageFormat::RG8S
-	DXGI_FORMAT_UNKNOWN,							// ImageFormat::RGB8S not directly supported
-	DXGI_FORMAT_R8G8B8A8_SNORM,
-	DXGI_FORMAT_R16_SNORM,
-	DXGI_FORMAT_R16G16_SNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGB16S not directly supported
-	DXGI_FORMAT_R16G16B16A16_SNORM,
-	DXGI_FORMAT_R16_FLOAT,
-	DXGI_FORMAT_R16G16_FLOAT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16F not directly supported
-	DXGI_FORMAT_R16G16B16A16_FLOAT,
-	DXGI_FORMAT_R32_FLOAT,
-	DXGI_FORMAT_R32G32_FLOAT,
-	DXGI_FORMAT_R32G32B32_FLOAT,
-	DXGI_FORMAT_R32G32B32A32_FLOAT,
-	DXGI_FORMAT_R16_SINT,
-	DXGI_FORMAT_R16G16_SINT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16I not directly supported
-	DXGI_FORMAT_R16G16B16A16_SINT,
-	DXGI_FORMAT_R32_SINT,
-	DXGI_FORMAT_R32G32_SINT,
-	DXGI_FORMAT_R32G32B32_SINT,
-	DXGI_FORMAT_R32G32B32A32_SINT,
-	DXGI_FORMAT_R16_UINT,
-	DXGI_FORMAT_R16G16_UINT,
-	DXGI_FORMAT_UNKNOWN,  // RGB16UI not directly supported
-	DXGI_FORMAT_R16G16B16A16_UINT,
-	DXGI_FORMAT_R32_UINT,
-	DXGI_FORMAT_R32G32_UINT,
-	DXGI_FORMAT_R32G32B32_UINT,
-	DXGI_FORMAT_R32G32B32A32_UINT,
-	DXGI_FORMAT_UNKNOWN,  // RGBE8 not directly supported
-	DXGI_FORMAT_R9G9B9E5_SHAREDEXP,
-	DXGI_FORMAT_R11G11B10_FLOAT,
-	DXGI_FORMAT_B5G6R5_UNORM,
-	DXGI_FORMAT_UNKNOWN,  // RGBA4 not directly supported
-	DXGI_FORMAT_R10G10B10A2_UNORM,
-	DXGI_FORMAT_D16_UNORM,
-	DXGI_FORMAT_D24_UNORM_S8_UINT,
-	DXGI_FORMAT_D24_UNORM_S8_UINT,
-	DXGI_FORMAT_D32_FLOAT,  //D32F
-	// DXT formats
-	DXGI_FORMAT_BC1_UNORM,
-	DXGI_FORMAT_BC2_UNORM,
-	DXGI_FORMAT_BC3_UNORM,
-	DXGI_FORMAT_BC4_UNORM, //ATI2N
-	DXGI_FORMAT_BC5_UNORM, //ATI2N
-	// PVR formats
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPP = 56,
-	DXGI_FORMAT_UNKNOWN, // PVR_2BPPA = 57,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPP = 58,
-	DXGI_FORMAT_UNKNOWN, // PVR_4BPPA = 59,
-	DXGI_FORMAT_UNKNOWN, // INTZ = 60,  //  NVidia hack. Supported on all DX10+ HW
-	//  XBox 360 specific fron buffer formats. NOt listed in other renderers. Please, add them when extend this structure.
-	DXGI_FORMAT_UNKNOWN, // LE_XRGB8 = 61,
-	DXGI_FORMAT_UNKNOWN, // LE_ARGB8 = 62,
-	DXGI_FORMAT_UNKNOWN, // LE_X2RGB10 = 63,
-	DXGI_FORMAT_UNKNOWN, // LE_A2RGB10 = 64,
-	// compressed mobile formats
-	DXGI_FORMAT_UNKNOWN, // ETC1 = 65,  //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATC = 66,   //  RGB
-	DXGI_FORMAT_UNKNOWN, // ATCA = 67,  //  RGBA, explicit alpha
-	DXGI_FORMAT_UNKNOWN, // ATCI = 68,  //  RGBA, interpolated alpha
-	DXGI_FORMAT_UNKNOWN, // RAWZ = 69, //depth only, Nvidia (requires recombination of data) //FIX IT: PS3 as well?
-	DXGI_FORMAT_UNKNOWN, // DF16 = 70, //depth only, Intel/AMD
-	DXGI_FORMAT_UNKNOWN, // STENCILONLY = 71, // stencil ony usage
-	// BC formats
-	DXGI_FORMAT_BC1_UNORM, // GNF_BC1 = 72,
-	DXGI_FORMAT_BC2_UNORM, // GNF_BC2 = 73,
-	DXGI_FORMAT_BC3_UNORM, // GNF_BC3 = 74,
-	DXGI_FORMAT_BC4_UNORM, // GNF_BC4 = 75,
-	DXGI_FORMAT_BC5_UNORM, // GNF_BC5 = 76,
-	DXGI_FORMAT_BC6H_UF16, // GNF_BC6HUF = 77,
-	DXGI_FORMAT_BC6H_SF16, // GNF_BC6HSF = 78,
-	DXGI_FORMAT_BC7_UNORM, // GNF_BC7 = 79,
-	// Reveser Form
-	DXGI_FORMAT_B8G8R8A8_UNORM, // BGRA8 = 80,
-	// Extend for DXGI
-	DXGI_FORMAT_UNKNOWN, // X8D24PAX32 = 81,
-	DXGI_FORMAT_UNKNOWN, // S8 = 82,
-	DXGI_FORMAT_UNKNOWN, // D16S8 = 83,
-	DXGI_FORMAT_UNKNOWN, // D32S8 = 84,
-};
-
 const D3D12_COMMAND_LIST_TYPE gDx12CmdTypeTranslator[CmdPoolType::MAX_CMD_TYPE] =
 {
 	D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -785,7 +596,7 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 	else
 	{
-		LOGERRORF( "Invalid descriptor param (%s)", pResName);
+		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
 		return NULL;
 	}
 }
@@ -812,10 +623,10 @@ static void internal_log(LogType type, const char* msg, const char* component)
 {
 	switch (type)
 	{
-		case LOG_TYPE_INFO: LOGINFOF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_WARN: LOGWARNINGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_DEBUG: LOGDEBUGF("%s ( %s )", component, msg); break;
-		case LOG_TYPE_ERROR: LOGERRORF( "%s ( %s )", component, msg); break;
+		case LOG_TYPE_INFO: LOGF(LogLevel::eINFO, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_WARN: LOGF(LogLevel::eWARNING, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_DEBUG: LOGF(LogLevel::eDEBUG, "%s ( %s )", component, msg); break;
+		case LOG_TYPE_ERROR: LOGF(LogLevel::eERROR, "%s ( %s )", component, msg); break;
 		default: break;
 	}
 }
@@ -1373,7 +1184,7 @@ DXGI_FORMAT util_to_dx_uav_format(DXGI_FORMAT defaultFormat)
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
 		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
-		case DXGI_FORMAT_D16_UNORM: LOGERRORF("Requested a UAV format for a depth stencil format");
+		case DXGI_FORMAT_D16_UNORM: LOGF( LogLevel::eERROR, "Requested a UAV format for a depth stencil format");
 #endif
 
 		default: return defaultFormat;
@@ -1487,7 +1298,7 @@ DXGI_FORMAT util_to_dx_swapchain_format(TinyImageFormat const format)
 
 	if (result == DXGI_FORMAT_UNKNOWN)
 	{
-		LOGERRORF( "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
+		LOGF(LogLevel::eERROR, "Image Format (%u) not supported for creating swapchain buffer", (uint32_t)format);
 	}
 
 	return result;
@@ -1870,7 +1681,8 @@ static void AddDevice(Renderer* pRenderer)
 		DXGI_ADAPTER_DESC adapterDesc;
 		pRenderer->pDxGPUs[i]->GetDesc(&adapterDesc);
 		pRenderer->mGpuSettings[i].mMaxRootSignatureDWORDS = gRootSignatureDWORDS[util_to_internal_gpu_vendor(adapterDesc.VendorId)];
-		LOGINFOF("GPU[%i] detected. Vendor ID: %x, Revision ID: %x, GPU Name: %S", i, adapterDesc.VendorId,
+		LOGF(
+			LogLevel::eINFO, "GPU[%i] detected. Vendor ID: %x, Revision ID: %x, GPU Name: %S", i, adapterDesc.VendorId,
 			adapterDesc.Revision, adapterDesc.Description);
 
 		// Check that gpu supports at least graphics
@@ -1907,11 +1719,11 @@ static void AddDevice(Renderer* pRenderer)
 	pRenderer->pActiveGpuSettings = &pRenderer->mGpuSettings[gpuIndex];
 
 	//print selected GPU information
-	LOGINFOF("GPU[%d] is selected as default GPU", gpuIndex);
-	LOGINFOF("Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
-	LOGINFOF("Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
-	LOGINFOF("Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
-	LOGINFOF("Revision id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mRevisionId);
+	LOGF(LogLevel::eINFO, "GPU[%d] is selected as default GPU", gpuIndex);
+	LOGF(LogLevel::eINFO, "Name of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mGpuName);
+	LOGF(LogLevel::eINFO, "Vendor id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mVendorId);
+	LOGF(LogLevel::eINFO, "Model id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mModelId);
+	LOGF(LogLevel::eINFO, "Revision id of selected gpu: %s", pRenderer->pActiveGpuSettings->mGpuVendorPreset.mRevisionId);
 
 	// Load functions
 	{
@@ -2030,8 +1842,8 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 			//when initializing the forge
 			RemoveDevice(pRenderer);
 			SAFE_FREE(pRenderer);
-			LOGERRORF( "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGERRORF( "Office preset is not supported by The Forge.");
+			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
+			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
 
 			//return NULL pRenderer so that client can gracefully handle exit
 			//This is better than exiting from here in case client has allocated memory or has fallbacks
@@ -2078,13 +1890,13 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 						m_WaveIntrinsicsSupport.WaveOps != TRUE && !SUCCEEDED(EnableExperimentalShaderModels()))
 					{
 						RemoveDevice(pRenderer);
-						LOGERRORF( "Hardware does not support Shader Model 6.0");
+						LOGF(LogLevel::eERROR, "Hardware does not support Shader Model 6.0");
 						return;
 					}
 				}
 				else
 				{
-					LOGWARNINGF(
+					LOGF( LogLevel::eWARNING,
 						"\nRenderDoc does not support SM 6.0 or higher. Application might work but you won't be able to debug the SM 6.0+ "
 						"shaders or view their bytecode.");
 				}
@@ -2553,7 +2365,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 
 	if (pSwapChain->mDesc.mSampleCount > SAMPLE_COUNT_1)
 	{
-		LOGWARNINGF("DirectX12 does not support multi-sample swapchains. Falling back to single sample swapchain");
+		LOGF(LogLevel::eWARNING, "DirectX12 does not support multi-sample swapchains. Falling back to single sample swapchain");
 		pSwapChain->mDesc.mSampleCount = SAMPLE_COUNT_1;
 	}
 
@@ -2783,7 +2595,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	{
 		if (pBuffer->mDesc.mVertexStride == 0)
 		{
-			LOGERRORF( "Vertex Stride must be a non zero value");
+			LOGF(LogLevel::eERROR, "Vertex Stride must be a non zero value");
 			ASSERT(false);
 		}
 	}
@@ -2803,8 +2615,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		if (DESCRIPTOR_TYPE_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_BUFFER_RAW))
 		{
 			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
-				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
-
+				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			srvDesc.Buffer.Flags |= D3D12_BUFFER_SRV_FLAG_RAW;
 		}
@@ -2831,7 +2642,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		if (DESCRIPTOR_TYPE_RW_BUFFER_RAW == (pDesc->mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER_RAW))
 		{
 			if (pDesc->mFormat != TinyImageFormat_UNDEFINED)
-				LOGWARNINGF("Raw buffers use R32 typeless format. Format will be ignored");
+				LOGF(LogLevel::eWARNING, "Raw buffers use R32 typeless format. Format will be ignored");
 			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			uavDesc.Buffer.Flags |= D3D12_BUFFER_UAV_FLAG_RAW;
 		}
@@ -2844,7 +2655,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 				!(FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE))
 			{
 				// Format does not support UAV Typed Load
-				LOGWARNINGF("Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->mFormat);
+				LOGF(LogLevel::eWARNING, "Cannot use Typed UAV for buffer format %u", (uint32_t)pDesc->mFormat);
 				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 			}
 		}
@@ -2920,7 +2731,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	ASSERT(pDesc && pDesc->mWidth && pDesc->mHeight && (pDesc->mDepth || pDesc->mArraySize));
 	if (pDesc->mSampleCount > SAMPLE_COUNT_1 && pDesc->mMipLevels > 1)
 	{
-		LOGERRORF( "Multi-Sampled textures cannot have mip maps");
+		LOGF(LogLevel::eERROR, "Multi-Sampled textures cannot have mip maps");
 		ASSERT(false);
 		return;
 	}
@@ -2956,12 +2767,24 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	if (NULL == pTexture->pDxResource)
 	{
 		D3D12_RESOURCE_DIMENSION res_dim = D3D12_RESOURCE_DIMENSION_UNKNOWN;
-		if (pDesc->mDepth > 1)
-			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-		else if (pDesc->mHeight > 1)
+		if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_2D)
+		{
+			ASSERT(pDesc->mDepth == 1);
 			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		}
+		else if (pDesc->mFlags & TEXTURE_CREATION_FLAG_FORCE_3D)
+		{
+			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+		}
 		else
-			res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		{
+			if (pDesc->mDepth > 1)
+				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+			else if (pDesc->mHeight > 1)
+				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			else
+				res_dim = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		}
 
 		desc.Dimension = res_dim;
 		//On PC, If Alignment is set to 0, the runtime will use 4MB for MSAA textures and 64KB for everything else.
@@ -2984,7 +2807,8 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &data, sizeof(data));
 		while (data.NumQualityLevels == 0 && data.SampleCount > 0)
 		{
-			LOGWARNINGF("Sample Count (%u) not supported. Trying a lower sample count (%u)", data.SampleCount,
+			LOGF(
+				LogLevel::eWARNING, "Sample Count (%u) not supported. Trying a lower sample count (%u)", data.SampleCount,
 				data.SampleCount / 2);
 			data.SampleCount = desc.SampleDesc.Count / 2;
 			pRenderer->pDxDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &data, sizeof(data));
@@ -3448,16 +3272,16 @@ void addDescriptorBinder(
 							switch (dim)
 							{
 								case TEXTURE_DIM_2DMS:
-									LOGERRORF( "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGF(LogLevel::eERROR, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_2DMS_ARRAY:
-									LOGERRORF( "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGF(LogLevel::eERROR, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_CUBE:
-									LOGERRORF( "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGF(LogLevel::eERROR, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								case TEXTURE_DIM_CUBE_ARRAY:
-									LOGERRORF( "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
+									LOGF(LogLevel::eERROR, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
 									break;
 								default: break;
 							}
@@ -3768,7 +3592,7 @@ void compileShader(
 {
 	if (shaderTarget > pRenderer->mSettings.mShaderTarget)
 	{
-		LOGERRORF(
+		LOGF( LogLevel::eERROR,
 			"Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
 			(uint32_t)shaderTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
 		return;
@@ -3929,7 +3753,7 @@ void compileShader(
 			IDxcBlobEncoding* pError;
 			d3d_call(pResult->GetErrorBuffer(&pError));
 			eastl::string log = convertBlobToString(pError);
-			LOGERRORF(log.c_str());
+			LOGF( LogLevel::eERROR, log.c_str());
 			pError->Release();
 			return;
 		}
@@ -4016,7 +3840,7 @@ void compileShader(
 			ASSERT(msg);
 			memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 			eastl::string error = eastl::string(fileName) + " " + msg;
-			LOGERRORF(error.c_str());
+			LOGF( LogLevel::eERROR, error.c_str());
 			SAFE_FREE(msg);
 		}
 		ASSERT(SUCCEEDED(hres));
@@ -4220,7 +4044,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[it->second].reg != pRes->reg)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching register. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4230,7 +4054,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[it->second].set != pRes->set)
 				{
-					LOGERRORF(
+					LOGF( LogLevel::eERROR,
 						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching space. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
@@ -4293,7 +4117,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 			if (pNode != staticSamplerMap.end())
 			{
-				LOGINFOF("Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
+				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
 				// Set the index to invalid value so we can use this later for error checking if user tries to update a static sampler
 				pDesc->mIndexInParent = ~0u;
 				staticSamplers.push_back({ pDesc, pNode->second });
@@ -4369,7 +4193,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				layout.mRootConstants.erase(eastl::find(layout.mRootConstants.begin(), layout.mRootConstants.end(), *convertIt));
 				(*convertIt)->mDxType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 
-				LOGWARNINGF("Converting root constant (%s) to root cbv to keep root signature size below hardware limit",
+				LOGF(
+					LogLevel::eWARNING, "Converting root constant (%s) to root cbv to keep root signature size below hardware limit",
 					(*convertIt)->mDesc.name);
 			}
 		}
@@ -4395,7 +4220,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 					layout.mCbvSrvUavTable.push_back(*constantIt);
 					layout.mRootDescriptorParams.erase(eastl::find(layout.mRootDescriptorParams.begin(), layout.mRootDescriptorParams.end(), *constantIt));
 
-					LOGWARNINGF(
+					LOGF(
+						LogLevel::eWARNING,
 						"Placing root descriptor (%s) in descriptor table to keep root signature size below hardware limit",
 						(*constantIt)->mDesc.name);
 				}
@@ -4406,7 +4232,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	// We should never reach inside this if statement. If we do, something got messed up
 	if (pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS < calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size()))
 	{
-		LOGWARNINGF( "Root Signature size greater than the specified max size");
+		LOGF(LogLevel::eWARNING, "Root Signature size greater than the specified max size");
 		ASSERT(false);
 	}
 
@@ -4523,7 +4349,9 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				//Root constants - Number of 32 bit constants
 				//Descriptor tables - 1
 				//Static samplers - 0
-				LOGINFOF("Root constant (%s) has (%u) 32 bit values. It is recommended to have root constant number less or equal than 13",
+				LOGF(
+					LogLevel::eINFO,
+					"Root constant (%s) has (%u) 32 bit values. It is recommended to have root constant number less or equal than 13",
 					pDesc->mDesc.name, pDesc->mDesc.size);
 			}
 
@@ -4684,7 +4512,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	{
 		char* pMsg = (char*)conf_calloc(error_msgs->GetBufferSize(), sizeof(char));
 		memcpy(pMsg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
-		LOGERRORF( "Failed to serialize root signature with error (%s)", pMsg);
+		LOGF(LogLevel::eERROR, "Failed to serialize root signature with error (%s)", pMsg);
 		conf_free(pMsg);
 	}
 
@@ -5546,7 +5374,7 @@ void cmdBindDescriptors(
 		ASSERT(pParam);
 		if (!pParam->pName)
 		{
-			LOGERRORF( "Name of Descriptor at index (%u) is NULL", i);
+			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
 			return;
 		}
 
@@ -5563,7 +5391,7 @@ void cmdBindDescriptors(
 		{
 			if (!pParam->pRootConstant)
 			{
-				LOGERRORF( "Root constant (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Root constant (%s) is NULL", pParam->pName);
 				continue;
 			}
 			if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
@@ -5582,7 +5410,7 @@ void cmdBindDescriptors(
 		{
 			if (!pParam->ppBuffers[0])
 			{
-				LOGERRORF( "Root descriptor CBV (%s) is NULL", pParam->pName);
+				LOGF(LogLevel::eERROR, "Root descriptor CBV (%s) is NULL", pParam->pName);
 				continue;
 			}
 			D3D12_GPU_VIRTUAL_ADDRESS cbv = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
@@ -5644,7 +5472,8 @@ void cmdBindDescriptors(
 			{
 				if (pDesc->mIndexInParent == -1)
 				{
-					LOGERRORF(
+					LOGF(
+						LogLevel::eERROR,
 						"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
 						"RootSignatureDesc::mStaticSamplers",
 						pParam->pName);
@@ -5652,14 +5481,14 @@ void cmdBindDescriptors(
 				}
 				if (!pParam->ppSamplers)
 				{
-					LOGERRORF( "Sampler descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppSamplers[j])
 					{
-						LOGERRORF( "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pSamplerHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[j]->mSamplerId, 1, pSamplerHash[setIndex]);
@@ -5672,7 +5501,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppTextures)
 				{
-					LOGERRORF( "Texture descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
@@ -5683,7 +5512,7 @@ void cmdBindDescriptors(
 #ifdef _DEBUG
 					if (!pParam->ppTextures[j])
 					{
-						LOGERRORF( "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 #endif
@@ -5701,7 +5530,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppTextures)
 				{
-					LOGERRORF( "RW Texture descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
@@ -5714,7 +5543,7 @@ void cmdBindDescriptors(
 #ifdef _DEBUG
 					if (!pParam->ppTextures[j])
 					{
-						LOGERRORF( "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 #endif
@@ -5732,14 +5561,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
@@ -5763,14 +5592,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
@@ -5787,7 +5616,7 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppBuffers)
 				{
-					LOGERRORF( "Buffer descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 
@@ -5797,7 +5626,7 @@ void cmdBindDescriptors(
 				{
 					if (!pParam->ppBuffers[j])
 					{
-						LOGERRORF( "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 
@@ -5839,14 +5668,14 @@ void cmdBindDescriptors(
 			{
 				if (!pParam->ppAccelerationStructures)
 				{
-					LOGERRORF( "Acceleration Structure descriptor (%s) is NULL", pParam->pName);
+					LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) is NULL", pParam->pName);
 					return;
 				}
 				for (uint32_t j = 0; j < arrayCount; ++j)
 				{
 					if (!pParam->ppAccelerationStructures[j])
 					{
-						LOGERRORF( "Acceleration Structure descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
+						LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
 						return;
 					}
 
@@ -5903,7 +5732,7 @@ void cmdBindDescriptors(
 					descriptorSetSlotToUse = node->mCbvSrvUavUpdateCount[frameIdx][setIndex]++;
 					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 					{
-						LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex);
+						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
 						ASSERT(0);
 						return;
 					}
@@ -5960,7 +5789,7 @@ void cmdBindDescriptors(
 					descriptorSetSlotToUse = node->mSamplerUpdateCount[frameIdx][setIndex]++;
 					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
 					{
-						LOGERRORF( "Trying to update more descriptors than allocated for set (%d)", setIndex);
+						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
 						ASSERT(0);
 						return;
 					}
@@ -6727,8 +6556,8 @@ D3D12_INDIRECT_ARGUMENT_TYPE util_to_dx_indirect_argument_type(IndirectArgumentT
 		case INDIRECT_CONSTANT_BUFFER_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW; break;
 		case INDIRECT_SHADER_RESOURCE_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW; break;
 		case INDIRECT_UNORDERED_ACCESS_VIEW: res = D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW; break;
-		case INDIRECT_DESCRIPTOR_TABLE: LOGERRORF( "Dx12 Doesn't support DescriptorTable in Indirect Command"); break;
-		case INDIRECT_PIPELINE: LOGERRORF( "Dx12 Doesn't support the Pipeline in Indirect Command"); break;
+		case INDIRECT_DESCRIPTOR_TABLE: LOGF(LogLevel::eERROR, "Dx12 Doesn't support DescriptorTable in Indirect Command"); break;
+		case INDIRECT_PIPELINE: LOGF(LogLevel::eERROR, "Dx12 Doesn't support the Pipeline in Indirect Command"); break;
 	}
 	return res;
 }
@@ -6754,7 +6583,7 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 	{
 		if (pDesc->pArgDescs[i].mType == INDIRECT_DESCRIPTOR_TABLE || pDesc->pArgDescs[i].mType == INDIRECT_PIPELINE)
 		{
-			LOGERRORF( "Dx12 Doesn't support DescriptorTable or Pipeline in Indirect Command");
+			LOGF(LogLevel::eERROR, "Dx12 Doesn't support DescriptorTable or Pipeline in Indirect Command");
 		}
 
 		argumentDescs[i].Type = util_to_dx_indirect_argument_type(pDesc->pArgDescs[i].mType);
