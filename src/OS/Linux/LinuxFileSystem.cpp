@@ -221,14 +221,14 @@ void open_file_dialog(
 	const char* title, const char* dir, FileDialogCallbackFn callback, void* userData, const char* fileDesc,
 	const eastl::vector<eastl::string>& fileExtensions)
 {
-	LOGERRORF( "Not implemented");
+	LOGF(LogLevel::eERROR, "Not implemented");
 }
 
 void save_file_dialog(
 	const char* title, const char* dir, FileDialogCallbackFn callback, void* userData, const char* fileDesc,
 	const eastl::vector<eastl::string>& fileExtensions)
 {
-	LOGERRORF( "Not implemented");
+	LOGF(LogLevel::eERROR, "Not implemented");
 }
 
 #include <sys/inotify.h>

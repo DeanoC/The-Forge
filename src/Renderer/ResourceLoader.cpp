@@ -50,8 +50,6 @@
 #define MAX_PATH PATH_MAX
 #endif
 #include "../OS/Interfaces/IMemory.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
-#include "tiny_imageformat/tinyimageformat_query.h"
 
 // buffer functions
 #if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)

@@ -22,27 +22,34 @@
  * under the License.
 */
 
-#pragma once
-#include "IOperatingSystem.h"
+#ifndef VOLK_FORGE_EXT_H_
+#define VOLK_FORGE_EXT_H_
 
-#if defined(_APPLE_)
-typedef struct tagRECT
-{
-	long left;
-	long top;
-	long right;
-	long bottom;
-} RECT, *PRECT;
+#include "../../../Renderer/IRenderer.h"
+#include <LayerFactory/Project/vk_layer_dispatch_table.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-typedef struct WindowResizeEventData
-{
-	RectDesc            rect;
-	struct WindowsDesc* pWindow;
-} WindowResizeEventData;
+/**
+ * Initialize library by using provided dispatch tables and VK instance/device.
+ * It'll init all VK func pointers from the dispatch tables that are passed in.
+ * This function also fills out the following members of Forge's Renderer struct:
+ * - pVkInstance
+ * - pVkDevice
+ * - pVkActiveGPU
+ * Returns VK_SUCCESS on success and VK_ERROR_INITIALIZATION_FAILED otherwise.
+ */
+VkResult volkInitializeWithDispatchTables(Renderer* pRenderer);
 
-typedef void (*WindowResizeEventHandler)(const WindowResizeEventData* data);
-void registerWindowResizeEvent(WindowResizeEventHandler callback);
-void unregisterWindowResizeEvent(WindowResizeEventHandler callback);
+/**
+ * Wraps dispatchable VK objects.
+ */
+VkResult wrapDispatchableVkObject(const void** pObj);
 
-bool requestMouseCapture(bool allowCapture);
+#ifdef __cplusplus
+}
+#endif
+
+#endif

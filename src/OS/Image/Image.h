@@ -34,6 +34,8 @@ static_assert(false, "Image.h can only be included by ResourceLoader.cpp and Ima
 #include "../Interfaces/IFileSystem.h"
 #include "../../ThirdParty/OpenSource/EASTL/string.h"
 
+//Google basis Transcoder
+#include "../../ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.h"
 #define ALL_MIPLEVELS 127
 
 /************************************************************************************/
@@ -124,6 +126,7 @@ public:
 
 	// Image Format Saving
 	bool                 iSaveDDS(const char* fileName);
+	bool                 iSaveKTX(const char* fileName);
 	bool                 iSaveTGA(const char* fileName);
 	bool                 iSaveBMP(const char* fileName);
 	bool                 iSavePNG(const char* fileName);
@@ -144,7 +147,7 @@ protected:
 	bool                 mOwnsMemory;
 	// is memory (mipmaps*w*h*d)*s or
 	// mipmaps * (w*h*d*s) with s being constant for all mipmaps
-	bool								 mMipsAfterSlices;
+	bool				 mMipsAfterSlices;
 
 public:
 	typedef bool (*ImageLoaderFunction)(

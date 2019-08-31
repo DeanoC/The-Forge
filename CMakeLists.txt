@@ -39,7 +39,6 @@ set(Src
 		OS/Core/DLL.h
 		OS/Core/FileSystem.cpp
 		OS/Core/GPUConfig.h
-		OS/Core/PlatformEvents.cpp
 		OS/Core/RingBuffer.h
 		OS/Core/ThreadSystem.cpp
 		OS/Core/ThreadSystem.h
@@ -53,7 +52,6 @@ set(Src
 		OS/Interfaces/IMemory.h
 		OS/Interfaces/IMiddleware.h
 		OS/Interfaces/IOperatingSystem.h
-		OS/Interfaces/IPlatformEvents.h
 		OS/Interfaces/IProfiler.h
 		OS/Interfaces/IThread.h
 		OS/Interfaces/ITime.h
@@ -77,6 +75,16 @@ set(Src
 		ThirdParty/OpenSource/EASTL/string.cpp
 		ThirdParty/OpenSource/EASTL/thread_support.cpp
 		ThirdParty/OpenSource/EASTL/EAStdC/EASprintf.cpp
+
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_file_headers.h
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_global_selector_cb.h
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_global_selector_palette.h
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.h
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_internal.h
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_bc7_m6.inc
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_dxt1_5.inc
+		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_dxt1_6.inc
 		)
 if (WIN32)
 	if(NOT USE_VULKAN)

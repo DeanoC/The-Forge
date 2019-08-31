@@ -63,6 +63,7 @@
 #include "../../ThirdParty/OpenSource/tinydds/tinydds.h"
 #define TINYKTX_IMPLEMENTATION
 #include "../../ThirdParty/OpenSource/tinyktx/tinyktx.h"
+#include "ImageHelper.h"
 
 #include "../Interfaces/IMemory.h"
 
@@ -259,6 +260,9 @@ Image::Image()
 	pAdditionalData = NULL;
 	mOwnsMemory = true;
 	mLinearLayout = true;
+
+	// Init basisu
+	basist::basisu_transcoder_init();
 }
 
 Image::Image(const Image& img)
@@ -745,17 +749,22 @@ static void tinyktxddsCallbackFree(void *user, void *data) {
 	conf_free(data);
 }
 static size_t tinyktxddsCallbackRead(void *user, void* data, size_t size) {
-	auto file = (MemoryBuffer*) user;
+	MemoryBuffer* file = (MemoryBuffer*) user;
 	return file->Read(data, (unsigned int)size);
 }
 static bool tinyktxddsCallbackSeek(void *user, int64_t offset) {
-	auto file = (MemoryBuffer*) user;
+	MemoryBuffer* file = (MemoryBuffer*) user;
 	return file->Seek((unsigned int)offset, SeekDir::SEEK_DIR_BEGIN);
 
 }
 static int64_t tinyktxddsCallbackTell(void *user) {
-	auto file = (MemoryBuffer*) user;
+	MemoryBuffer* file = (MemoryBuffer*) user;
 	return file->Tell();
+}
+
+static void tinyktxddsCallbackWrite(void* user, void const* data, size_t size) {
+	File* file = (File*)user;
+	file->Write(data, (unsigned int)size);
 }
 
 // Load Image Data form mData functions
@@ -1188,6 +1197,121 @@ bool Image::iLoadGNFFromMemory(const char* memory, size_t memSize, const bool us
 }
 #endif
 
+//------------------------------------------------------------------------------
+//  Loads a Basis data from memory.
+//
+bool iLoadBASISFromMemory(Image* pImage, const char* memory, uint32_t memSize, memoryAllocationFunc pAllocator /*= NULL*/, void* pUserData /*= NULL*/)
+{
+	if (memory == NULL || memSize == 0)
+		return false;
+
+	basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
+
+	eastl::vector<uint8_t> basis_data;
+	basis_data.resize(memSize);
+	memcpy(basis_data.data(), memory, memSize);
+
+	basist::basisu_transcoder decoder(&sel_codebook);
+
+	basist::basisu_file_info fileinfo;
+	if (!decoder.get_file_info(basis_data.data(), (uint32_t)basis_data.size(), fileinfo))
+	{
+		LOGF(LogLevel::eERROR, "Failed retrieving Basis file information!");
+		return false;
+	}
+
+	ASSERT(fileinfo.m_total_images == fileinfo.m_image_mipmap_levels.size());
+	ASSERT(fileinfo.m_total_images == decoder.get_total_images(&basis_data[0], (uint32_t)basis_data.size()));
+
+	basist::basisu_image_info imageinfo;
+	decoder.get_image_info(basis_data.data(), (uint32_t)basis_data.size(), imageinfo, 0);
+
+	uint32_t width = imageinfo.m_width;
+	uint32_t height = imageinfo.m_height;
+	uint32_t depth = 1;
+	uint32_t mipMapCount = max(1U, fileinfo.m_image_mipmap_levels[0]);
+	uint32_t arrayCount = fileinfo.m_total_images;
+
+	TinyImageFormat imageFormat = TinyImageFormat_UNDEFINED;
+
+	bool isNormalMap;
+
+	if (fileinfo.m_userdata0 == 1)
+		isNormalMap = true;
+	else
+		isNormalMap = false;
+
+	basist::transcoder_texture_format basisTextureFormat;
+
+	if (!isNormalMap)
+	{
+		if (!imageinfo.m_alpha_flag)
+		{
+			imageFormat = TinyImageFormat_DXBC1_RGBA_UNORM;
+			basisTextureFormat = basist::transcoder_texture_format::cTFBC1;
+		}
+		else
+		{
+			imageFormat = TinyImageFormat_DXBC3_UNORM;
+			basisTextureFormat = basist::transcoder_texture_format::cTFBC3;
+		}
+	}
+	else
+	{
+        imageFormat = TinyImageFormat_DXBC5_UNORM;
+        basisTextureFormat = basist::transcoder_texture_format::cTFBC5;
+	}
+
+	pImage->RedefineDimensions(imageFormat, width, height, depth, mipMapCount, arrayCount);
+
+	int size = pImage->GetMipMappedSize();
+
+	if (pAllocator)
+	{
+		pImage->SetPixels((unsigned char*)pAllocator(pImage, size, pUserData));
+	}
+	else
+	{
+		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * size), true);
+	}
+
+	decoder.start_transcoding(basis_data.data(), (uint32_t)basis_data.size());
+
+
+	for (uint32_t image_index = 0; image_index < fileinfo.m_total_images; image_index++)
+	{
+		for (uint32_t level_index = 0; level_index < fileinfo.m_image_mipmap_levels[image_index]; level_index++)
+		{
+			basist::basisu_image_level_info level_info;
+
+			if (!decoder.get_image_level_info(&basis_data[0], (uint32_t)basis_data.size(), level_info, image_index, level_index))
+			{
+				LOGF(LogLevel::eERROR, "Failed retrieving image level information (%u %u)!\n", image_index, level_index);
+				return false;
+			}
+
+			if (basisTextureFormat == basist::cTFPVRTC1_4_OPAQUE_ONLY)
+			{
+				if (!isPowerOf2(level_info.m_width) || !isPowerOf2(level_info.m_height))
+				{
+					LOGF(LogLevel::eWARNING, "Warning: Will not transcode image %u level %u res %ux%u to PVRTC1 (one or more dimension is not a power of 2)\n", image_index, level_index, level_info.m_width, level_info.m_height);
+
+					// Can't transcode this image level to PVRTC because it's not a pow2 (we're going to support transcoding non-pow2 to the next larger pow2 soon)
+					continue;
+				}
+			}
+
+			if (!decoder.transcode_image_level(&basis_data[0], (uint32_t)basis_data.size(), image_index, level_index, pImage->GetPixels(), (uint32_t)(imageinfo.m_num_blocks_x * imageinfo.m_num_blocks_y), basisTextureFormat, 0))
+			{
+				LOGF(LogLevel::eERROR, "Failed transcoding image level (%u %u)!\n", image_index, level_index);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 // Image loading
 // struct of table for file format to loading function
 struct ImageLoaderDefinition
@@ -1208,6 +1332,7 @@ struct StaticImageLoader
 #if defined(ORBIS)
 		gImageLoaders.push_back({ ".gnf", iLoadGNFFromMemory });
 #endif
+		gImageLoaders.push_back({ ".basis", iLoadBASISFromMemory });
 
 	}
 } gImageLoaderInst;
@@ -1256,6 +1381,7 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 
 	char fileName[MAX_PATH] = {};
 	strcpy(fileName, origFileName);
+	// For loading basis file, it should have its extension
 	if (!extension.size())
 	{
 #if defined(__ANDROID__)
@@ -1473,12 +1599,87 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 }
 
 // -- IMAGE SAVING --
+static void tinyktxCallbackError(void* user, char const* msg) {
+	LOGF( LogLevel::eERROR, "Tiny_Ktx ERROR: %s", msg);
+}
 
-bool Image::iSaveDDS(const char* fileName)
-{
-	// TODO replace with TInyDDS
+bool Image::iSaveDDS(const char* fileName) {
+	TinyDDS_WriteCallbacks callback{
+			&tinyktxddsCallbackError,
+			&tinyktxddsCallbackAlloc,
+			&tinyktxddsCallbackFree,
+			&tinyktxddsCallbackWrite,
+	};
 
-	return false;
+	TinyDDS_Format fmt = TinyImageFormat_ToTinyDDSFormat(mFormat);
+	if (fmt == TDDS_UNDEFINED)
+		return convertAndSaveImage(*this, &Image::iSaveKTX, fileName);
+
+	File file;
+	if (!file.Open(fileName, FileMode::FM_WriteBinary, FSR_Textures))
+		return false;
+
+	uint32_t mipmapsizes[TINYDDS_MAX_MIPMAPLEVELS];
+	void const* mipmaps[TINYDDS_MAX_MIPMAPLEVELS];
+	memset(mipmapsizes, 0, sizeof(uint32_t) * TINYDDS_MAX_MIPMAPLEVELS);
+	memset(mipmaps, 0, sizeof(void const*) * TINYDDS_MAX_MIPMAPLEVELS);
+
+	for (unsigned int i = 0; i < mMipMapCount; ++i) {
+		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
+		mipmaps[i] = GetPixels(i);
+	}
+
+	return TinyDDS_WriteImage(&callback,
+		&file,
+		mWidth,
+		mHeight,
+		mDepth,
+		mArrayCount,
+		mMipMapCount,
+		fmt,
+		mDepth == 0,
+		true,
+		mipmapsizes,
+		mipmaps);
+}
+
+bool Image::iSaveKTX(const char* fileName) {
+	TinyKtx_WriteCallbacks callback{
+			&tinyktxddsCallbackError,
+			&tinyktxddsCallbackAlloc,
+			&tinyktxddsCallbackFree,
+			&tinyktxddsCallbackWrite,
+	};
+
+	TinyKtx_Format fmt = TinyImageFormat_ToTinyKtxFormat(mFormat);
+	if (fmt == TKTX_UNDEFINED)
+		return convertAndSaveImage(*this, &Image::iSaveKTX, fileName);
+
+	File file;
+	if (!file.Open(fileName, FileMode::FM_WriteBinary, FSR_Textures))
+		return false;
+	
+	uint32_t mipmapsizes[TINYKTX_MAX_MIPMAPLEVELS];
+	void const* mipmaps[TINYKTX_MAX_MIPMAPLEVELS];
+	memset(mipmapsizes, 0, sizeof(uint32_t) * TINYKTX_MAX_MIPMAPLEVELS);
+	memset(mipmaps, 0, sizeof(void const*) * TINYKTX_MAX_MIPMAPLEVELS);
+
+	for (unsigned int i = 0; i < mMipMapCount; ++i) {
+		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
+		mipmaps[i] = GetPixels(i);
+	}
+
+	return TinyKtx_WriteImage(&callback,
+		&file,
+		mWidth,
+		mHeight,
+		mDepth,
+		mArrayCount,
+		mMipMapCount,
+		fmt,
+		mDepth == 0,
+		mipmapsizes,
+		mipmaps);
 }
 
 bool convertAndSaveImage(const Image& image, bool (Image::*saverFunction)(const char*), const char* fileName)
@@ -1596,7 +1797,8 @@ static ImageSaverDefinition gImageSavers[] = {
 	{ ".bmp", &Image::iSaveBMP }, { ".hdr", &Image::iSaveHDR }, { ".png", &Image::iSavePNG },
 	{ ".tga", &Image::iSaveTGA }, { ".jpg", &Image::iSaveJPG },
 #endif
-	{ ".dds", &Image::iSaveDDS }
+	{ ".dds", &Image::iSaveDDS },
+	{ ".ktx",& Image::iSaveKTX }
 };
 
 bool Image::Save(const char* fileName)

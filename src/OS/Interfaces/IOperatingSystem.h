@@ -219,7 +219,3 @@ MonitorDesc* getMonitor(uint32_t index);
 float2       getDpiScale();
 
 bool getResolutionSupport(const MonitorDesc* pMonitor, const Resolution* pRes);
-//
-// failure research ...
-//
-#include "IPlatformEvents.h"
