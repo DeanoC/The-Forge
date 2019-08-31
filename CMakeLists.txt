@@ -14,10 +14,15 @@ if (NOT hasParent)
 	endif ()
 endif ()
 
-#currnet vulkan only on windows
+#currently vulkan only on windows
+# windows supports USE_VULKAN, USE_D3D11 and USE_D3D12
+# defaults to USE_D3D12
 if (WIN32)
-#	set(USE_VULKAN TRUE)
+	if(NOT USE_VULKAN AND NOT USE_D3D11)
+		set(USE_D3D12 TRUE)
+	endif()
 endif()
+
 
 SET_MIN_VERSIONS()
 set(LibName gfx_theforge)
