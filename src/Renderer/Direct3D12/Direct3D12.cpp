@@ -2754,7 +2754,6 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		pTexture->mOwnsImage = true;
 	}
 
-
 	//add to gpu
 	D3D12_RESOURCE_DESC desc = {};
 
