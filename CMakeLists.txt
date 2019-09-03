@@ -14,15 +14,25 @@ if (NOT hasParent)
 	endif ()
 endif ()
 
-#currently vulkan only on windows
+#set(USE_D3D12 TRUE)
+#set(USE_VULKAN TRUE)
+#set(USE_D3D11 TRUE)
+
 # windows supports USE_VULKAN, USE_D3D11 and USE_D3D12
 # defaults to USE_D3D12
 if (WIN32)
 	if(NOT USE_VULKAN AND NOT USE_D3D11)
 		set(USE_D3D12 TRUE)
 	endif()
-endif()
 
+	if(USE_VULKAN)
+		find_package(Vulkan REQUIRED)
+	endif()
+endif()
+# TODO vulkan on metal support
+if( APPLE)
+	set(USE_METAL TRUE)
+endif()
 
 SET_MIN_VERSIONS()
 set(LibName gfx_theforge)
@@ -92,7 +102,13 @@ set(Src
 		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_dxt1_6.inc
 		)
 if (WIN32)
-	if(NOT USE_VULKAN)
+	if(USE_D3D11)
+		list(APPEND Src Renderer/Direct3D11/Direct3D11.cpp)
+		list(APPEND Src Renderer/Direct3D11/Direct3D11Raytracing.cpp)
+		list(APPEND Src Renderer/Direct3D11/Direct3D11ShaderReflection.cpp)
+	endif()
+
+	if(USE_D3D12)
 		list(APPEND Src Renderer/Direct3D12/Direct3D12.cpp)
 		list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.cpp)
 		list(APPEND Src Renderer/Direct3D12/Direct3D12Hooks.h)
@@ -107,11 +123,25 @@ if (WIN32)
 	list(APPEND Src OS/Windows/WindowsTime.cpp)
 endif ()
 
+if(USE_VULKAN)
+	list(APPEND Src Renderer/Vulkan/Vulkan.cpp)
+	list(APPEND Src Renderer/Vulkan/VulkanRaytracing.cpp)
+	list(APPEND Src Renderer/Vulkan/VulkanShaderReflection.cpp)
+	list(APPEND Src Renderer/Vulkan/VulkanCapsBuilder.h)
+	list(APPEND Src Tools/SpirvTools/SpirvTools.cpp)
+
+	list(APPEND Deps gfx_spirvtools)
+	list(APPEND Deps gfx_spirvcross)
+endif()
+
 if (APPLE)
-	list(APPEND Src Renderer/Metal/MetalMemoryAllocator.h)
-	list(APPEND Src Renderer/Metal/MetalRaytracing.mm)
-	list(APPEND Src Renderer/Metal/MetalRenderer.mm)
-	list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
+	if( USE_METAL )
+		list(APPEND Src Renderer/Metal/MetalMemoryAllocator.h)
+		list(APPEND Src Renderer/Metal/MetalCapsBuilder.h)
+		list(APPEND Src Renderer/Metal/MetalRaytracing.mm)
+		list(APPEND Src Renderer/Metal/MetalRenderer.mm)
+		list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
+	endif()
 
 	list(APPEND Src OS/macOs/macOSFileSystem.mm)
 	list(APPEND Src OS/macOs/macOSThread.cpp)
@@ -123,17 +153,6 @@ set(Deps
 		al2o3_memory
 		tiny_imageformat
 		)
-
-if(USE_VULKAN)
-	find_package(Vulkan REQUIRED)
-	list(APPEND Src Renderer/Vulkan/Vulkan.cpp)
-	list(APPEND Src Renderer/Vulkan/VulkanRaytracing.cpp)
-	list(APPEND Src Renderer/Vulkan/VulkanShaderReflection.cpp)
-	list(APPEND Src Tools/SpirvTools/SpirvTools.cpp)
-
-	list(APPEND Deps gfx_spirvtools)
-	list(APPEND Deps gfx_spirvcross)
-endif()
 
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
 
@@ -159,9 +178,14 @@ if (APPLE)
 			"-framework QuartzCore"
 			)
 endif ()
+
 if(WIN32)
-	if(NOT USE_VULKAN)
+	if(USE_D3D12)
 		target_compile_definitions(${LibName} PRIVATE DIRECT3D12)
+	endif()
+
+	if(USE_D3D11)
+		target_compile_definitions(${LibName} PRIVATE DIRECT3D11)
 	endif()
 
 	target_link_libraries(${LibName} PRIVATE

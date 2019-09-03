@@ -248,7 +248,8 @@ DXGI_FORMAT util_to_dx_uav_format(DXGI_FORMAT defaultFormat)
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
 		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
-		case DXGI_FORMAT_D16_UNORM: ErrorMsg("Requested a UAV format for a depth stencil format");
+		case DXGI_FORMAT_D16_UNORM: 		LOGF(LogLevel::eERROR,
+																				"Requested a UAV format for a depth stencil format");
 #endif
 
 		default: return defaultFormat;
@@ -1517,7 +1518,7 @@ void compileShader(
 {
 	if (shaderTarget > pRenderer->mSettings.mShaderTarget)
 	{
-		ErrorMsg(
+		LOGF(LogLevel::eERROR,
 			"Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
 			(uint32_t)shaderTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
 		return;
@@ -1581,7 +1582,7 @@ void compileShader(
 		ASSERT(msg);
 		memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 		eastl::string error = eastl::string(fileName) + " " + msg;
-		ErrorMsg(error.c_str());
+		LOGF(LogLevel::eERROR, error.c_str());
 		SAFE_FREE(msg);
 	}
 	ASSERT(SUCCEEDED(hres));
@@ -2352,8 +2353,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[pNode->second].reg != pRes->reg)
 				{
-					ErrorMsg(
-						"\nFailed to create root signature\n"
+					LOGF(LogLevel::eERROR,
+							 "\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching register. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
 						"have the same register and space",
@@ -2362,8 +2363,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[pNode->second].set != pRes->set)
 				{
-					ErrorMsg(
-						"\nFailed to create root signature\n"
+					LOGF(LogLevel::eERROR,
+							 "\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching space. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
 						"have the same register and space",
