@@ -53,10 +53,10 @@ const char *pszBases[FSR_Count] = {
 #endif
 static void LogFunc(LogType type, const char *m0, const char *m1) {
 	switch (type) {
-	case LogType::LOG_TYPE_INFO: LOGINFOF("%s %s", m0, m1);
-	case LogType::LOG_TYPE_DEBUG: LOGDEBUGF("%s %s", m0, m1);
-	case LogType::LOG_TYPE_WARN: LOGWARNINGF("%s %s", m0, m1);
-	case LogType::LOG_TYPE_ERROR: LOGERRORF("%s %s", m0, m1);
+		case LogType::LOG_TYPE_INFO: LOGINFO("%s %s", m0, m1);
+		case LogType::LOG_TYPE_DEBUG: LOGDEBUG("%s %s", m0, m1);
+		case LogType::LOG_TYPE_WARN: LOGWARNING("%s %s", m0, m1);
+		case LogType::LOG_TYPE_ERROR: LOGERROR("%s %s", m0, m1);
 	}
 }
 
@@ -67,7 +67,7 @@ static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage)
 	case TheForge_SS_VERT: return SHADER_STAGE_VERT;
 	case TheForge_SS_FRAG: return SHADER_STAGE_FRAG;
 	case TheForge_SS_COMP: return SHADER_STAGE_COMP;
-	default: LOGERRORF("Shader stage is not supported on Metal backend");
+		default: LOGERROR("Shader stage is not supported on Metal backend");
 		return SHADER_STAGE_NONE;
 	}
 #else
@@ -81,7 +81,7 @@ static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage)
 	case TheForge_SS_COMP:				return SHADER_STAGE_COMP;
 	case TheForge_SS_RAYTRACING:	return SHADER_STAGE_RAYTRACING;
 	default:
-		LOGERRORF("Shader stage is not supported on Metal backend");
+		LOGERROR("Shader stage is not supported on Metal backend");
 		return SHADER_STAGE_NONE;
 	}
 #endif
@@ -146,7 +146,7 @@ static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc co
 			break;
 		case 2: srcStage = &src->stages[5];
 			break;
-		default: LOGERRORF("Shader stage is not supported on Metal backend");
+			default: LOGERROR("Shader stage is not supported on Metal backend");
 			return;
 		}
 #else
