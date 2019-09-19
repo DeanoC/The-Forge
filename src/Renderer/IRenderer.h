@@ -1306,7 +1306,7 @@ typedef struct ShaderDesc
 typedef struct BinaryShaderStageDesc
 {
 	/// Byte code array
-	char*    pByteCode;
+	char const *pByteCode;
 	uint32_t mByteCodeSize;
 	eastl::string mEntryPoint;
 #if defined(METAL)

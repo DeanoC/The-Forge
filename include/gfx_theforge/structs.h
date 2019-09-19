@@ -130,7 +130,7 @@ typedef struct TheForge_ShaderDesc
 typedef struct TheForge_BinaryShaderStageDesc
 {
 	/// Byte code array
-	char*    byteCode;
+	char const *byteCode;
 	uint32_t byteCodeSize;
 	char const* entryPoint;
 
