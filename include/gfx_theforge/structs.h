@@ -392,7 +392,7 @@ typedef struct TheForge_TextureDesc
 	uint32_t mSharedNodeIndexCount;
 	uint32_t mNodeIndex;
 	bool mHostVisible;
-} heForge_TextureDesc;
+} TheForge_TextureDesc;
 
 typedef struct TheForge_QueryPoolDesc
 {

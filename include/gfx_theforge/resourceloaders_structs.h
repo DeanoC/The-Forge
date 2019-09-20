@@ -16,7 +16,7 @@ typedef struct TheForge_BufferLoadDesc
 
 typedef struct TheForge_RawImageData
 {
-	unsigned char* pRawData;
+	unsigned char const *pRawData;
 	TinyImageFormat format;
 	uint32_t width;
 	uint32_t height;
