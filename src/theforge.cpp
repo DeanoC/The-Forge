@@ -625,31 +625,12 @@ AL2O3_EXTERN_C void TheForge_CmdResourceBarrier(TheForge_CmdHandle cmd,
 																								uint32_t bufferBarrierCount,
 																								TheForge_BufferBarrier *pBufferBarriers,
 																								uint32_t textureBarrierCount,
-																								TheForge_TextureBarrier *pTextureBarriers,
-																								bool batch) {
+																								TheForge_TextureBarrier *pTextureBarriers) {
 	cmdResourceBarrier((Cmd *) cmd,
 										 bufferBarrierCount,
 										 (BufferBarrier *) pBufferBarriers,
 										 textureBarrierCount,
-										 (TextureBarrier *) pTextureBarriers,
-										 batch);
-}
-AL2O3_EXTERN_C void TheForge_CmdSynchronizeResources(TheForge_CmdHandle cmd,
-																										 uint32_t bufferCount,
-																										 TheForge_BufferHandle *pBuffers,
-																										 uint32_t textureCount,
-																										 TheForge_TextureHandle *pTextures,
-																										 bool batch) {
-	cmdSynchronizeResources((Cmd *) cmd,
-													bufferCount,
-													(Buffer **) pBuffers,
-													textureCount,
-													(Texture **) pTextures,
-													batch);
-}
-
-AL2O3_EXTERN_C void TheForge_CmdFlushBarriers(TheForge_CmdHandle cmd) {
-	cmdFlushBarriers((Cmd *) cmd);
+										 (TextureBarrier *) pTextureBarriers);
 }
 
 AL2O3_EXTERN_C void TheForge_WaitQueueIdle(TheForge_QueueHandle queue) {
@@ -695,26 +676,26 @@ AL2O3_EXTERN_C void TheForge_CmdExecuteIndirect(TheForge_CmdHandle cmd,
 }
 
 AL2O3_EXTERN_C void TheForge_CmdBeginQuery(TheForge_CmdHandle cmd,
-																					 TheForge_QueryHeapHandle queryHeap,
+																					 TheForge_QueryPoolHandle queryHeap,
 																					 TheForge_QueryDesc *pQuery) {
 	cmdBeginQuery((Cmd *) cmd,
-								(QueryHeap *) queryHeap,
+								(QueryPool *) queryHeap,
 								(QueryDesc *) pQuery);
 }
 AL2O3_EXTERN_C void TheForge_CmdEndQuery(TheForge_CmdHandle cmd,
-																				 TheForge_QueryHeapHandle queryHeap,
+																				 TheForge_QueryPoolHandle queryHeap,
 																				 TheForge_QueryDesc *pQuery) {
 	cmdEndQuery((Cmd *) cmd,
-							(QueryHeap *) queryHeap,
+							(QueryPool *) queryHeap,
 							(QueryDesc *) pQuery);
 }
 AL2O3_EXTERN_C void TheForge_CmdResolveQuery(TheForge_CmdHandle cmd,
-																						 TheForge_QueryHeapHandle queryHeap,
+																						 TheForge_QueryPoolHandle queryHeap,
 																						 TheForge_BufferHandle readbackBuffer,
 																						 uint32_t startQuery,
 																						 uint32_t queryCount) {
 	cmdResolveQuery((Cmd *) cmd,
-									(QueryHeap *) queryHeap,
+									(QueryPool *) queryHeap,
 									(Buffer *) readbackBuffer,
 									startQuery,
 									queryCount);
@@ -1224,10 +1205,10 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_TextureBarrier, newState) == offsetof(TextureBarrier, mNewState));
 	API_CHK(offsetof(TheForge_TextureBarrier, split) == offsetof(TextureBarrier, mSplit));
 
-	API_CHK(sizeof(TheForge_QueryHeapDesc) == sizeof(QueryHeapDesc));
-	API_CHK(offsetof(TheForge_QueryHeapDesc, type) == offsetof(QueryHeapDesc, mType));
-	API_CHK(offsetof(TheForge_QueryHeapDesc, queryCount) == offsetof(QueryHeapDesc, mQueryCount));
-	API_CHK(offsetof(TheForge_QueryHeapDesc, nodeIndex) == offsetof(QueryHeapDesc, mNodeIndex));
+	API_CHK(sizeof(TheForge_QueryPoolDesc) == sizeof(QueryPoolDesc));
+	API_CHK(offsetof(TheForge_QueryPoolDesc, type) == offsetof(QueryPoolDesc, mType));
+	API_CHK(offsetof(TheForge_QueryPoolDesc, queryCount) == offsetof(QueryPoolDesc, mQueryCount));
+	API_CHK(offsetof(TheForge_QueryPoolDesc, nodeIndex) == offsetof(QueryPoolDesc, mNodeIndex));
 
 	API_CHK(sizeof(TheForge_QueryDesc) == sizeof(QueryDesc));
 	API_CHK(offsetof(TheForge_QueryDesc, index) == offsetof(QueryDesc, mIndex));

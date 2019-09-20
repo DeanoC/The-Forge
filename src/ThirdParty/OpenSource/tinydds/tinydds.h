@@ -821,6 +821,8 @@ typedef struct TinyDDS_Context {
 
 	bool headerValid;
 	uint8_t const *mipmaps[TINYDDS_MAX_MIPMAPLEVELS];
+	uint32_t const *clut;
+
 } TinyDDS_Context;
 
 #define TINYDDS_MAKE_RIFFCODE(a, b, c, d) (a | (b << 8) | (c << 16) | (d << 24))
@@ -892,11 +894,24 @@ void TinyDDS_Reset(TinyDDS_ContextHandle handle) {
 		}
 	}
 
+	if (ctx->clut) {
+		callbacks.freeFn(user, (void *) ctx->clut);
+		ctx->clut = NULL;
+	}
+
 	// reset to default state
 	memset(ctx, 0, sizeof(TinyDDS_Context));
 	memcpy(&ctx->callbacks, &callbacks, sizeof(TinyDDS_Callbacks));
 	ctx->user = user;
 
+}
+
+static bool TinyDDS_IsCLUT(TinyDDS_Format fmt) {
+	switch (fmt) {
+		case TDDS_P8:
+		case TDDS_A8P8: return true;
+		default: return false;
+	}
 }
 
 static bool TinyDDS_IsCompressed(TinyDDS_Format fmt) {
@@ -1058,13 +1073,13 @@ static uint32_t TinyDDS_FormatSize(TinyDDS_Format fmt) {
 		// block formats
 	case TDDS_BC1_RGBA_UNORM_BLOCK:
 	case TDDS_BC1_RGBA_SRGB_BLOCK:
-		return 8;
-	case TDDS_BC2_UNORM_BLOCK:
+	case TDDS_BC4_UNORM_BLOCK:
+	case TDDS_BC4_SNORM_BLOCK: return 8;
+
+		case TDDS_BC2_UNORM_BLOCK:
 	case TDDS_BC2_SRGB_BLOCK:
 	case TDDS_BC3_UNORM_BLOCK:
 	case TDDS_BC3_SRGB_BLOCK:
-	case TDDS_BC4_UNORM_BLOCK:
-	case TDDS_BC4_SNORM_BLOCK:
 	case TDDS_BC5_UNORM_BLOCK:
 	case TDDS_BC5_SNORM_BLOCK:
 	case TDDS_BC6H_UFLOAT_BLOCK:
@@ -1326,6 +1341,10 @@ bool TinyDDS_ReadHeader(TinyDDS_ContextHandle handle) {
 		return false;
 	}
 
+	if (ctx->header.magic != 0x20534444) {
+		return false;
+	}
+
 	// try the easy case of a modern dx10 DDS file
 	if ((ctx->header.formatFlags & TINYDDS_DDPF_FOURCC) &&
 			(ctx->header.formatFourCC == TINYDDS_MAKE_RIFFCODE('D', 'X', '1', '0'))) {
@@ -1377,6 +1396,22 @@ bool TinyDDS_ReadHeader(TinyDDS_ContextHandle handle) {
 		// compressed images never get asked to make mip maps which is good as
 		// requires decompress/compress cycle
 		if(ctx->header.mipMapCount == 0) ctx->header.mipMapCount = 1;
+	}
+
+	if (TinyDDS_IsCLUT(ctx->format)) {
+		// for now don't ask to generate mipmaps for cluts
+		if (ctx->header.mipMapCount == 0) {
+			ctx->header.mipMapCount = 1;
+		}
+
+		size_t const clutSize = 256 * sizeof(uint32_t);
+
+		ctx->clut = (uint32_t *) ctx->callbacks.allocFn(ctx->user, clutSize);
+
+		if (ctx->callbacks.readFn(ctx->user, (void *) ctx->clut, clutSize) != clutSize) {
+			ctx->callbacks.errorFn(ctx->user, "Could not read DDS CLUT");
+			return false;
+		}
 	}
 
 	ctx->firstImagePos = ctx->callbacks.tellFn(ctx->user);

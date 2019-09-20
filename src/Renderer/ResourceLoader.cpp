@@ -26,7 +26,7 @@
 
 // this is needed for the CopyEngine on XBox
 #ifdef _DURANGO
-#include "../../Xbox/CommonXBOXOne_3/OS/XBoxPrivateHeaders.h"
+#include "../../Xbox/Common_3/Renderer/XBoxPrivateHeaders.h"
 #endif
 
 #include "../ThirdParty/OpenSource/EASTL/deque.h"
@@ -51,8 +51,6 @@
 #endif
 #include "../OS/Interfaces/IMemory.h"
 
-// buffer functions
-#if !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
 extern void addBuffer(Renderer* pRenderer, const BufferDesc* desc, Buffer** pp_buffer);
 extern void removeBuffer(Renderer* pRenderer, Buffer* p_buffer);
 extern void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange);
@@ -62,7 +60,6 @@ extern void removeTexture(Renderer* pRenderer, Texture* p_texture);
 extern void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
 extern void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
 extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer);
-#endif
 /************************************************************************/
 /************************************************************************/
 
@@ -549,7 +546,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	if (applyBarrieers && (uploadOffset.x == 0) && (uploadOffset.y == 0) && (uploadOffset.z == 0))
 	{
 		TextureBarrier preCopyBarrier = { pTexture, RESOURCE_STATE_COPY_DEST };
-		cmdResourceBarrier(pCmd, 0, NULL, 1, &preCopyBarrier, false);
+		cmdResourceBarrier(pCmd, 0, NULL, 1, &preCopyBarrier);
 	}
 	Extent3D          uploadGran = pCopyEngine->pQueue->mUploadGranularity;
 
@@ -676,7 +673,7 @@ static bool updateTexture(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t a
 	if (applyBarrieers)
 	{
 		TextureBarrier postCopyBarrier = { pTexture, util_determine_resource_start_state(pTexture->mDesc.mDescriptors) };
-		cmdResourceBarrier(pCmd, 0, NULL, 1, &postCopyBarrier, true);
+		cmdResourceBarrier(pCmd, 0, NULL, 1, &postCopyBarrier);
 	}
 	else
 	{
@@ -747,7 +744,7 @@ static bool updateBuffer(Renderer* pRenderer, CopyEngine* pCopyEngine, size_t ac
 #ifdef _DURANGO
 	// XBox One needs explicit resource transitions
 	BufferBarrier bufferBarriers[] = { { pBuffer, state } };
-	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #else
 	// Resource will automatically transition so just set the next state without a barrier
 	pBuffer->mCurrentState = state;
@@ -769,12 +766,12 @@ static bool updateResourceState(Renderer* pRenderer, CopyEngine* pCopyEngine, si
 		if (pUpdate.mRequest.buffer)
 		{
 			BufferBarrier barrier = { pUpdate.mRequest.buffer, pUpdate.mRequest.buffer->mDesc.mStartState };
-			cmdResourceBarrier(pCmd, 1, &barrier, 0, NULL, true);
+			cmdResourceBarrier(pCmd, 1, &barrier, 0, NULL);
 		}
 		else if (pUpdate.mRequest.texture)
 		{
 			TextureBarrier barrier = { pUpdate.mRequest.texture, pUpdate.mRequest.texture->mDesc.mStartState };
-			cmdResourceBarrier(pCmd, 0, NULL, 1, &barrier, true);
+			cmdResourceBarrier(pCmd, 0, NULL, 1, &barrier);
 		}
 		else
 		{
@@ -1088,7 +1085,6 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 
 	bool freeImage = false;
 	Image* pImage = NULL;
-	TinyImageFormat tinyFormat = TinyImageFormat_UNDEFINED;
 
 	if (pTextureDesc->pFilename)
 	{
@@ -1502,15 +1498,15 @@ void mtl_compileShader(
 			memcpy(pByteCode->data(), file.ReadText().c_str(), pByteCode->size());
 			file.Close();
 		}
-		else
-			LOGF( LogLevel::eERROR, "Failed to assemble shader's %s .metallib file", fileName.c_str());
-	}
-	else {
+		else {
+			LOGF(LogLevel::eERROR, "Failed to assemble shader's %s .metallib file", fileName.c_str());
+		}
+	} else {
 		LOGF( LogLevel::eERROR,"Failed to compile shader %s", fileName.c_str());
 	}
 }
 #endif
-#if (defined(DIRECT3D12) || defined(DIRECT3D11)) && !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
+#if (defined(DIRECT3D12) || defined(DIRECT3D11))
 extern void compileShader(
 	Renderer* pRenderer, ShaderTarget target, ShaderStage stage, const char* fileName, uint32_t codeSize, const char* code,
 	uint32_t macroCount, ShaderMacro* pMacros, void* (*allocator)(size_t a, const char *f, int l, const char *sf), uint32_t* pByteCodeSize, char** ppByteCode, const char* pEntryPoint);

@@ -25,7 +25,7 @@ typedef struct TheForge_DescriptorBinder *TheForge_DescriptorBinderHandle;
 typedef struct TheForge_Buffer *TheForge_BufferHandle;
 typedef struct TheForge_Texture *TheForge_TextureHandle;
 typedef struct TheForge_AcclerationStructure *TheForge_AcclerationStructureHandle;
-typedef struct TheForge_QueryHeap *TheForge_QueryHeapHandle;
+typedef struct TheForge_QueryPool *TheForge_QueryPoolHandle;
 typedef struct TheForge_CommandSignature *TheForge_CommandSignatureHandle;
 typedef struct TheForge_SwapChain *TheForge_SwapChainHandle;
 
@@ -394,12 +394,12 @@ typedef struct TheForge_TextureDesc
 	bool mHostVisible;
 } heForge_TextureDesc;
 
-typedef struct TheForge_QueryHeapDesc
+typedef struct TheForge_QueryPoolDesc
 {
 	TheForge_QueryType type;
 	uint32_t  queryCount;
 	uint32_t  nodeIndex;
-} TheForge_QueryHeapDesc;
+} TheForge_QueryPoolDesc;
 
 typedef struct TheForge_QueryDesc
 {

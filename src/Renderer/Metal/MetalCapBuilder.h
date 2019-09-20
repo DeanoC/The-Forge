@@ -124,7 +124,7 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 	familyTier = [pRenderer->pDevice supportsFeatureSet: MTLFeatureSet_iOS_GPUFamily4_v1] ? 4 : familyTier;
 	familyTier = [pRenderer->pDevice supportsFeatureSet: MTLFeatureSet_iOS_GPUFamily4_v2] ? 4 : familyTier;
 
-	if(familyTier == 1)
+    if(familyTier == 1) {
 		// this is a tier 1 decide so no astc and XR
 		pRenderer->capBits.canShaderReadFrom[TinyImageFormat_ASTC_4x4_UNORM] = false;
 		pRenderer->capBits.canShaderReadFrom[TinyImageFormat_ASTC_4x4_SRGB] = false;
@@ -156,13 +156,12 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 		pRenderer->capBits.canShaderReadFrom[TinyImageFormat_ASTC_12x12_SRGB] = false;
 
 		// TODO when TinyImageFormat supports XR formats exclude them here for tier 1
-
 	}
 
-	if(familyTier >= 1)
+    if(familyTier >= 1) {
 		CAN_COLOR_WRITE(R8_UNORM); // this has a subscript 8 which makes no sense
 		CAN_COLOR_WRITE(R8_SNORM);
-		CAN_COLOR_WRITE(R8_UINT;
+		CAN_COLOR_WRITE(R8_UINT);
 		CAN_COLOR_WRITE(R8_SINT);
 		CAN_COLOR_WRITE(R8_SRGB);
 
@@ -170,7 +169,7 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 		CAN_COLOR_WRITE(R16_SNORM);
 		CAN_COLOR_WRITE(R16_SFLOAT);
 		CAN_COLOR_WRITE(R16_UINT);
-		CAN_COLOR_WRITE(R16_SINT;
+		CAN_COLOR_WRITE(R16_SINT);
 
 		CAN_COLOR_WRITE(R8G8_UNORM);
 		CAN_COLOR_WRITE(R8G8_SNORM);
@@ -180,7 +179,7 @@ inline void utils_caps_builder(Renderer* pRenderer) {
 
 		CAN_COLOR_WRITE(B5G6R5_UNORM);
 		CAN_COLOR_WRITE(A1R5G5B5_UNORM);
-		CAN_COLOR_WRITE(A4B4G4R4A4_UNORM);
+		CAN_COLOR_WRITE(A4B4G4R4_UNORM);
 		CAN_COLOR_WRITE(R5G6B5_UNORM);
 		CAN_COLOR_WRITE(B5G5R5A1_UNORM);
 

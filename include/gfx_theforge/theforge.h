@@ -87,10 +87,10 @@ AL2O3_EXTERN_C void TheForge_AddRasterizerState(TheForge_RendererHandle handle,
 AL2O3_EXTERN_C void TheForge_RemoveRasterizerState(TheForge_RendererHandle handle,
 																									 TheForge_RasterizerStateHandle pRasterizerState);
 
-AL2O3_EXTERN_C void TheForge_AddQueryHeap(TheForge_RendererHandle handle,
-																					const TheForge_QueryHeapDesc *pDesc,
-																					TheForge_QueryHeapHandle *pQueryHeap);
-AL2O3_EXTERN_C void TheForge_RemoveQueryHeap(TheForge_RendererHandle handle, TheForge_QueryHeapHandle queryHeap);
+AL2O3_EXTERN_C void TheForge_AddQueryPool(TheForge_RendererHandle handle,
+																					const TheForge_QueryPoolDesc *pDesc,
+																					TheForge_QueryPoolHandle *pQueryHeap);
+AL2O3_EXTERN_C void TheForge_RemoveQueryPool(TheForge_RendererHandle handle, TheForge_QueryPoolHandle queryHeap);
 
 
 AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle, TheForge_BufferDesc const* pDesc, TheForge_BufferHandle* pBuffer);
@@ -156,14 +156,7 @@ AL2O3_EXTERN_C void TheForge_CmdResourceBarrier(TheForge_CmdHandle cmd,
 																								uint32_t bufferBarrierCount,
 																								TheForge_BufferBarrier *pBufferBarriers,
 																								uint32_t textureBarrierCount,
-																								TheForge_TextureBarrier *pTextureBarriers,
-																								bool batch);
-AL2O3_EXTERN_C void TheForge_CmdSynchronizeResources(TheForge_CmdHandle cmd,
-																										 uint32_t bufferCount,
-																										 TheForge_BufferHandle *pBuffers, uint32_t textureCount,
-																										 TheForge_TextureHandle *pTextures,
-																										 bool batch);
-AL2O3_EXTERN_C void TheForge_CmdFlushBarriers(TheForge_CmdHandle cmd);
+																								TheForge_TextureBarrier *pTextureBarriers);
 
 AL2O3_EXTERN_C void TheForge_CmdBeginDebugMarker(TheForge_CmdHandle cmd, float r, float g, float b, const char *pName);
 AL2O3_EXTERN_C void TheForge_CmdExecuteIndirect(TheForge_CmdHandle cmd,
@@ -174,13 +167,13 @@ AL2O3_EXTERN_C void TheForge_CmdExecuteIndirect(TheForge_CmdHandle cmd,
 																								TheForge_BufferHandle counterBuffer,
 																								uint64_t counterBufferOffset);
 AL2O3_EXTERN_C void TheForge_CmdBeginQuery(TheForge_CmdHandle cmd,
-																					 TheForge_QueryHeapHandle queryHeap,
+																					 TheForge_QueryPoolHandle queryHeap,
 																					 TheForge_QueryDesc *pQuery);
 AL2O3_EXTERN_C void TheForge_CmdEndQuery(TheForge_CmdHandle cmd,
-																				 TheForge_QueryHeapHandle queryHeap,
+																				 TheForge_QueryPoolHandle queryHeap,
 																				 TheForge_QueryDesc *pQuery);
 AL2O3_EXTERN_C void TheForge_CmdResolveQuery(TheForge_CmdHandle cmd,
-																						 TheForge_QueryHeapHandle queryHeap,
+																						 TheForge_QueryPoolHandle queryHeap,
 																						 TheForge_BufferHandle readbackBuffer,
 																						 uint32_t startQuery,
 																						 uint32_t queryCount);

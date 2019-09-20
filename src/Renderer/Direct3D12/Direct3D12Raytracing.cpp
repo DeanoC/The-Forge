@@ -64,10 +64,8 @@ typedef struct DescriptorBinder
 	DescriptorBinderMap  mRootSignatureNodes;
 } DescriptorBinder;
 
-#ifndef ENABLE_RENDERER_RUNTIME_SWITCH
 extern void addBuffer(Renderer* pRenderer, const BufferDesc* desc, Buffer** pp_buffer);
 extern void removeBuffer(Renderer* pRenderer, Buffer* p_buffer);
-#endif
 
 extern void add_descriptor_heap(Renderer* pRenderer, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, uint32_t numDescriptors, struct DescriptorStoreHeap** ppDescHeap);
 extern void reset_descriptor_heap(struct DescriptorStoreHeap* pHeap);
@@ -146,10 +144,6 @@ struct RaytracingShaderTable
 	uint64_t					mMissRecordSize;
 	uint64_t					mHitGroupRecordSize;
 };
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace d3d12 {
-#endif
 
 bool isRaytracingSupported(Renderer* pRenderer)
 {
@@ -762,10 +756,6 @@ void cmdDispatchRays(Cmd* pCmd, Raytracing* pRaytracing, const RaytracingDispatc
 	pDxrCmd->DispatchRays(&dispatchDesc);
 	pDxrCmd->Release();
 }
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
-#endif
 /************************************************************************/
 // Utility Functions Implementation
 /************************************************************************/
@@ -1117,10 +1107,6 @@ void d3d12_cmdBindRaytracingPipeline(Cmd* pCmd, Pipeline* pPipeline)
 	pDxrCmd->Release();
 }
 #else
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace d3d12 {
-#endif
-
 bool isRaytracingSupported(Renderer* pRenderer)
 {
 	return false;
@@ -1166,9 +1152,5 @@ void removeAccelerationStructure(Raytracing* pRaytracing, AccelerationStructure*
 void removeRaytracingShaderTable(Raytracing* pRaytracing, RaytracingShaderTable* pTable)
 {
 }
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
-#endif
 #endif
 #endif

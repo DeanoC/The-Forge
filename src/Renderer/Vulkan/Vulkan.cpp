@@ -431,7 +431,7 @@ PFN_vkCmdDrawIndexedIndirectCountKHR pfnVkCmdDrawIndexedIndirectCountKHR = NULL;
 
 // Internal utility functions (may become external one day)
 VkSampleCountFlagBits util_to_vk_sample_count(SampleCount sampleCount);
-#if !defined(ENABLE_RENDERER_RUNTIME_SWITCH) && !defined(ENABLE_RENDERER_RUNTIME_SWITCH)
+
 // clang-format off
 API_INTERFACE void FORGE_CALLCONV addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer);
 API_INTERFACE void FORGE_CALLCONV removeBuffer(Renderer* pRenderer, Buffer* pBuffer);
@@ -443,9 +443,8 @@ API_INTERFACE void FORGE_CALLCONV cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, ui
 API_INTERFACE void FORGE_CALLCONV cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
 API_INTERFACE const RendererShaderDefinesDesc FORGE_CALLCONV get_renderer_shaderdefines(Renderer* pRenderer);
 // clang-format on
-#endif
 
-//+1 for Acceleration Structure because it is not counted by VK_DESCRIPTOR_TYPE_RANGE_SIZE	
+//+1 for Acceleration Structure because it is not counted by VK_DESCRIPTOR_TYPE_RANGE_SIZE
 #define CONF_DESCRIPTOR_TYPE_RANGE_SIZE (VK_DESCRIPTOR_TYPE_RANGE_SIZE + 1)	
 static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_RANGE_SIZE;
 
@@ -543,11 +542,6 @@ union DescriptorUpdateData
 /************************************************************************/
 // Descriptor Binder Structure
 /************************************************************************/
-// Put this in a namespace to avoid conflicts with other renderer cpp files when they are compiled together
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace {
-#endif
-
 typedef struct DescriptorBinderNode
 {
 	uint32_t              mMaxUsagePerSet[DESCRIPTOR_UPDATE_FREQ_COUNT];
@@ -575,10 +569,6 @@ typedef struct DescriptorBinderNode
 
 using DescriptorBinderMap = eastl::hash_map<const RootSignature*, DescriptorBinderNode*>;
 using DescriptorBinderMapNode = DescriptorBinderMap::value_type;
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
-#endif
 
 typedef struct DescriptorBinder
 {
@@ -1138,7 +1128,7 @@ static void create_default_resources(Renderer* pRenderer)
 
 	uint32_t bufferBarrierCount = (uint32_t)bufferBarriers.size();
 	uint32_t textureBarrierCount = (uint32_t)textureBarriers.size();
-	cmdResourceBarrier(cmd, bufferBarrierCount, bufferBarriers.data(), textureBarrierCount, textureBarriers.data(), false);
+	cmdResourceBarrier(cmd, bufferBarrierCount, bufferBarriers.data(), textureBarrierCount, textureBarriers.data());
 	endCmd(cmd);
 
 	queueSubmit(graphicsQueue, 1, &cmd, NULL, 0, NULL, 0, NULL);
@@ -1652,7 +1642,7 @@ void CreateInstance(const char* app_name, Renderer* pRenderer)
 
 		uint32_t                     extension_count = 0;
 		const uint32_t               initialCount = sizeof(gVkWantedInstanceExtensions) / sizeof(gVkWantedInstanceExtensions[0]);
-		const uint32_t               userRequestedCount = (uint32_t)pRenderer->mSettings.mInstanceExtensions.size();
+		const uint32_t               userRequestedCount = (uint32_t)pRenderer->mSettings.mInstanceExtensionCount;
 		eastl::vector<const char*> wantedInstanceExtensions(initialCount + userRequestedCount);
 		for (uint32_t i = 0; i < initialCount; ++i)
 		{
@@ -1660,7 +1650,7 @@ void CreateInstance(const char* app_name, Renderer* pRenderer)
 		}
 		for (uint32_t i = 0; i < userRequestedCount; ++i)
 		{
-			wantedInstanceExtensions[initialCount + i] = pRenderer->mSettings.mInstanceExtensions[i].c_str();
+			wantedInstanceExtensions[initialCount + i] = pRenderer->mSettings.ppInstanceExtensions[i];
 		}
 		const uint32_t wanted_extension_count = (uint32_t)wantedInstanceExtensions.size();
 		// Layer extensions
@@ -2074,7 +2064,7 @@ static void AddDevice(Renderer* pRenderer)
 	{
 		const char*                  layer_name = NULL;
 		uint32_t                     initialCount = sizeof(gVkWantedDeviceExtensions) / sizeof(gVkWantedDeviceExtensions[0]);
-		const uint32_t               userRequestedCount = (uint32_t)pRenderer->mSettings.mDeviceExtensions.size();
+		const uint32_t               userRequestedCount = (uint32_t)pRenderer->mSettings.mDeviceExtensionCount;
 		eastl::vector<const char*> wantedDeviceExtensions(initialCount + userRequestedCount);
 		for (uint32_t i = 0; i < initialCount; ++i)
 		{
@@ -2082,7 +2072,7 @@ static void AddDevice(Renderer* pRenderer)
 		}
 		for (uint32_t i = 0; i < userRequestedCount; ++i)
 		{
-			wantedDeviceExtensions[initialCount + i] = pRenderer->mSettings.mDeviceExtensions[i].c_str();
+			wantedDeviceExtensions[initialCount + i] = pRenderer->mSettings.ppDeviceExtensions[i];
 		}
 		const uint32_t wanted_extension_count = (uint32_t)wantedDeviceExtensions.size();
 		uint32_t       count = 0;
@@ -2152,8 +2142,6 @@ static void AddDevice(Renderer* pRenderer)
 	gpuFeatures2.pNext = &descriptorIndexingFeatures;
 
 	vkGetPhysicalDeviceFeatures2KHR(pRenderer->pVkActiveGPU, &gpuFeatures2);
-
-	utils_caps_builder(pRenderer);
 
 	// need a queue_priorite for each queue in the queue family we create
 	uint32_t queueFamiliesCount = pRenderer->mVkQueueFamilyPropertyCount[pRenderer->mActiveGPUIndex];
@@ -2257,6 +2245,8 @@ static void AddDevice(Renderer* pRenderer)
 	gDebugMarkerSupport =
 		vkCmdBeginDebugUtilsLabelEXT && vkCmdEndDebugUtilsLabelEXT && vkCmdInsertDebugUtilsLabelEXT && vkSetDebugUtilsObjectNameEXT;
 #endif
+
+	utils_caps_builder(pRenderer);
 }
 
 static void RemoveDevice(Renderer* pRenderer)
@@ -2282,10 +2272,6 @@ uint64_t get_vk_device_memory_offset(Renderer* pRenderer, Buffer* pBuffer)
 	vmaGetAllocationInfo(pRenderer->pVmaAllocator, pBuffer->pVkAllocation, &allocInfo);
 	return (uint64_t)allocInfo.offset;
 }
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace vk {
-#endif
 /************************************************************************/
 // Renderer Init Remove
 /************************************************************************/
@@ -2322,8 +2308,8 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 #endif
 
 		// Add user specified instance layers for instance creation
-		for (uint32_t i = 0; i < (uint32_t)settings->mInstanceLayers.size(); ++i)
-			pRenderer->mInstanceLayers.push_back(settings->mInstanceLayers[i].c_str());
+		for (uint32_t i = 0; i < (uint32_t)settings->mInstanceLayerCount; ++i)
+			pRenderer->mInstanceLayers.push_back(settings->ppInstanceLayers[i]);
 
 		VkResult vkRes = volkInitialize();
 		if (vkRes != VK_SUCCESS)
@@ -3032,18 +3018,19 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 
 	pBuffer->mDesc = *pDesc;
 
+	uint64_t allocationSize = pBuffer->mDesc.mSize;
 	// Align the buffer size to multiples of the dynamic uniform buffer minimum size
 	if (pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 	{
 		uint64_t minAlignment = pRenderer->pActiveGpuSettings->mUniformBufferAlignment;
-		pBuffer->mDesc.mSize = round_up_64(pBuffer->mDesc.mSize, minAlignment);
+		allocationSize = round_up_64(allocationSize, minAlignment);
 	}
 
 	DECLARE_ZERO(VkBufferCreateInfo, add_info);
 	add_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 	add_info.pNext = NULL;
 	add_info.flags = 0;
-	add_info.size = pBuffer->mDesc.mSize;
+	add_info.size = allocationSize;
 	add_info.usage = util_to_vk_buffer_usage(pBuffer->mDesc.mDescriptors, pDesc->mFormat != TinyImageFormat_UNDEFINED);
 	add_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	add_info.queueFamilyIndexCount = 0;
@@ -4503,8 +4490,7 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 /************************************************************************/
 // Pipeline State Functions
 /************************************************************************/
-
-void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
+static void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
 {
 	ASSERT(pRenderer);
 	ASSERT(pDesc);
@@ -4793,12 +4779,7 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 	*ppPipeline = pPipeline;
 }
 
-void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
-{
-	addGraphicsPipelineImpl(pRenderer, pDesc, ppPipeline);
-}
-
-void addComputePipelineImpl(Renderer* pRenderer, const ComputePipelineDesc* pDesc, Pipeline** ppPipeline)
+static void addComputePipelineImpl(Renderer* pRenderer, const ComputePipelineDesc* pDesc, Pipeline** ppPipeline)
 {
 	ASSERT(pRenderer);
 	ASSERT(pDesc);
@@ -4839,11 +4820,6 @@ void addComputePipelineImpl(Renderer* pRenderer, const ComputePipelineDesc* pDes
 	}
 
 	*ppPipeline = pPipeline;
-}
-
-void addComputePipeline(Renderer* pRenderer, const ComputePipelineDesc* pDesc, Pipeline** ppPipeline)
-{
-	addComputePipelineImpl(pRenderer, pDesc, ppPipeline);
 }
 
 void addPipeline(Renderer* pRenderer, const PipelineDesc* pDesc, Pipeline** ppPipeline)
@@ -5059,8 +5035,6 @@ void endCmd(Cmd* pCmd)
 	}
 
 	pCmd->pVkActiveRenderPass = VK_NULL_HANDLE;
-
-	cmdFlushBarriers(pCmd);
 
 	VkResult vk_res = vkEndCommandBuffer(pCmd->pVkCmdBuf);
 	ASSERT(VK_SUCCESS == vk_res);
@@ -5723,9 +5697,7 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 	}
 }
 
-void cmdResourceBarrier(
-	Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers,
-	bool batch)
+void cmdResourceBarrier(Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)
 {
 	VkImageMemoryBarrier* imageBarriers =
 		numTextureBarriers ? (VkImageMemoryBarrier*)alloca(numTextureBarriers * sizeof(VkImageMemoryBarrier)) : NULL;
@@ -5742,6 +5714,7 @@ void cmdResourceBarrier(
 	{
 		BufferBarrier* pTrans = &pBufferBarriers[i];
 		Buffer*        pBuffer = pTrans->pBuffer;
+
 		if (!(pTrans->mNewState & pBuffer->mCurrentState))
 		{
 			VkBufferMemoryBarrier* pBufferBarrier = &bufferBarriers[bufferBarrierCount++];
@@ -5763,11 +5736,31 @@ void cmdResourceBarrier(
 			srcAccessFlags |= pBufferBarrier->srcAccessMask;
 			dstAccessFlags |= pBufferBarrier->dstAccessMask;
 		}
+		else if (pTrans->mNewState == RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			VkBufferMemoryBarrier* pBufferBarrier = &bufferBarriers[bufferBarrierCount++];
+			pBufferBarrier->sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+			pBufferBarrier->pNext = NULL;
+
+			pBufferBarrier->buffer = pBuffer->pVkBuffer;
+			pBufferBarrier->size = VK_WHOLE_SIZE;
+			pBufferBarrier->offset = 0;
+
+			pBufferBarrier->srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+			pBufferBarrier->dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+
+			pBufferBarrier->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			pBufferBarrier->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+			srcAccessFlags |= pBufferBarrier->srcAccessMask;
+			dstAccessFlags |= pBufferBarrier->dstAccessMask;
+		}
 	}
 	for (uint32_t i = 0; i < numTextureBarriers; ++i)
 	{
 		TextureBarrier* pTrans = &pTextureBarriers[i];
 		Texture*        pTexture = pTrans->pTexture;
+
 		if (!(pTrans->mNewState & pTexture->mCurrentState))
 		{
 			VkImageMemoryBarrier* pImageBarrier = &imageBarriers[imageBarrierCount++];
@@ -5794,6 +5787,30 @@ void cmdResourceBarrier(
 			srcAccessFlags |= pImageBarrier->srcAccessMask;
 			dstAccessFlags |= pImageBarrier->dstAccessMask;
 		}
+		else if (pTrans->mNewState == RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			VkImageMemoryBarrier* pImageBarrier = &imageBarriers[imageBarrierCount++];
+			pImageBarrier->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			pImageBarrier->pNext = NULL;
+
+			pImageBarrier->image = pTexture->pVkImage;
+			pImageBarrier->subresourceRange.aspectMask = pTexture->mVkAspectMask;
+			pImageBarrier->subresourceRange.baseMipLevel = 0;
+			pImageBarrier->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+			pImageBarrier->subresourceRange.baseArrayLayer = 0;
+			pImageBarrier->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+			pImageBarrier->srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+			pImageBarrier->dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+			pImageBarrier->oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+			pImageBarrier->newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+			pImageBarrier->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			pImageBarrier->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+			srcAccessFlags |= pImageBarrier->srcAccessMask;
+			dstAccessFlags |= pImageBarrier->dstAccessMask;
+		}
 	}
 
 	VkPipelineStageFlags srcStageMask = util_determine_pipeline_stage_flags(srcAccessFlags, pCmd->pCmdPool->mCmdPoolDesc.mCmdPoolType);
@@ -5801,127 +5818,9 @@ void cmdResourceBarrier(
 
 	if (bufferBarrierCount || imageBarrierCount)
 	{
-		uint32_t bufferBarrierEmptySlots = MAX_BATCH_BARRIERS - pCmd->mBatchBufferMemoryBarrierCount;
-		uint32_t imageBarrierEmptySlots = MAX_BATCH_BARRIERS - pCmd->mBatchImageMemoryBarrierCount;
-
-		if (batch && bufferBarrierEmptySlots >= bufferBarrierCount && imageBarrierEmptySlots >= imageBarrierCount)
-		{
-			memcpy(
-				pCmd->pBatchBufferMemoryBarriers + pCmd->mBatchBufferMemoryBarrierCount, bufferBarriers,
-				bufferBarrierCount * sizeof(VkBufferMemoryBarrier));
-			pCmd->mBatchBufferMemoryBarrierCount += bufferBarrierCount;
-
-			memcpy(
-				pCmd->pBatchImageMemoryBarriers + pCmd->mBatchImageMemoryBarrierCount, imageBarriers,
-				imageBarrierCount * sizeof(VkImageMemoryBarrier));
-			pCmd->mBatchImageMemoryBarrierCount += imageBarrierCount;
-			pCmd->mSrcStageMask |= srcStageMask;
-			pCmd->mDstStageMask |= dstStageMask;
-		}
-		else
-		{
-			vkCmdPipelineBarrier(
-				pCmd->pVkCmdBuf, srcStageMask, dstStageMask, 0, 0, NULL, bufferBarrierCount, bufferBarriers, imageBarrierCount,
-				imageBarriers);
-		}
-	}
-}
-
-void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers, uint32_t numTextures, Texture** ppTextures, bool batch)
-{
-	VkImageMemoryBarrier* imageBarriers = numTextures ? (VkImageMemoryBarrier*)alloca(numTextures * sizeof(VkImageMemoryBarrier)) : NULL;
-	uint32_t              imageBarrierCount = 0;
-
-	VkBufferMemoryBarrier* bufferBarriers = numBuffers ? (VkBufferMemoryBarrier*)alloca(numBuffers * sizeof(VkBufferMemoryBarrier)) : NULL;
-	uint32_t               bufferBarrierCount = 0;
-
-	VkAccessFlags srcAccessFlags = VK_ACCESS_SHADER_WRITE_BIT;
-	VkAccessFlags dstAccessFlags = srcAccessFlags | VK_ACCESS_SHADER_READ_BIT;
-
-	for (uint32_t i = 0; i < numBuffers; ++i)
-	{
-		VkBufferMemoryBarrier* pBufferBarrier = &bufferBarriers[bufferBarrierCount++];
-		pBufferBarrier->sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-		pBufferBarrier->pNext = NULL;
-
-		pBufferBarrier->buffer = ppBuffers[i]->pVkBuffer;
-		pBufferBarrier->size = VK_WHOLE_SIZE;
-		pBufferBarrier->offset = 0;
-
-		pBufferBarrier->srcAccessMask = srcAccessFlags;
-		pBufferBarrier->dstAccessMask = dstAccessFlags;
-
-		pBufferBarrier->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		pBufferBarrier->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	}
-	for (uint32_t i = 0; i < numTextures; ++i)
-	{
-		VkImageMemoryBarrier* pImageBarrier = &imageBarriers[imageBarrierCount++];
-		pImageBarrier->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		pImageBarrier->pNext = NULL;
-
-		pImageBarrier->image = ppTextures[i]->pVkImage;
-		pImageBarrier->subresourceRange.aspectMask = ppTextures[i]->mVkAspectMask;
-		pImageBarrier->subresourceRange.baseMipLevel = 0;
-		pImageBarrier->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		pImageBarrier->subresourceRange.baseArrayLayer = 0;
-		pImageBarrier->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-		pImageBarrier->srcAccessMask = srcAccessFlags;
-		pImageBarrier->dstAccessMask = dstAccessFlags;
-		pImageBarrier->oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-		pImageBarrier->newLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-		pImageBarrier->srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		pImageBarrier->dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	}
-
-	VkPipelineStageFlags srcStageMask = util_determine_pipeline_stage_flags(srcAccessFlags, pCmd->pCmdPool->mCmdPoolDesc.mCmdPoolType);
-	VkPipelineStageFlags dstStageMask = util_determine_pipeline_stage_flags(dstAccessFlags, pCmd->pCmdPool->mCmdPoolDesc.mCmdPoolType);
-
-	if (bufferBarrierCount || imageBarrierCount)
-	{
-		uint32_t bufferBarrierEmptySlots = MAX_BATCH_BARRIERS - pCmd->mBatchBufferMemoryBarrierCount;
-		uint32_t imageBarrierEmptySlots = MAX_BATCH_BARRIERS - pCmd->mBatchImageMemoryBarrierCount;
-
-		if (batch && bufferBarrierEmptySlots >= bufferBarrierCount && imageBarrierEmptySlots >= imageBarrierCount)
-		{
-			memcpy(
-				pCmd->pBatchBufferMemoryBarriers + pCmd->mBatchBufferMemoryBarrierCount, bufferBarriers,
-				bufferBarrierCount * sizeof(VkBufferMemoryBarrier));
-			pCmd->mBatchBufferMemoryBarrierCount += bufferBarrierCount;
-
-			memcpy(
-				pCmd->pBatchImageMemoryBarriers + pCmd->mBatchImageMemoryBarrierCount, imageBarriers,
-				imageBarrierCount * sizeof(VkImageMemoryBarrier));
-
-			pCmd->mBatchImageMemoryBarrierCount += imageBarrierCount;
-			pCmd->mSrcStageMask |= srcStageMask;
-			pCmd->mDstStageMask |= dstStageMask;
-		}
-		else
-		{
-			vkCmdPipelineBarrier(
-				pCmd->pVkCmdBuf, srcStageMask, dstStageMask, 0, 0, NULL, bufferBarrierCount, bufferBarriers, imageBarrierCount,
-				imageBarriers);
-		}
-	}
-}
-
-void cmdFlushBarriers(Cmd* pCmd)
-{
-	if (pCmd->mBatchBufferMemoryBarrierCount || pCmd->mBatchImageMemoryBarrierCount)
-	{
-		VkPipelineStageFlags srcPipelineFlags = pCmd->mSrcStageMask;
-		VkPipelineStageFlags dstPipelineFlags = pCmd->mDstStageMask;
 		vkCmdPipelineBarrier(
-			pCmd->pVkCmdBuf, srcPipelineFlags, dstPipelineFlags, 0, 0, NULL, pCmd->mBatchBufferMemoryBarrierCount,
-			pCmd->pBatchBufferMemoryBarriers, pCmd->mBatchImageMemoryBarrierCount, pCmd->pBatchImageMemoryBarriers);
-
-		pCmd->mBatchBufferMemoryBarrierCount = 0;
-		pCmd->mBatchImageMemoryBarrierCount = 0;
-		pCmd->mSrcStageMask = 0;
-		pCmd->mDstStageMask = 0;
+			pCmd->pVkCmdBuf, srcStageMask, dstStageMask, 0, 0, NULL, bufferBarrierCount, bufferBarriers, imageBarrierCount,
+			imageBarriers);
 	}
 }
 
@@ -6217,9 +6116,9 @@ TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR)
 {
 	//TODO: figure out this properly. BGRA not supported on android
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
-	return TinyImageFormat_B8G8R8A8_SRGB;
+	return TinyImageFormat_B8G8R8A8_UNORM;
 #else
-	return TinyImageFormat_R8G8B8A8_SRGB;
+	return TinyImageFormat_R8G8B8A8_UNORM;
 #endif
 }
 
@@ -6316,10 +6215,10 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 						  * 1e-9);             // convert to ticks/sec (DX12 standard)
 }
 
-void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** ppQueryHeap)
+void addQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
 {
-	QueryHeap* pQueryHeap = (QueryHeap*)conf_calloc(1, sizeof(*pQueryHeap));
-	pQueryHeap->mDesc = *pDesc;
+	QueryPool* pQueryPool = (QueryPool*)conf_calloc(1, sizeof(*pQueryPool));
+	pQueryPool->mDesc = *pDesc;
 
 	VkQueryPoolCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -6328,29 +6227,29 @@ void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** p
 	createInfo.queryType = util_to_vk_query_type(pDesc->mType);
 	createInfo.flags = 0;
 	createInfo.pipelineStatistics = 0;
-	vkCreateQueryPool(pRenderer->pVkDevice, &createInfo, NULL, &pQueryHeap->pVkQueryPool);
+	vkCreateQueryPool(pRenderer->pVkDevice, &createInfo, NULL, &pQueryPool->pVkQueryPool);
 
-	*ppQueryHeap = pQueryHeap;
+	*ppQueryPool = pQueryPool;
 }
 
-void removeQueryHeap(Renderer* pRenderer, QueryHeap* pQueryHeap)
+void removeQueryPool(Renderer* pRenderer, QueryPool* pQueryPool)
 {
-	vkDestroyQueryPool(pRenderer->pVkDevice, pQueryHeap->pVkQueryPool, NULL);
-	SAFE_FREE(pQueryHeap);
+	vkDestroyQueryPool(pRenderer->pVkDevice, pQueryPool->pVkQueryPool, NULL);
+	SAFE_FREE(pQueryPool);
 }
 
-void cmdResetQueryHeap(Cmd* pCmd, QueryHeap* pQueryHeap, uint32_t startQuery, uint32_t queryCount)
+void cmdResetQueryPool(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount)
 {
-	vkCmdResetQueryPool(pCmd->pVkCmdBuf, pQueryHeap->pVkQueryPool, startQuery, queryCount);
+	vkCmdResetQueryPool(pCmd->pVkCmdBuf, pQueryPool->pVkQueryPool, startQuery, queryCount);
 }
 
-void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	QueryType type = pQueryHeap->mDesc.mType;
+	QueryType type = pQueryPool->mDesc.mType;
 	switch (type)
 	{
 		case QUERY_TYPE_TIMESTAMP:
-			vkCmdWriteTimestamp(pCmd->pVkCmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, pQueryHeap->pVkQueryPool, pQuery->mIndex);
+			vkCmdWriteTimestamp(pCmd->pVkCmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, pQueryPool->pVkQueryPool, pQuery->mIndex);
 			break;
 		case QUERY_TYPE_PIPELINE_STATISTICS: break;
 		case QUERY_TYPE_OCCLUSION: break;
@@ -6358,13 +6257,13 @@ void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	}
 }
 
-void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	QueryType type = pQueryHeap->mDesc.mType;
+	QueryType type = pQueryPool->mDesc.mType;
 	switch (type)
 	{
 		case QUERY_TYPE_TIMESTAMP:
-			vkCmdWriteTimestamp(pCmd->pVkCmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, pQueryHeap->pVkQueryPool, pQuery->mIndex);
+			vkCmdWriteTimestamp(pCmd->pVkCmdBuf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, pQueryPool->pVkQueryPool, pQuery->mIndex);
 			break;
 		case QUERY_TYPE_PIPELINE_STATISTICS: break;
 		case QUERY_TYPE_OCCLUSION: break;
@@ -6372,10 +6271,10 @@ void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	}
 }
 
-void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
+void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
 {
 	vkCmdCopyQueryPoolResults(
-		pCmd->pVkCmdBuf, pQueryHeap->pVkQueryPool, startQuery, queryCount, pReadbackBuffer->pVkBuffer, 0, sizeof(uint64_t),
+		pCmd->pVkCmdBuf, pQueryPool->pVkQueryPool, startQuery, queryCount, pReadbackBuffer->pVkBuffer, 0, sizeof(uint64_t),
 		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 }
 /************************************************************************/
@@ -6506,10 +6405,7 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 	}
 }
 #endif
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}    // namespace RENDERER_CPP_NAMESPACE
-#endif
-#include "../../ThirdParty/OpenSource/volk/volk.c"
+#include "../../../Common_3/ThirdParty/OpenSource/volk/volk.c"
 #if defined(VK_USE_DISPATCH_TABLES)
 #include "../../../Common_3/ThirdParty/OpenSource/volk/volkForgeExt.c"
 #endif

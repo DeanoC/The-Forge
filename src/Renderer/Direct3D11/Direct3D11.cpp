@@ -248,8 +248,7 @@ DXGI_FORMAT util_to_dx_uav_format(DXGI_FORMAT defaultFormat)
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
 		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
-		case DXGI_FORMAT_D16_UNORM: 		LOGF(LogLevel::eERROR,
-																				"Requested a UAV format for a depth stencil format");
+		case DXGI_FORMAT_D16_UNORM: LOGF(eERROR, "Requested a UAV format for a depth stencil format");
 #endif
 
 		default: return defaultFormat;
@@ -1518,7 +1517,7 @@ void compileShader(
 {
 	if (shaderTarget > pRenderer->mSettings.mShaderTarget)
 	{
-		LOGF(LogLevel::eERROR,
+		LOGF(eERROR, 
 			"Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
 			(uint32_t)shaderTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
 		return;
@@ -1582,7 +1581,7 @@ void compileShader(
 		ASSERT(msg);
 		memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
 		eastl::string error = eastl::string(fileName) + " " + msg;
-		LOGF(LogLevel::eERROR, error.c_str());
+		LOGF(eERROR, error.c_str());
 		SAFE_FREE(msg);
 	}
 	ASSERT(SUCCEEDED(hres));
@@ -1783,16 +1782,17 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	//set properties
 	pBuffer->mDesc = *pDesc;
 
+	uint64_t allocationSize = pBuffer->mDesc.mSize;
 	//add to renderer
 	// Align the buffer size to multiples of 256
 	if ((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_UNIFORM_BUFFER))
 	{
-		pBuffer->mDesc.mSize = round_up_64(pBuffer->mDesc.mSize, pRenderer->pActiveGpuSettings->mUniformBufferAlignment);
+		allocationSize = round_up_64(allocationSize, pRenderer->pActiveGpuSettings->mUniformBufferAlignment);
 	}
 
 	D3D11_BUFFER_DESC desc = {};
 	desc.BindFlags = util_determine_dx_bind_flags(pDesc->mDescriptors, RESOURCE_STATE_COMMON);
-	desc.ByteWidth = (UINT)pBuffer->mDesc.mSize;
+	desc.ByteWidth = (UINT)allocationSize;
 	desc.CPUAccessFlags = util_determine_dx_cpu_access_flags(pDesc->mMemoryUsage);
 	desc.MiscFlags = util_determine_dx_resource_misc_flags(pDesc->mDescriptors, pDesc->mFormat);
 	desc.StructureByteStride = (UINT)((desc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS) ? 0 : pDesc->mStructStride);
@@ -2353,8 +2353,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				if (shaderResources[pNode->second].reg != pRes->reg)
 				{
-					LOGF(LogLevel::eERROR,
-							 "\nFailed to create root signature\n"
+					LOGF(eERROR, 
+						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching register. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
 						"have the same register and space",
@@ -2363,8 +2363,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				}
 				if (shaderResources[pNode->second].set != pRes->set)
 				{
-					LOGF(LogLevel::eERROR,
-							 "\nFailed to create root signature\n"
+					LOGF(eERROR, 
+						"\nFailed to create root signature\n"
 						"Shared shader resource %s has mismatching space. All shader resources "
 						"shared by multiple shaders specified in addRootSignature "
 						"have the same register and space",
@@ -3297,73 +3297,8 @@ void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t
 /************************************************************************/
 // Transition Commands
 /************************************************************************/
-void cmdResourceBarrier(
-	Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers,
-	bool batch)
+void cmdResourceBarrier(Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)
 {
-	ASSERT(pCmd);
-
-	// Ensure beingCmd was actually called
-	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
-	if (cachedCmdsIter == gCachedCmds.end())
-	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
-		return;
-	}
-
-	DECLARE_ZERO(CachedCmd, cmd);
-	cmd.pCmd = pCmd;
-	cmd.sType = CMD_TYPE_cmdResourceBarrier;
-	cmd.mResourceBarrierCmd.numBufferBarriers = numBufferBarriers;
-	cmd.mResourceBarrierCmd.pBufferBarriers = pBufferBarriers;
-	cmd.mResourceBarrierCmd.numTextureBarriers = numTextureBarriers;
-	cmd.mResourceBarrierCmd.pTextureBarriers = pTextureBarriers;
-	cmd.mResourceBarrierCmd.batch = batch;
-	cachedCmdsIter->second.push_back(cmd);
-}
-
-void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers, uint32_t numTextures, Texture** ppTextures, bool batch)
-{
-	ASSERT(pCmd);
-
-	// Ensure beingCmd was actually called
-	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
-	if (cachedCmdsIter == gCachedCmds.end())
-	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
-		return;
-	}
-
-	DECLARE_ZERO(CachedCmd, cmd);
-	cmd.pCmd = pCmd;
-	cmd.sType = CMD_TYPE_cmdSynchronizeResources;
-	cmd.mSynchronizeResourcesCmd.numBuffers = numBuffers;
-	cmd.mSynchronizeResourcesCmd.ppBuffers = ppBuffers;
-	cmd.mSynchronizeResourcesCmd.numTextures = numTextures;
-	cmd.mSynchronizeResourcesCmd.ppTextures = ppTextures;
-	cmd.mSynchronizeResourcesCmd.batch = batch;
-	cachedCmdsIter->second.push_back(cmd);
-}
-
-void cmdFlushBarriers(Cmd* pCmd)
-{
-	ASSERT(pCmd);
-
-	// Ensure beingCmd was actually called
-	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
-	if (cachedCmdsIter == gCachedCmds.end())
-	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
-		return;
-	}
-
-	DECLARE_ZERO(CachedCmd, cmd);
-	cmd.pCmd = pCmd;
-	cmd.sType = CMD_TYPE_cmdFlushBarriers;
-	cachedCmdsIter->second.push_back(cmd);
 }
 /************************************************************************/
 // Queue Fence Semaphore Functions
@@ -3730,20 +3665,16 @@ void queueSubmit(
 					pContext->Dispatch(cmd.mDispatchCmd.groupCountX, cmd.mDispatchCmd.groupCountY, cmd.mDispatchCmd.groupCountZ);
 					break;
 				}
-				case CMD_TYPE_cmdResourceBarrier: break;
-				case CMD_TYPE_cmdSynchronizeResources: break;
-				case CMD_TYPE_cmdFlushBarriers: break;
-				case CMD_TYPE_cmdExecuteIndirect: break;
 				case CMD_TYPE_cmdBeginQuery:
 				{
 					const BeginQueryCmd& query = cmd.mBeginQueryCmd;
-					pContext->End(query.pQueryHeap->ppDxQueries[query.mQuery.mIndex]);
+					pContext->End(query.pQueryPool->ppDxQueries[query.mQuery.mIndex]);
 					break;
 				}
 				case CMD_TYPE_cmdEndQuery:
 				{
 					const EndQueryCmd& query = cmd.mEndQueryCmd;
-					pContext->End(query.pQueryHeap->ppDxQueries[query.mQuery.mIndex]);
+					pContext->End(query.pQueryPool->ppDxQueries[query.mQuery.mIndex]);
 					break;
 				}
 				case CMD_TYPE_cmdResolveQuery:
@@ -3754,7 +3685,7 @@ void queueSubmit(
 						uint64_t* pResults = (uint64_t*)alloca(resolve.queryCount * sizeof(uint64_t));
 						for (uint32_t i = resolve.startQuery; i < resolve.startQuery + resolve.queryCount; ++i)
 						{
-							while (pContext->GetData(resolve.pQueryHeap->ppDxQueries[i], &pResults[i], sizeof(uint64_t), 0) != S_OK)
+							while (pContext->GetData(resolve.pQueryPool->ppDxQueries[i], &pResults[i], sizeof(uint64_t), 0) != S_OK)
 								Thread::Sleep(0);
 						}
 						D3D11_MAPPED_SUBRESOURCE sub = {};
@@ -3827,11 +3758,10 @@ void toggleVSync(Renderer* pRenderer, SwapChain** ppSwapChain)
 /************************************************************************/
 // Utility functions
 /************************************************************************/
-
-TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR) { 
-	return TinyImageFormat_B8G8R8A8_SRGB; 
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR)
+{
+	return TinyImageFormat_B8G8R8A8_UNORM;
 }
-
 /************************************************************************/
 // Indirect Draw functions
 /************************************************************************/
@@ -3843,28 +3773,6 @@ void cmdExecuteIndirect(
 	Cmd* pCmd, CommandSignature* pCommandSignature, uint maxCommandCount, Buffer* pIndirectBuffer, uint64_t bufferOffset,
 	Buffer* pCounterBuffer, uint64_t counterBufferOffset)
 {
-	ASSERT(pCmd);
-	ASSERT(pIndirectBuffer);
-
-	// Ensure beingCmd was actually called
-	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
-	ASSERT(cachedCmdsIter != gCachedCmds.end());
-	if (cachedCmdsIter == gCachedCmds.end())
-	{
-		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
-		return;
-	}
-
-	DECLARE_ZERO(CachedCmd, cmd);
-	cmd.pCmd = pCmd;
-	cmd.sType = CMD_TYPE_cmdExecuteIndirect;
-	cmd.mExecuteIndirectCmd.pCommandSignature = pCommandSignature;
-	cmd.mExecuteIndirectCmd.maxCommandCount = maxCommandCount;
-	cmd.mExecuteIndirectCmd.pIndirectBuffer = pIndirectBuffer;
-	cmd.mExecuteIndirectCmd.bufferOffset = bufferOffset;
-	cmd.mExecuteIndirectCmd.pCounterBuffer = pCounterBuffer;
-	cmd.mExecuteIndirectCmd.counterBufferOffset = counterBufferOffset;
-	cachedCmdsIter->second.push_back(cmd);
 }
 /************************************************************************/
 // GPU Query Implementation
@@ -3899,12 +3807,12 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 	SAFE_RELEASE(pDisjointQuery);
 }
 
-void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** ppQueryHeap)
+void addQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
 {
-	QueryHeap* pQueryHeap = (QueryHeap*)conf_calloc(1, sizeof(*pQueryHeap));
-	pQueryHeap->mDesc = *pDesc;
+	QueryPool* pQueryPool = (QueryPool*)conf_calloc(1, sizeof(*pQueryPool));
+	pQueryPool->mDesc = *pDesc;
 
-	pQueryHeap->ppDxQueries = (ID3D11Query**)conf_calloc(pDesc->mQueryCount, sizeof(ID3D11Query*));
+	pQueryPool->ppDxQueries = (ID3D11Query**)conf_calloc(pDesc->mQueryCount, sizeof(ID3D11Query*));
 
 	D3D11_QUERY_DESC desc = {};
 	desc.MiscFlags = 0;
@@ -3912,32 +3820,32 @@ void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** p
 
 	for (uint32_t i = 0; i < pDesc->mQueryCount; ++i)
 	{
-		pRenderer->pDxDevice->CreateQuery(&desc, &pQueryHeap->ppDxQueries[i]);
+		pRenderer->pDxDevice->CreateQuery(&desc, &pQueryPool->ppDxQueries[i]);
 	}
 
-	*ppQueryHeap = pQueryHeap;
+	*ppQueryPool = pQueryPool;
 }
 
-void removeQueryHeap(Renderer* pRenderer, QueryHeap* pQueryHeap)
+void removeQueryPool(Renderer* pRenderer, QueryPool* pQueryPool)
 {
 	UNREF_PARAM(pRenderer);
-	for (uint32_t i = 0; i < pQueryHeap->mDesc.mQueryCount; ++i)
+	for (uint32_t i = 0; i < pQueryPool->mDesc.mQueryCount; ++i)
 	{
-		SAFE_RELEASE(pQueryHeap->ppDxQueries[i]);
+		SAFE_RELEASE(pQueryPool->ppDxQueries[i]);
 	}
-	SAFE_FREE(pQueryHeap->ppDxQueries);
-	SAFE_FREE(pQueryHeap);
+	SAFE_FREE(pQueryPool->ppDxQueries);
+	SAFE_FREE(pQueryPool);
 }
 
-void cmdResetQueryHeap(Cmd* pCmd, QueryHeap* pQueryHeap, uint32_t startQuery, uint32_t queryCount)
+void cmdResetQueryPool(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount)
 {
 	UNREF_PARAM(pCmd);
-	UNREF_PARAM(pQueryHeap);
+	UNREF_PARAM(pQueryPool);
 	UNREF_PARAM(startQuery);
 	UNREF_PARAM(queryCount);
 }
 
-void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
 	ASSERT(pCmd);
 	ASSERT(pQuery);
@@ -3954,12 +3862,12 @@ void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
 	cmd.sType = CMD_TYPE_cmdBeginQuery;
-	cmd.mBeginQueryCmd.pQueryHeap = pQueryHeap;
+	cmd.mBeginQueryCmd.pQueryPool = pQueryPool;
 	cmd.mBeginQueryCmd.mQuery = *pQuery;
 	cachedCmdsIter->second.push_back(cmd);
 }
 
-void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
 	ASSERT(pCmd);
 	ASSERT(pQuery);
@@ -3976,12 +3884,12 @@ void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
 	cmd.sType = CMD_TYPE_cmdEndQuery;
-	cmd.mEndQueryCmd.pQueryHeap = pQueryHeap;
+	cmd.mEndQueryCmd.pQueryPool = pQueryPool;
 	cmd.mEndQueryCmd.mQuery = *pQuery;
 	cachedCmdsIter->second.push_back(cmd);
 }
 
-void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
+void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
 {
 	ASSERT(pCmd);
 	ASSERT(pReadbackBuffer);
@@ -3998,7 +3906,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, 
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
 	cmd.sType = CMD_TYPE_cmdResolveQuery;
-	cmd.mResolveQueryCmd.pQueryHeap = pQueryHeap;
+	cmd.mResolveQueryCmd.pQueryPool = pQueryPool;
 	cmd.mResolveQueryCmd.pReadbackBuffer = pReadbackBuffer;
 	cmd.mResolveQueryCmd.startQuery = startQuery;
 	cmd.mResolveQueryCmd.queryCount = queryCount;
@@ -4084,11 +3992,6 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 // Resource Debug Naming Interface
 /************************************************************************/
 void setBufferName(Renderer* pRenderer, Buffer* pBuffer, const char* pName) {}
-
 void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName) {}
-
 #endif
-#endif
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
 #endif

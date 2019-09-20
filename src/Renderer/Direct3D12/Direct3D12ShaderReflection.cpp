@@ -27,7 +27,7 @@
 #include "../../OS/Interfaces/ILog.h"
 
 #ifdef _DURANGO
-#include "../../../Xbox/CommonXBOXOne_3/OS/XBoxPrivateHeaders.h"
+#include "../../../Xbox/Common_3/Renderer/XBoxPrivateHeaders.h"
 #else
 #include <d3dcompiler.h>
 #include "../../ThirdParty/OpenSource/DirectXShaderCompiler/dxcapi.use.h"
@@ -38,7 +38,7 @@ extern dxc::DxcDllSupport gDxcDllHelper;
 
 static DescriptorType sD3D12_TO_DESCRIPTOR[] = {
 	DESCRIPTOR_TYPE_UNIFORM_BUFFER,    //D3D_SIT_CBUFFER
-	DESCRIPTOR_TYPE_UNDEFINED,         //D3D_SIT_TBUFFER
+	DESCRIPTOR_TYPE_BUFFER,            //D3D_SIT_TBUFFER
 	DESCRIPTOR_TYPE_TEXTURE,           //D3D_SIT_TEXTURE
 	DESCRIPTOR_TYPE_SAMPLER,           //D3D_SIT_SAMPLER
 	DESCRIPTOR_TYPE_RW_TEXTURE,        //D3D_SIT_UAV_RWTYPED

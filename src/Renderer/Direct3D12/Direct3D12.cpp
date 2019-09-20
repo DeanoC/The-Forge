@@ -28,7 +28,7 @@
 #define MAX_FRAMES_IN_FLIGHT 3U
 
 #ifdef _DURANGO
-#include "..\..\..\Xbox\CommonXBOXOne_3\OS\XBoxPrivateHeaders.h"
+#include "..\..\..\Xbox\Common_3\Renderer\XBoxPrivateHeaders.h"
 #else
 #define IID_ARGS IID_PPV_ARGS
 #endif
@@ -42,8 +42,8 @@
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
 #include "../../ThirdParty/OpenSource/renderdoc/renderdoc_app.h"
 #include "../../OS/Core/GPUConfig.h"
-#include "tiny_imageformat/tinyimageformat_base.h"
-#include "tiny_imageformat/tinyimageformat_query.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
 #include "Direct3D12CapBuilder.h"
 #include "Direct3D12Hooks.h"
 
@@ -524,11 +524,6 @@ uint32_t util_calculate_node_mask(Renderer* pRenderer, uint32_t i)
 /************************************************************************/
 // Descriptor Binder Implementation
 /************************************************************************/
-// Put this in a namespace to avoid conflicts with other renderer cpp files when they are compiled together
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace {
-#endif
-
 /// Descriptor table structure holding the native descriptor set handle
 typedef struct DescriptorTable
 {
@@ -573,10 +568,6 @@ typedef struct DescriptorBinderNode
 } DescriptorBinderNode;
 
 using DescriptorBinderMap = eastl::hash_map<const RootSignature*, DescriptorBinderNode>;
-
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
-#endif
 
 typedef struct DescriptorBinder
 {
@@ -1784,25 +1775,6 @@ static void RemoveDevice(Renderer* pRenderer)
 #endif
 }
 
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-namespace d3d12 {
-#endif
-
-/************************************************************************/
-// Functions not exposed in IRenderer but still need to be assigned when using runtime switching of renderers
-/************************************************************************/
-// clang-format off
-API_INTERFACE void FORGE_CALLCONV addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer);
-API_INTERFACE void FORGE_CALLCONV removeBuffer(Renderer* pRenderer, Buffer* pBuffer);
-API_INTERFACE void FORGE_CALLCONV addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture);
-API_INTERFACE void FORGE_CALLCONV removeTexture(Renderer* pRenderer, Texture* pTexture);
-API_INTERFACE void FORGE_CALLCONV mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange);
-API_INTERFACE void FORGE_CALLCONV unmapBuffer(Renderer* pRenderer, Buffer* pBuffer);
-API_INTERFACE void FORGE_CALLCONV cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
-API_INTERFACE void FORGE_CALLCONV cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
-API_INTERFACE void FORGE_CALLCONV compileShader(Renderer* pRenderer, ShaderTarget target, ShaderStage stage, const char* fileName, uint32_t codeSize, const char* code,	uint32_t macroCount, ShaderMacro* pMacros, void* (*allocator)(size_t a, const char *f, int l, const char *sf), uint32_t* pByteCodeSize, char** ppByteCode, const char* pEntryPoint);
-API_INTERFACE const RendererShaderDefinesDesc FORGE_CALLCONV get_renderer_shaderdefines(Renderer* pRenderer);
-// clang-format on
 /************************************************************************/
 // Renderer Init Remove
 /************************************************************************/
@@ -2188,7 +2160,6 @@ void addCmd(CmdPool* pCmdPool, bool secondary, DmaCmd** ppCmd)
 	//set command pool of new command
 	pCmd->pRenderer = pCmdPool->pQueue->pRenderer;
 	pCmd->pCmdPool = pCmdPool;
-	pCmd->mNodeIndex = pCmdPool->pQueue->mQueueDesc.mNodeIndex;
 
 	//add command to pool
 	//ASSERT(pCmdPool->pDxCmdAlloc);
@@ -2246,14 +2217,6 @@ void removeCmd(CmdPool* pCmdPool, DmaCmd* pCmd)
 	//verify that given command and pool are valid
 	ASSERT(pCmdPool);
 	ASSERT(pCmd);
-
-	if (pCmd->mTransientCBVs.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-		remove_cpu_descriptor_handles(
-			pCmd->pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], &pCmd->mTransientCBVs,
-			MAX_TRANSIENT_CBVS_PER_FRAME);
-
-	if (pCmd->pRootConstantRingBuffer)
-		removeGPURingBuffer(pCmd->pRootConstantRingBuffer);
 
 	//remove command from pool
 	SAFE_RELEASE(pCmd->pDxCmdAlloc);
@@ -2509,10 +2472,12 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	pBuffer->mDesc = *pDesc;
 
 	//add to renderer
+
+	uint64_t allocationSize = pBuffer->mDesc.mSize;
 	// Align the buffer size to multiples of 256
 	if ((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_UNIFORM_BUFFER))
 	{
-		pBuffer->mDesc.mSize = round_up_64(pBuffer->mDesc.mSize, pRenderer->pActiveGpuSettings->mUniformBufferAlignment);
+		allocationSize = round_up_64(allocationSize, pRenderer->pActiveGpuSettings->mUniformBufferAlignment);
 	}
 
 	DECLARE_ZERO(D3D12_RESOURCE_DESC, desc);
@@ -2520,7 +2485,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	//Alignment must be 64KB (D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT) or 0, which is effectively 64KB.
 	//https://msdn.microsoft.com/en-us/library/windows/desktop/dn903813(v=vs.85).aspx
 	desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	desc.Width = pBuffer->mDesc.mSize;
+	desc.Width = allocationSize;
 	desc.Height = 1;
 	desc.DepthOrArraySize = 1;
 	desc.MipLevels = 1;
@@ -2541,7 +2506,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	// Adjust for padding
 	UINT64 padded_size = 0;
 	pRenderer->pDxDevice->GetCopyableFootprints(&desc, 0, 1, 0, NULL, NULL, NULL, &padded_size);
-	pBuffer->mDesc.mSize = (uint64_t)padded_size;
+	allocationSize = (uint64_t)padded_size;
 	desc.Width = padded_size;
 
 	if (pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_CPU_TO_GPU || pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_CPU_ONLY)
@@ -2581,7 +2546,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	{
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = pBuffer->mDxGpuAddress;
-		cbvDesc.SizeInBytes = (UINT)pBuffer->mDesc.mSize;
+		cbvDesc.SizeInBytes = (UINT)allocationSize;
 		add_cbv(pRenderer, &cbvDesc, &pBuffer->mDxCbvHandle);
 	}
 
@@ -2712,8 +2677,12 @@ void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange)
 		range.Begin += pRange->mOffset;
 		range.End = range.Begin + pRange->mSize;
 	}
-	HRESULT hr = pBuffer->pDxResource->Map(0, &range, &pBuffer->pCpuMappedAddress);
-	ASSERT(SUCCEEDED(hr) && pBuffer->pCpuMappedAddress);
+
+	void* pData = NULL;
+	HRESULT hr = pBuffer->pDxResource->Map(0, &range, &pData);
+	ASSERT(SUCCEEDED(hr) && pData);
+
+	pBuffer->pCpuMappedAddress = (uint8_t*)pData + pBuffer->mPositionInHeap;
 }
 
 void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
@@ -2753,6 +2722,7 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	{
 		pTexture->mOwnsImage = true;
 	}
+
 
 	//add to gpu
 	D3D12_RESOURCE_DESC desc = {};
@@ -4477,10 +4447,11 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	ID3DBlob* error_msgs = NULL;
 #ifdef _DURANGO
 	DECLARE_ZERO(D3D12_ROOT_SIGNATURE_DESC, desc);
-	CD3DX12_ROOT_SIGNATURE_DESC::Init(
-		desc, (UINT)rootParams_1_0.size(), rootParams_1_0.empty() == false ? rootParams_1_0.data() : NULL, (UINT)staticSamplerDescs.size(),
-		staticSamplerDescs.data(), rootSignatureFlags);
-
+	desc.NumParameters = (uint32_t)rootParams_1_0.size();
+	desc.pParameters = rootParams_1_0.data();
+	desc.NumStaticSamplers = (UINT)staticSamplerDescs.size();
+	desc.pStaticSamplers = staticSamplerDescs.data();
+	desc.Flags = rootSignatureFlags;
 	hres = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &pRootSignature->pDxSerializedRootSignatureString, &error_msgs);
 #else
 	DECLARE_ZERO(D3D12_VERSIONED_ROOT_SIGNATURE_DESC, desc);
@@ -5022,18 +4993,12 @@ void beginCmd(DmaCmd* pCmd)
 
 	hres = pCmd->pDxCmdList->Reset(pCmd->pDxCmdAlloc, NULL);
 	ASSERT(SUCCEEDED(hres));
-
-	pCmd->pBoundDescriptorBinder = NULL;
-	pCmd->mTransientCBVPosition = 0;
 }
 #endif
 
 void endCmd(Cmd* pCmd)
 {
 	ASSERT(pCmd);
-
-	::cmdFlushBarriers(pCmd);
-
 	ASSERT(pCmd->pDxCmdList);
 
 	HRESULT hres = pCmd->pDxCmdList->Close();
@@ -5044,9 +5009,6 @@ void endCmd(Cmd* pCmd)
 void endCmd(DmaCmd* pCmd)
 {
 	ASSERT(pCmd);
-
-	::cmdFlushBarriers(pCmd);
-
 	ASSERT(pCmd->pDxCmdList);
 
 	HRESULT hres = pCmd->pDxCmdList->Close();
@@ -5206,7 +5168,7 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t offset)
 
 #ifdef _DURANGO
 	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_INDEX_BUFFER } };
-	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
@@ -5236,7 +5198,7 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 		views[i].StrideInBytes = (UINT)ppBuffers[i]->mDesc.mVertexStride;
 #ifdef _DURANGO
 		BufferBarrier bufferBarriers[] = { { ppBuffers[i], RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER } };
-		cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+		cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 	}
 
@@ -5581,7 +5543,7 @@ void cmdBindDescriptors(
 					}
 
 					BufferBarrier bufferBarriers[] = { { pParam->ppBuffers[j], state } };
-					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, true);
+					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 				}
 
@@ -5605,7 +5567,7 @@ void cmdBindDescriptors(
 					node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pParam->ppBuffers[j]->mDxUavHandle;
 #ifdef _DURANGO
 					BufferBarrier bufferBarriers[] = { { pParam->ppBuffers[j], RESOURCE_STATE_UNORDERED_ACCESS } };
-					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, true);
+					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 				}
 
@@ -5688,10 +5650,6 @@ void cmdBindDescriptors(
 			default: break;
 		}
 	}
-
-#ifdef _DURANGO
-	cmdFlushBarriers(pCmd);
-#endif
 
 	for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
 	{
@@ -5858,9 +5816,137 @@ void cmdBindDescriptors(
 	}
 }
 
-void cmdResourceBarrier(
-	Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers,
-	bool batch)
+void cmdResourceBarrier(Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)
+{
+	D3D12_RESOURCE_BARRIER* barriers =
+		(D3D12_RESOURCE_BARRIER*)alloca((numBufferBarriers + numTextureBarriers) * sizeof(D3D12_RESOURCE_BARRIER));
+	uint32_t transitionCount = 0;
+
+	for (uint32_t i = 0; i < numBufferBarriers; ++i)
+	{
+		BufferBarrier*          pTransBarrier = &pBufferBarriers[i];
+		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
+		Buffer*                 pBuffer = pTransBarrier->pBuffer;
+
+		// Only transition GPU visible resources.
+		// Note: General CPU_TO_GPU resources have to stay in generic read state. They are created in upload heap.
+		// There is one corner case: CPU_TO_GPU resources with UAV usage can have state transition. And they are created in custom heap.
+		if (pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_ONLY ||
+			pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_TO_CPU ||
+			(pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_CPU_TO_GPU && pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER))
+		{
+			//if (!(pBuffer->mCurrentState & pTransBarrier->mNewState) && pBuffer->mCurrentState != pTransBarrier->mNewState)
+			if (pBuffer->mCurrentState != pTransBarrier->mNewState)
+			{
+				if (pTransBarrier->mSplit)
+				{
+					ResourceState currentState = pBuffer->mCurrentState;
+					// Determine if the barrier is begin only or end only
+					// If the previous state and new state are same, we know this is end only since the state was already set in begin only
+					if (pBuffer->mPreviousState & pTransBarrier->mNewState)
+					{
+						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+						pBuffer->mPreviousState = RESOURCE_STATE_UNDEFINED;
+						pBuffer->mCurrentState = pTransBarrier->mNewState;
+					}
+					else
+					{
+						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+						pBuffer->mPreviousState = pTransBarrier->mNewState;
+					}
+
+					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+					pBarrier->Transition.pResource = pBuffer->pDxResource;
+					pBarrier->Transition.StateBefore = util_to_dx_resource_state(currentState);
+					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
+
+					++transitionCount;
+				}
+				else
+				{
+					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+					pBarrier->Transition.pResource = pBuffer->pDxResource;
+					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+					pBarrier->Transition.StateBefore = util_to_dx_resource_state(pBuffer->mCurrentState);
+					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
+
+					pBuffer->mCurrentState = pTransBarrier->mNewState;
+
+					++transitionCount;
+				}
+			}
+			else if (pTransBarrier->mNewState == RESOURCE_STATE_UNORDERED_ACCESS)
+			{
+				pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+				pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+				pBarrier->UAV.pResource = pBuffer->pDxResource;
+				++transitionCount;
+			}
+		}
+	}
+	for (uint32_t i = 0; i < numTextureBarriers; ++i)
+	{
+		TextureBarrier*         pTransBarrier = &pTextureBarriers[i];
+		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
+		Texture*                pTexture = pTransBarrier->pTexture;
+
+		if (pTexture->mCurrentState != pTransBarrier->mNewState)
+		{
+			if (pTransBarrier->mSplit)
+			{
+				ResourceState currentState = pTexture->mCurrentState;
+				// Determine if the barrier is begin only or end only
+				// If the previous state and new state are same, we know this is end only since the state was already set in begin only
+				if (pTexture->mPreviousState & pTransBarrier->mNewState)
+				{
+					pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
+					pTexture->mPreviousState = RESOURCE_STATE_UNDEFINED;
+					pTexture->mCurrentState = pTransBarrier->mNewState;
+				}
+				else
+				{
+					pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
+					pTexture->mPreviousState = pTransBarrier->mNewState;
+				}
+
+				pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				pBarrier->Transition.pResource = pTexture->pDxResource;
+				pBarrier->Transition.StateBefore = util_to_dx_resource_state(currentState);
+				pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
+
+				++transitionCount;
+			}
+			else
+			{
+				pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+				pBarrier->Transition.pResource = pTexture->pDxResource;
+				pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				pBarrier->Transition.StateBefore = util_to_dx_resource_state(pTexture->mCurrentState);
+				pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
+				pTexture->mCurrentState = pTransBarrier->mNewState;
+
+				++transitionCount;
+			}
+		}
+		else if (pTransBarrier->mNewState == RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+			pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			pBarrier->UAV.pResource = pTexture->pDxResource;
+			++transitionCount;
+		}
+	}
+
+	if (transitionCount)
+		pCmd->pDxCmdList->ResourceBarrier(transitionCount, barriers);
+}
+
+#ifdef _DURANGO
+void cmdResourceBarrier(DmaCmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)
 {
 	D3D12_RESOURCE_BARRIER* barriers =
 		(D3D12_RESOURCE_BARRIER*)alloca((numBufferBarriers + numTextureBarriers) * sizeof(D3D12_RESOURCE_BARRIER));
@@ -5980,213 +6066,7 @@ void cmdResourceBarrier(
 	}
 
 	if (transitionCount)
-	{
-		if (batch && (transitionCount + pCmd->mBatchBarrierCount <= MAX_BATCH_BARRIERS))
-		{
-			memcpy(pCmd->pBatchBarriers + pCmd->mBatchBarrierCount, barriers, sizeof(D3D12_RESOURCE_BARRIER) * transitionCount);
-			pCmd->mBatchBarrierCount += transitionCount;
-		}
-		else
-		{
-			pCmd->pDxCmdList->ResourceBarrier(transitionCount, barriers);
-		}
-	}
-}
-
-#ifdef _DURANGO
-void cmdResourceBarrier(
-	DmaCmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers,
-	bool batch)
-{
-	D3D12_RESOURCE_BARRIER* barriers =
-		(D3D12_RESOURCE_BARRIER*)alloca((numBufferBarriers + numTextureBarriers) * sizeof(D3D12_RESOURCE_BARRIER));
-	uint32_t transitionCount = 0;
-
-	for (uint32_t i = 0; i < numBufferBarriers; ++i)
-	{
-		BufferBarrier*          pTransBarrier = &pBufferBarriers[i];
-		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
-		Buffer*                 pBuffer = pTransBarrier->pBuffer;
-
-		// Only transition GPU visible resources.
-		// Note: General CPU_TO_GPU resources have to stay in generic read state. They are created in upload heap.
-		// There is one corner case: CPU_TO_GPU resources with UAV usage can have state transition. And they are created in custom heap.
-		if (pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_ONLY ||
-			pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_GPU_TO_CPU ||
-			(pBuffer->mDesc.mMemoryUsage == RESOURCE_MEMORY_USAGE_CPU_TO_GPU && pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER))
-		{
-			//if (!(pBuffer->mCurrentState & pTransBarrier->mNewState) && pBuffer->mCurrentState != pTransBarrier->mNewState)
-			if (pBuffer->mCurrentState != pTransBarrier->mNewState)
-			{
-				if (pTransBarrier->mSplit)
-				{
-					ResourceState currentState = pBuffer->mCurrentState;
-					// Determine if the barrier is begin only or end only
-					// If the previous state and new state are same, we know this is end only since the state was already set in begin only
-					if (pBuffer->mPreviousState & pTransBarrier->mNewState)
-					{
-						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-						pBuffer->mPreviousState = RESOURCE_STATE_UNDEFINED;
-						pBuffer->mCurrentState = pTransBarrier->mNewState;
-					}
-					else
-					{
-						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-						pBuffer->mPreviousState = pTransBarrier->mNewState;
-					}
-
-					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					pBarrier->Transition.pResource = pBuffer->pDxResource;
-					pBarrier->Transition.StateBefore = util_to_dx_resource_state(currentState);
-					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
-
-					++transitionCount;
-				}
-				else
-				{
-					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-					pBarrier->Transition.pResource = pBuffer->pDxResource;
-					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					pBarrier->Transition.StateBefore = util_to_dx_resource_state(pBuffer->mCurrentState);
-					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
-
-					pBuffer->mCurrentState = pTransBarrier->mNewState;
-
-					++transitionCount;
-				}
-			}
-			else if (pBuffer->mCurrentState == RESOURCE_STATE_UNORDERED_ACCESS)
-			{
-				pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-				pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-				pBarrier->UAV.pResource = pBuffer->pDxResource;
-				++transitionCount;
-			}
-		}
-	}
-	for (uint32_t i = 0; i < numTextureBarriers; ++i)
-	{
-		TextureBarrier*         pTransBarrier = &pTextureBarriers[i];
-		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
-		Texture*                pTexture = pTransBarrier->pTexture;
-		{
-			if (pTexture->mCurrentState != pTransBarrier->mNewState)
-			{
-				if (pTransBarrier->mSplit)
-				{
-					ResourceState currentState = pTexture->mCurrentState;
-					// Determine if the barrier is begin only or end only
-					// If the previous state and new state are same, we know this is end only since the state was already set in begin only
-					if (pTexture->mPreviousState & pTransBarrier->mNewState)
-					{
-						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
-						pTexture->mPreviousState = RESOURCE_STATE_UNDEFINED;
-						pTexture->mCurrentState = pTransBarrier->mNewState;
-					}
-					else
-					{
-						pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY;
-						pTexture->mPreviousState = pTransBarrier->mNewState;
-					}
-
-					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					pBarrier->Transition.pResource = pTexture->pDxResource;
-					pBarrier->Transition.StateBefore = util_to_dx_resource_state(currentState);
-					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
-
-					++transitionCount;
-				}
-				else
-				{
-					pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-					pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-					pBarrier->Transition.pResource = pTexture->pDxResource;
-					pBarrier->Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					pBarrier->Transition.StateBefore = util_to_dx_resource_state(pTexture->mCurrentState);
-					pBarrier->Transition.StateAfter = util_to_dx_resource_state(pTransBarrier->mNewState);
-					pTexture->mCurrentState = pTransBarrier->mNewState;
-
-					++transitionCount;
-				}
-			}
-		}
-	}
-
-	if (transitionCount)
-	{
-		if (batch && (transitionCount + pCmd->mBatchBarrierCount <= MAX_BATCH_BARRIERS))
-		{
-			memcpy(pCmd->pBatchBarriers + pCmd->mBatchBarrierCount, barriers, sizeof(D3D12_RESOURCE_BARRIER) * transitionCount);
-			pCmd->mBatchBarrierCount += transitionCount;
-		}
-		else
-		{
-			pCmd->pDxCmdList->ResourceBarrier(transitionCount, barriers);
-		}
-	}
-}
-#endif
-
-void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers, uint32_t numTextures, Texture** ppTextures, bool batch)
-{
-	D3D12_RESOURCE_BARRIER* barriers = (D3D12_RESOURCE_BARRIER*)alloca((numBuffers + numTextures) * sizeof(D3D12_RESOURCE_BARRIER));
-	uint32_t                transitionCount = 0;
-
-	for (uint32_t i = 0; i < numBuffers; ++i)
-	{
-		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
-		{
-			pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-			pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			pBarrier->UAV.pResource = ppBuffers[i]->pDxResource;
-			++transitionCount;
-		}
-	}
-	for (uint32_t i = 0; i < numTextures; ++i)
-	{
-		D3D12_RESOURCE_BARRIER* pBarrier = &barriers[transitionCount];
-		{
-			pBarrier->Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-			pBarrier->Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			pBarrier->UAV.pResource = ppTextures[i]->pDxResource;
-			++transitionCount;
-		}
-	}
-
-	if (transitionCount)
-	{
-		if (batch && (transitionCount + pCmd->mBatchBarrierCount <= MAX_BATCH_BARRIERS))
-		{
-			memcpy(pCmd->pBatchBarriers + pCmd->mBatchBarrierCount, barriers, sizeof(D3D12_RESOURCE_BARRIER) * transitionCount);
-			pCmd->mBatchBarrierCount += transitionCount;
-		}
-		else
-		{
-			pCmd->pDxCmdList->ResourceBarrier(transitionCount, barriers);
-		}
-	}
-}
-
-void cmdFlushBarriers(Cmd* pCmd)
-{
-	if (pCmd->mBatchBarrierCount)
-	{
-		pCmd->pDxCmdList->ResourceBarrier(pCmd->mBatchBarrierCount, pCmd->pBatchBarriers);
-		pCmd->mBatchBarrierCount = 0;
-	}
-}
-
-#ifdef _DURANGO
-void cmdFlushBarriers(DmaCmd* pCmd)
-{
-	if (pCmd->mBatchBarrierCount)
-	{
-		pCmd->pDxCmdList->ResourceBarrier(pCmd->mBatchBarrierCount, pCmd->pBatchBarriers);
-		pCmd->mBatchBarrierCount = 0;
-	}
+		pCmd->pDxCmdList->ResourceBarrier(transitionCount, barriers);
 }
 #endif
 
@@ -6200,7 +6080,7 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 
 #ifdef _DURANGO
 	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_COPY_DEST } };
-	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 
 	pCmd->pDxCmdList->CopyBufferRegion(
@@ -6211,7 +6091,7 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 		bufferBarriers[0].mNewState =
 			((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_VERTEX_BUFFER) ? RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
 																		   : RESOURCE_STATE_COMMON);
-		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 	}
 #endif
 }
@@ -6226,7 +6106,7 @@ void cmdUpdateBuffer(DmaCmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* 
 	ASSERT(pBuffer->pDxResource);
 
 	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_COPY_DEST } };
-	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 
 	pCmd->pDxCmdList->CopyBufferRegion(
 		pBuffer->pDxResource, pBuffer->mPositionInHeap + dstOffset, pSrcBuffer->pDxResource, pSrcBuffer->mPositionInHeap + srcOffset, size);
@@ -6235,7 +6115,7 @@ void cmdUpdateBuffer(DmaCmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* 
 		bufferBarriers[0].mNewState =
 			((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_VERTEX_BUFFER) ? RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
 				: RESOURCE_STATE_COMMON);
-		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 	}
 }
 #endif
@@ -6424,7 +6304,7 @@ void queuePresent(
 
 #if defined(_DURANGO)
 
-	if (pSwapChain->mDesc.mColorFormat == ImageFormat::RGB10A2)
+	if (pSwapChain->mDesc.mColorFormat == TinyImageFormat_R10G10B10A2_UNORM)
 	{
 		RECT presentRect;
 
@@ -6667,7 +6547,7 @@ void cmdExecuteIndirect(
 
 #ifdef _DURANGO
 	BufferBarrier bufferBarriers[] = { { pIndirectBuffer, RESOURCE_STATE_INDIRECT_ARGUMENT } };
-	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL, false);
+	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
 #endif
 	if (!pCounterBuffer)
 		pCmd->pDxCmdList->ExecuteIndirect(
@@ -6690,43 +6570,43 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 	*pFrequency = (double)freq;
 }
 
-void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** ppQueryHeap)
+void addQueryPool(Renderer* pRenderer, const QueryPoolDesc* pDesc, QueryPool** ppQueryPool)
 {
-	QueryHeap* pQueryHeap = (QueryHeap*)conf_calloc(1, sizeof(*pQueryHeap));
-	pQueryHeap->mDesc = *pDesc;
+	QueryPool* pQueryPool = (QueryPool*)conf_calloc(1, sizeof(*pQueryPool));
+	pQueryPool->mDesc = *pDesc;
 
 	D3D12_QUERY_HEAP_DESC desc = {};
 	desc.Count = pDesc->mQueryCount;
 	desc.NodeMask = util_calculate_node_mask(pRenderer, pDesc->mNodeIndex);
 	desc.Type = util_to_dx_query_heap_type(pDesc->mType);
-	pRenderer->pDxDevice->CreateQueryHeap(&desc, IID_ARGS(&pQueryHeap->pDxQueryHeap));
+	pRenderer->pDxDevice->CreateQueryHeap(&desc, IID_ARGS(&pQueryPool->pDxQueryHeap));
 
-	*ppQueryHeap = pQueryHeap;
+	*ppQueryPool = pQueryPool;
 }
 
-void removeQueryHeap(Renderer* pRenderer, QueryHeap* pQueryHeap)
+void removeQueryPool(Renderer* pRenderer, QueryPool* pQueryPool)
 {
 	UNREF_PARAM(pRenderer);
-	SAFE_RELEASE(pQueryHeap->pDxQueryHeap);
-	SAFE_FREE(pQueryHeap);
+	SAFE_RELEASE(pQueryPool->pDxQueryHeap);
+	SAFE_FREE(pQueryPool);
 }
 
-void cmdResetQueryHeap(Cmd* pCmd, QueryHeap* pQueryHeap, uint32_t startQuery, uint32_t queryCount)
+void cmdResetQueryPool(Cmd* pCmd, QueryPool* pQueryPool, uint32_t startQuery, uint32_t queryCount)
 {
 	UNREF_PARAM(pCmd);
-	UNREF_PARAM(pQueryHeap);
+	UNREF_PARAM(pQueryPool);
 	UNREF_PARAM(startQuery);
 	UNREF_PARAM(queryCount);
 }
 
-void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdBeginQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	D3D12_QUERY_TYPE type = util_to_dx_query_type(pQueryHeap->mDesc.mType);
+	D3D12_QUERY_TYPE type = util_to_dx_query_type(pQueryPool->mDesc.mType);
 	switch (type)
 	{
 		case D3D12_QUERY_TYPE_OCCLUSION: break;
 		case D3D12_QUERY_TYPE_BINARY_OCCLUSION: break;
-		case D3D12_QUERY_TYPE_TIMESTAMP: pCmd->pDxCmdList->EndQuery(pQueryHeap->pDxQueryHeap, type, pQuery->mIndex); break;
+		case D3D12_QUERY_TYPE_TIMESTAMP: pCmd->pDxCmdList->EndQuery(pQueryPool->pDxQueryHeap, type, pQuery->mIndex); break;
 		case D3D12_QUERY_TYPE_PIPELINE_STATISTICS: break;
 		case D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0: break;
 		case D3D12_QUERY_TYPE_SO_STATISTICS_STREAM1: break;
@@ -6736,14 +6616,14 @@ void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	}
 }
 
-void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdEndQuery(Cmd* pCmd, QueryPool* pQueryPool, QueryDesc* pQuery)
 {
-	D3D12_QUERY_TYPE type = util_to_dx_query_type(pQueryHeap->mDesc.mType);
+	D3D12_QUERY_TYPE type = util_to_dx_query_type(pQueryPool->mDesc.mType);
 	switch (type)
 	{
 		case D3D12_QUERY_TYPE_OCCLUSION: break;
 		case D3D12_QUERY_TYPE_BINARY_OCCLUSION: break;
-		case D3D12_QUERY_TYPE_TIMESTAMP: pCmd->pDxCmdList->EndQuery(pQueryHeap->pDxQueryHeap, type, pQuery->mIndex); break;
+		case D3D12_QUERY_TYPE_TIMESTAMP: pCmd->pDxCmdList->EndQuery(pQueryPool->pDxQueryHeap, type, pQuery->mIndex); break;
 		case D3D12_QUERY_TYPE_PIPELINE_STATISTICS: break;
 		case D3D12_QUERY_TYPE_SO_STATISTICS_STREAM0: break;
 		case D3D12_QUERY_TYPE_SO_STATISTICS_STREAM1: break;
@@ -6753,10 +6633,10 @@ void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
 	}
 }
 
-void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
+void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
 {
 	pCmd->pDxCmdList->ResolveQueryData(
-		pQueryHeap->pDxQueryHeap, util_to_dx_query_type(pQueryHeap->mDesc.mType), startQuery, queryCount, pReadbackBuffer->pDxResource,
+		pQueryPool->pDxQueryHeap, util_to_dx_query_type(pQueryPool->mDesc.mType), startQuery, queryCount, pReadbackBuffer->pDxResource,
 		startQuery * 8);
 }
 /************************************************************************/
@@ -6833,8 +6713,5 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 	pTexture->pDxResource->SetName(wName);
 }
 
-#endif
-#if defined(__cplusplus) && defined(ENABLE_RENDERER_RUNTIME_SWITCH)
-}
 #endif
 #endif

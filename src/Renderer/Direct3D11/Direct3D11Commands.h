@@ -21,10 +21,6 @@ enum CmdType
 	CMD_TYPE_cmdDrawIndexed,
 	CMD_TYPE_cmdDrawIndexedInstanced,
 	CMD_TYPE_cmdDispatch,
-	CMD_TYPE_cmdResourceBarrier,
-	CMD_TYPE_cmdSynchronizeResources,
-	CMD_TYPE_cmdFlushBarriers,
-	CMD_TYPE_cmdExecuteIndirect,
 	CMD_TYPE_cmdBeginQuery,
 	CMD_TYPE_cmdEndQuery,
 	CMD_TYPE_cmdResolveQuery,
@@ -158,19 +154,19 @@ struct ExecuteIndirectCmd
 
 struct BeginQueryCmd
 {
-	QueryHeap* pQueryHeap;
+	QueryPool *pQueryPool;
 	QueryDesc  mQuery;
 };
 
 struct EndQueryCmd
 {
-	QueryHeap* pQueryHeap;
+	QueryPool *pQueryPool;
 	QueryDesc  mQuery;
 };
 
 struct ResolveQueryCmd
 {
-	QueryHeap* pQueryHeap;
+	QueryPool *pQueryPool;
 	Buffer*    pReadbackBuffer;
 	uint32_t   startQuery;
 	uint32_t   queryCount;
@@ -230,10 +226,6 @@ struct CachedCmd
 		DrawIndexedCmd          mDrawIndexedCmd;
 		DrawIndexedInstancedCmd mDrawIndexedInstancedCmd;
 		DispatchCmd             mDispatchCmd;
-		ResourceBarrierCmd      mResourceBarrierCmd;
-		SynchronizeResourcesCmd mSynchronizeResourcesCmd;
-		FlushBarriersCmd        mFlushBarriersCmd;
-		ExecuteIndirectCmd      mExecuteIndirectCmd;
 		BeginQueryCmd           mBeginQueryCmd;
 		EndQueryCmd             mEndQueryCmd;
 		ResolveQueryCmd         mResolveQueryCmd;

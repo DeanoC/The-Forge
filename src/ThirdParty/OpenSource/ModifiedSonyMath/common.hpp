@@ -1479,6 +1479,12 @@ struct AABB
 		minBounds = Vector3(-0.001f, -0.001f, -0.001f);
 		maxBounds = Vector3(0.001f, 0.001f, 0.001f);
 	}
+
+	AABB(Vector3 const &argsMinBounds, Vector3 const &argsMaxBounds) {
+		minBounds = argsMinBounds;
+		maxBounds = argsMaxBounds;
+	}
+
 	inline void Transform(Matrix4 const& mat)
 	{
 		minBounds = (mat * Vector4(minBounds.getX(), minBounds.getY(), minBounds.getZ(), 1.0f)).getXYZ();

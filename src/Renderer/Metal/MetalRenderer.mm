@@ -31,6 +31,8 @@
 #define RENDERER_IMPLEMENTATION
 #define MAX_FRAMES_IN_FLIGHT 3
 
+#define VERTEX_BINDING_OFFSET 16
+
 #if !defined(__APPLE__) && !defined(TARGET_OS_MAC)
 #error "MacOs is needed!"
 #endif
@@ -46,6 +48,8 @@
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_apis.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
+#include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_bits.h"
+
 #include "../../OS/Image/ImageHelper.h" // for GetMipMappedSize
 
 #include "MetalCapBuilder.h"
@@ -180,9 +184,6 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 -(CFTimeInterval) GPUStartTime;
 -(CFTimeInterval) GPUEndTime;
 @end
-    
-static QueryHeap* lastFrameQuery = nullptr;
-
 /************************************************************************/
 // Dynamic Memory Allocator
 /************************************************************************/
@@ -1125,7 +1126,10 @@ void destroy_default_resources(Renderer* pRenderer)
 // API functions
 // -------------------------------------------------------------------------------------------------
 
-TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR) { return TinyImageFormat_B8G8R8A8_SRGB; }
+TinyImageFormat getRecommendedSwapchainFormat(bool hintHDR) {
+	return TinyImageFormat_B8G8R8A8_UNORM;
+}
+
 #ifndef TARGET_IOS
 // Returns the CFDictionary that contains the system profiler data type described in inDataType.
 CFDictionaryRef findDictionaryForDataType(const CFArrayRef inArray, CFStringRef inDataType)
@@ -1148,12 +1152,12 @@ CFDictionaryRef findDictionaryForDataType(const CFArrayRef inArray, CFStringRef 
 	return (NULL);
 }
 
-// Returns the CFArray of “item” dictionaries.
+// Returns the CFArray of ???item??? dictionaries.
 CFArrayRef getItemsArrayFromDictionary(const CFDictionaryRef inDictionary)
 {
 	CFArrayRef itemsArray;
 
-	// Retrieve the CFDictionary that has a key/value pair with the key equal to “_items”.
+	// Retrieve the CFDictionary that has a key/value pair with the key equal to ???_items???.
 	itemsArray = (CFArrayRef)CFDictionaryGetValue(inDictionary, CFSTR("_items"));
 	if (itemsArray != NULL)
 		CFRetain(itemsArray);
@@ -1200,14 +1204,14 @@ void retrieveSystemProfilerInformation(eastl::string& outVendorId)
 
 		if (itemsArray != NULL)
 		{
-			// Find out how many items in this category – each one is a dictionary
+			// Find out how many items in this category ??? each one is a dictionary
 			arrayCount = CFArrayGetCount(itemsArray);
 
 			for (i = 0; i < arrayCount; i++)
 			{
 				CFMutableStringRef outputString;
 
-				// Create a mutable CFStringRef with the dictionary value found with key “machine_name”
+				// Create a mutable CFStringRef with the dictionary value found with key ???machine_name???
 				// This is the machine_name of this mac machine.
 				// Here you can give any value in key tag,to get its corresponding content
 				outputString = CFStringCreateMutableCopy(
@@ -1672,11 +1676,12 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 	ASSERT(pBuffer);
 	pBuffer->mDesc = *pDesc;
 
+	uint64_t allocationSize = pBuffer->mDesc.mSize;
 	// Align the buffer size to multiples of the dynamic uniform buffer minimum size
 	if (pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 	{
 		uint64_t minAlignment = pRenderer->pActiveGpuSettings->mUniformBufferAlignment;
-		pBuffer->mDesc.mSize = round_up_64(pBuffer->mDesc.mSize, minAlignment);
+		allocationSize = round_up_64(allocationSize, minAlignment);
 	}
 
 	//Use isLowPower to determine if running intel integrated gpu
@@ -1696,7 +1701,7 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** ppBuffer)
 	if (pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT)
 		mem_reqs.flags |= RESOURCE_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT;
 
-	BufferCreateInfo alloc_info = { pBuffer->mDesc.pDebugName, pBuffer->mDesc.mSize };
+	BufferCreateInfo alloc_info = {pBuffer->mDesc.pDebugName, allocationSize};
 	bool             allocSuccess;
 	allocSuccess = createBuffer(pRenderer->pResourceAllocator, &alloc_info, &mem_reqs, pBuffer);
 	ASSERT(allocSuccess);
@@ -1762,14 +1767,14 @@ void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderT
 #ifndef TARGET_IOS
 	add_texture(pRenderer, &rtDesc, &pRenderTarget->pTexture, true);
 #else
-	if (pDesc->mFormat != ImageFormat::D24S8)
+	if (pDesc->mFormat != TinyImageFormat_D24_UNORM_S8_UINT)
 		add_texture(pRenderer, &rtDesc, &pRenderTarget->pTexture, true);
 	// Combined depth stencil is not supported on iOS.
 	else
 	{
-		rtDesc.mFormat = ImageFormat::D24;
+		rtDesc.mFormat = TinyImageFormat_X8_D24_UNORM;
 		add_texture(pRenderer, &rtDesc, &pRenderTarget->pTexture, true);
-		rtDesc.mFormat = ImageFormat::S8;
+		rtDesc.mFormat = TinyImageFormat_S8_UINT;
 		add_texture(pRenderer, &rtDesc, &pRenderTarget->pStencil, true);
 	}
 #endif
@@ -1897,21 +1902,16 @@ void addShader(Renderer* pRenderer, const ShaderDesc* pDesc, Shader** ppShaderPr
 				[[NSNumberFormatter alloc] init];    // Used for reading NSNumbers macro values from strings.
 			numberFormatter.numberStyle = NSNumberFormatterDecimalStyle;
 
-			NSArray* defArray = [[NSArray alloc] init];
-			NSArray* valArray = [[NSArray alloc] init];
+			NSMutableDictionary *macroDictionary = [NSMutableDictionary dictionaryWithCapacity:shader_macros.size()];
 			for (uint i = 0; i < shader_macros.size(); i++)
 			{
-				defArray = [defArray arrayByAddingObject:[[NSString alloc] initWithUTF8String:shader_macros[i].definition.c_str()]];
+				NSString *key = [NSString stringWithUTF8String:shader_macros[i].definition.c_str()];
 
 				// Try reading the macro value as a NSNumber. If failed, use it as an NSString.
-				NSString* valueString = [[NSString alloc] initWithUTF8String:shader_macros[i].value.c_str()];
+				NSString *valueString = [NSString stringWithUTF8String:shader_macros[i].value.c_str()];
 				NSNumber* valueNumber = [numberFormatter numberFromString:valueString];
-				if (valueNumber)
-					valArray = [valArray arrayByAddingObject:valueNumber];
-				else
-					valArray = [valArray arrayByAddingObject:valueString];
+				macroDictionary[key] = valueNumber ? valueNumber : valueString;
 			}
-			NSDictionary* macroDictionary = [[NSDictionary alloc] initWithObjects:valArray forKeys:defArray];
 
 			// Compile the code
 			NSString* shaderSource = [[NSString alloc] initWithUTF8String:source.c_str()];
@@ -2253,18 +2253,23 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 			}
 
 			renderPipelineDesc.vertexDescriptor.attributes[i].offset = attrib->mOffset;
-			renderPipelineDesc.vertexDescriptor.attributes[i].bufferIndex = attrib->mBinding + 16;
+			renderPipelineDesc.vertexDescriptor.attributes[i].bufferIndex = attrib->mBinding + VERTEX_BINDING_OFFSET;
 			renderPipelineDesc.vertexDescriptor.attributes[i].format = util_to_mtl_vertex_format(attrib->mFormat);
 
 			//setup layout for all bindings instead of just 0.
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16- 1].stride += TinyImageFormat_BitSizeOfBlock(attrib->mFormat) / 8;
-			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepRate = 1;
-			if(pPipeline->pShader->mtlVertexShader.patchType != MTLPatchTypeNone)
-				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepFunction = MTLVertexStepFunctionPerPatchControlPoint;
-			else if(attrib->mRate == VERTEX_ATTRIB_RATE_INSTANCE)
-				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepFunction = MTLVertexStepFunctionPerInstance;
-			else
-				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + 16 - 1].stepFunction = MTLVertexStepFunctionPerVertex;
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + VERTEX_BINDING_OFFSET - 1].stride +=
+					TinyImageFormat_BitSizeOfBlock(attrib->mFormat) / 8;
+			renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + VERTEX_BINDING_OFFSET - 1].stepRate = 1;
+			if(pPipeline->pShader->mtlVertexShader.patchType != MTLPatchTypeNone) {
+				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + VERTEX_BINDING_OFFSET - 1].stepFunction =
+						MTLVertexStepFunctionPerPatchControlPoint;
+			} else if(attrib->mRate == VERTEX_ATTRIB_RATE_INSTANCE) {
+				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + VERTEX_BINDING_OFFSET - 1].stepFunction =
+						MTLVertexStepFunctionPerInstance;
+			} else {
+				renderPipelineDesc.vertexDescriptor.layouts[inputBindingCount + VERTEX_BINDING_OFFSET - 1].stepFunction =
+						MTLVertexStepFunctionPerVertex;
+			}
 		}
 	}
 
@@ -2309,7 +2314,7 @@ void addGraphicsPipelineImpl(Renderer* pRenderer, const GraphicsPipelineDesc* pD
 		if (renderPipelineDesc.depthAttachmentPixelFormat == MTLPixelFormatDepth24Unorm_Stencil8)
 			renderPipelineDesc.stencilAttachmentPixelFormat = renderPipelineDesc.depthAttachmentPixelFormat;
 #else
-		if (pDesc->mDepthStencilFormat == ImageFormat::D24S8)
+		if (pDesc->mDepthStencilFormat == TinyImageFormat_D24_UNORM_S8_UINT)
 			renderPipelineDesc.stencilAttachmentPixelFormat = MTLPixelFormatStencil8;
 #endif
 	}
@@ -2373,17 +2378,7 @@ void addComputePipelineImpl(Renderer* pRenderer, const ComputePipelineDesc* pDes
 
 	*ppPipeline = pPipeline;
 }
-    
-void addComputePipeline(Renderer* pRenderer, const ComputePipelineDesc* pDesc, Pipeline** ppPipeline)
-{
-    addComputePipelineImpl(pRenderer, pDesc, ppPipeline);
-}
-    
-void addPipeline(Renderer* pRenderer, const GraphicsPipelineDesc* pDesc, Pipeline** ppPipeline)
-{
-    addGraphicsPipelineImpl(pRenderer, pDesc, ppPipeline);
-}
-    
+
 extern void addRaytracingPipeline(const RaytracingPipelineDesc* pDesc, Pipeline** ppPipeline);
 extern void removeRaytracingPipeline(RaytracingPipeline* pPipeline);
     
@@ -2621,6 +2616,7 @@ void beginCmd(Cmd* pCmd)
 		pCmd->selectedIndexBuffer = nil;
 		pCmd->pBoundDescriptorBinder = nil;
 		pCmd->pBoundRootSignature = nil;
+		pCmd->pLastFrameQuery = nil;
 		pCmd->mtlCommandBuffer = [pCmd->pCmdPool->pQueue->mtlCommandQueue commandBuffer];
 	}
 }
@@ -2930,8 +2926,8 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 	for (uint32_t i = startIdx; i < bufferCount; i++)
 	{
 		[pCmd->mtlRenderEncoder setVertexBuffer:ppBuffers[i]->mtlBuffer
-										 offset:(ppBuffers[i]->mPositionInHeap + (pOffsets ? pOffsets[i] : 0))
-										atIndex:((i - startIdx)+16)];
+																		 offset:(ppBuffers[i]->mPositionInHeap + (pOffsets ? pOffsets[i] : 0))
+																		atIndex:((i - startIdx) + VERTEX_BINDING_OFFSET)];
 	}
 }
 
@@ -3207,9 +3203,11 @@ void cmdExecuteIndirect(
 	}
 }
 
-void cmdResourceBarrier(
-	Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers,
-	bool batch)
+void cmdResourceBarrier(Cmd *pCmd,
+												uint32_t numBufferBarriers,
+												BufferBarrier *pBufferBarriers,
+												uint32_t numTextureBarriers,
+												TextureBarrier *pTextureBarriers)
 {
     if (numBufferBarriers)
     {
@@ -3251,25 +3249,6 @@ void cmdResourceBarrier(
         }
     }
 }
-	
-void cmdSynchronizeResources(Cmd* pCmd, uint32_t numBuffers, Buffer** ppBuffers, uint32_t numTextures, Texture** ppTextures, bool batch)
-{
-	if (numBuffers)
-	{
-		pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_BUFFERS;
-	}
-	
-	if (numTextures)
-	{
-		pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_TEXTURES;
-		pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_RENDERTARGETS;
-	}
-}
-	
-void cmdFlushBarriers(Cmd* pCmd)
-{
-	
-}
 
 void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size)
 {
@@ -3303,8 +3282,11 @@ void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pIntermediate, S
 #ifndef TARGET_IOS
 	MTLBlitOption blitOptions = MTLBlitOptionNone;
 #else
-	bool isPvrtc = TinyImageFormat_IsPvr(pTexture->mDesc.mFormat);
-	MTLBlitOption blitOptions = isPvrtc ? MTLBlitOptionRowLinearPVRTC : MTLBlitOptionNone;
+	// PVR formats get special case
+	uint64_t const tifname = (TinyImageFormat_Code(pTexture->mDesc.mFormat) & TinyImageFormat_NAMESPACE_REQUIRED_BITS);
+	bool const isPvrtc = (tifname == TinyImageFormat_NAMESPACE_PVRTC);
+
+MTLBlitOption blitOptions = isPvrtc ? MTLBlitOptionRowLinearPVRTC : MTLBlitOptionNone;
 #endif
 
 	// Copy to the texture's final subresource.
@@ -3392,9 +3374,6 @@ void queueSubmit(
 	__block uint32_t commandsFinished = 0;
 	__weak dispatch_semaphore_t completedFence = nil;
     
-    __block double lastFrameMinTime = 0.0;
-    __block double lastFrameMaxTime = 0.0;
-    
 	if (pFence)
 	{
 		completedFence = pFence->pMtlSemaphore;
@@ -3402,35 +3381,24 @@ void queueSubmit(
 	}
 	for (uint32_t i = 0; i < cmdCount; i++)
 	{
-		[ppCmds[i]->mtlCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+		__block Cmd *pCmd = ppCmds[i];
+		[pCmd->mtlCommandBuffer addCompletedHandler:^(id <MTLCommandBuffer> buffer) {
 			commandsFinished++;
             
             id<CommandBufferOverride> fixedObj = (id<CommandBufferOverride>)buffer;
-  
-            const double gpuStartTime([fixedObj GPUStartTime]);
-            const double gpuEndTime([fixedObj GPUEndTime]);
-            
-            if (commandsFinished == 1)
-            {
-                lastFrameMinTime = gpuStartTime;
-                lastFrameMaxTime = gpuEndTime;
-            } else {
-                if (gpuStartTime < lastFrameMinTime)
-                    lastFrameMinTime = gpuStartTime;
-                if (gpuEndTime > lastFrameMaxTime)
-                    lastFrameMaxTime = gpuEndTime;
-            }
+
+			if (pCmd->pLastFrameQuery) {
+				const double gpuStartTime([fixedObj GPUStartTime]);
+				const double gpuEndTime([fixedObj GPUEndTime]);
+
+				pCmd->pLastFrameQuery->mGpuTimestampStart = gpuStartTime * GPU_FREQUENCY;
+				pCmd->pLastFrameQuery->mGpuTimestampEnd = gpuEndTime * GPU_FREQUENCY;
+			}
             
 			if (commandsFinished == cmdCount)
 			{
 				if (completedFence)
 					dispatch_semaphore_signal(completedFence);
-            
-                if (lastFrameQuery)
-                {
-                    lastFrameQuery->gpuTimestampStart = lastFrameMinTime * GPU_FREQUENCY;
-                    lastFrameQuery->gpuTimestampEnd = lastFrameMaxTime * GPU_FREQUENCY;
-                }
             }
 		}];
 	}
@@ -3597,43 +3565,44 @@ void getTimestampFrequency(Queue* pQueue, double* pFrequency)
 {
     *pFrequency = GPU_FREQUENCY;
 }
-    
-void addQueryHeap(Renderer* pRenderer, const QueryHeapDesc* pDesc, QueryHeap** ppQueryHeap)
-{
-    QueryHeap* pQueryHeap = (QueryHeap*)conf_calloc(1, sizeof(QueryHeap));
-    pQueryHeap->mDesc = *pDesc;
+
+void addQueryPool(Renderer *pRenderer, const QueryPoolDesc *pDesc, QueryPool **ppQueryPool) {
+	QueryPool *pQueryPool = (QueryPool *) conf_calloc(1, sizeof(QueryPool));
+	pQueryPool->mDesc = *pDesc;
     
     // currently this is just a dummy struct for iOS GPU frame counters
-    pQueryHeap->gpuTimestampStart = 0.0;
-    pQueryHeap->gpuTimestampEnd = 0.0;
-    
-    *ppQueryHeap = pQueryHeap;
+	pQueryPool->mGpuTimestampStart = 0.0;
+	pQueryPool->mGpuTimestampEnd = 0.0;
+
+	*ppQueryPool = pQueryPool;
 }
 
-void removeQueryHeap(Renderer* pRenderer, QueryHeap* pQueryHeap)
-{
-    SAFE_FREE(pQueryHeap);
+void removeQueryPool(Renderer *pRenderer, QueryPool *pQueryPool) {
+	SAFE_FREE(pQueryPool);
 }
 
-void cmdResetQueryHeap(Cmd* pCmd, QueryHeap* pQueryHeap, uint32_t startQuery, uint32_t queryCount)
-{
-}
-
-void cmdBeginQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
-{
-    lastFrameQuery = pQueryHeap;
-}
-    
-void cmdEndQuery(Cmd* pCmd, QueryHeap* pQueryHeap, QueryDesc* pQuery)
+void cmdResetQueryPool(Cmd *pCmd, QueryPool *pQueryPool, uint32_t startQuery, uint32_t queryCount)
 {
 }
 
-void cmdResolveQuery(Cmd* pCmd, QueryHeap* pQueryHeap, Buffer* pReadbackBuffer, uint32_t startQuery, uint32_t queryCount)
+void cmdBeginQuery(Cmd *pCmd, QueryPool *pQueryPool, QueryDesc *pQuery) {
+	pCmd->pLastFrameQuery = pQueryPool;
+}
+
+void cmdEndQuery(Cmd *pCmd, QueryPool *pQueryPool, QueryDesc *pQuery)
+{
+}
+
+void cmdResolveQuery(Cmd *pCmd,
+										 QueryPool *pQueryPool,
+										 Buffer *pReadbackBuffer,
+										 uint32_t startQuery,
+										 uint32_t queryCount)
 {
     uint64_t* data = (uint64_t*)pReadbackBuffer->mtlBuffer.contents;
-    
-    memcpy(&data[0], &pQueryHeap->gpuTimestampStart, sizeof(uint64_t));
-    memcpy(&data[1], &pQueryHeap->gpuTimestampEnd, sizeof(uint64_t));
+
+	memcpy(&data[0], &pQueryPool->mGpuTimestampStart, sizeof(uint64_t));
+	memcpy(&data[1], &pQueryPool->mGpuTimestampEnd, sizeof(uint64_t));
 }
     
 // -------------------------------------------------------------------------------------------------
