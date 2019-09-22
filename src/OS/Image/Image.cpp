@@ -805,34 +805,39 @@ bool iLoadDDSFromMemory(Image* pImage,
 	}
 
 	// TheForge Image uses d = 0 as cubemap marker
-	if(TinyDDS_IsCubemap(ctx)) d = 0;
-    else d = d ? d : 1;
-    s = s ? s : 1;
+	if (TinyDDS_IsCubemap(ctx)) {
+		d = 0;
+	} else {
+		d = d ? d : 1;
+	}
+	s = s ? s : 1;
 
 	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
-    pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
+	pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
 
 	int size = pImage->GetMipMappedSize();
 
-	if (pAllocator)
-	{
-		pImage->SetPixels((unsigned char*)pAllocator(pImage, size, pUserData));
-	}
-	else
-	{
-		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * size), true);
+	if (pAllocator) {
+		pImage->SetPixels((unsigned char *) pAllocator(pImage, size, pUserData));
+	} else {
+		pImage->SetPixels((unsigned char *) conf_malloc(sizeof(unsigned char) * size), true);
 	}
 
-    for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
-        size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-        size_t const fileSize = TinyDDS_ImageSize(ctx, mipMapLevel);
-        if (expectedSize != fileSize) {
-            LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(),mipMapLevel, expectedSize, fileSize);
-            return false;
-        }
-        unsigned char *dst = pImage->GetPixels(mipMapLevel, 0);
-        memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), fileSize);
-    }
+	for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
+		size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
+		size_t const fileSize = TinyDDS_ImageSize(ctx, mipMapLevel);
+		if (expectedSize != fileSize) {
+			LOGF(LogLevel::eERROR,
+					 "DDS file %s mipmap %i size error %liu < %liu",
+					 pImage->GetName().c_str(),
+					 mipMapLevel,
+					 expectedSize,
+					 fileSize);
+			return false;
+		}
+		unsigned char *dst = pImage->GetPixels(mipMapLevel, 0);
+		memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), fileSize);
+	}
 
 	return true;
 }
@@ -957,54 +962,58 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 		return false;
 	}
 
-    // TheForge Image uses d = 0 as cubemap marker
-    if(TinyKtx_IsCubemap(ctx)) d = 0;
-    else d = d ? d : 1;
-    s = s ? s : 1;
+	// TheForge Image uses d = 0 as cubemap marker
+	if (TinyKtx_IsCubemap(ctx)) {
+		d = 0;
+	} else {
+		d = d ? d : 1;
+	}
+	s = s ? s : 1;
 
 	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
-    pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
+	pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
 
 	int size = pImage->GetMipMappedSize();
 
-	if (pAllocator)
-	{
-		pImage->SetPixels((uint8_t*)pAllocator(pImage, size, pUserData));
+	if (pAllocator) {
+		pImage->SetPixels((uint8_t *) pAllocator(pImage, size, pUserData));
+	} else {
+		pImage->SetPixels((uint8_t *) conf_malloc(sizeof(uint8_t) * size), true);
 	}
-	else
-	{
-		pImage->SetPixels((uint8_t*)conf_malloc(sizeof(uint8_t) * size), true);
-	}
-    
-    for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
-    {
-        uint8_t const* src = (uint8_t const*) TinyKtx_ImageRawData(ctx, mipMapLevel);
-        uint8_t *dst = pImage->GetPixels(mipMapLevel, 0);
 
-        if(TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
-            uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
-            uint32_t const dstStride = (pImage->GetWidth(mipMapLevel) * TinyImageFormat_BitSizeOfBlock(fmt)) /
-                                        (TinyImageFormat_PixelCountOfBlock(fmt) * 8);
+	for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++) {
+		uint8_t const *src = (uint8_t const *) TinyKtx_ImageRawData(ctx, mipMapLevel);
+		uint8_t *dst = pImage->GetPixels(mipMapLevel, 0);
 
-            for (uint32_t ww = 0u; ww < TinyKtx_ArraySlices(ctx); ++ww) {
-                for (uint32_t zz = 0; zz < TinyKtx_Depth(ctx); ++zz) {
-                    for (uint32_t yy = 0; yy < TinyKtx_Height(ctx); ++yy) {
-                        memcpy(dst, src, dstStride);
-                        src += srcStride;
-                        dst += dstStride;
-                    }
-                }
-            }
-        } else {
-            // fast path data is packed we can just copy
-            size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-            size_t const fileSize = TinyKtx_ImageSize(ctx, mipMapLevel);
-            if (expectedSize != fileSize) {
-                LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(),mipMapLevel, expectedSize, fileSize);
-                return false;
-            }
-            memcpy(dst, src, fileSize);
-        }
+		if (TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
+			uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
+			uint32_t const dstStride = (pImage->GetWidth(mipMapLevel) * TinyImageFormat_BitSizeOfBlock(fmt)) /
+					(TinyImageFormat_PixelCountOfBlock(fmt) * 8);
+
+			for (uint32_t ww = 0u; ww < TinyKtx_ArraySlices(ctx); ++ww) {
+				for (uint32_t zz = 0; zz < TinyKtx_Depth(ctx); ++zz) {
+					for (uint32_t yy = 0; yy < TinyKtx_Height(ctx); ++yy) {
+						memcpy(dst, src, dstStride);
+						src += srcStride;
+						dst += dstStride;
+					}
+				}
+			}
+		} else {
+			// fast path data is packed we can just copy
+			size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
+			size_t const fileSize = TinyKtx_ImageSize(ctx, mipMapLevel);
+			if (expectedSize != fileSize) {
+				LOGF(LogLevel::eERROR,
+						 "DDS file %s mipmap %i size error %liu < %liu",
+						 pImage->GetName().c_str(),
+						 mipMapLevel,
+						 expectedSize,
+						 fileSize);
+				return false;
+			}
+			memcpy(dst, src, fileSize);
+		}
 	}
 	return true;
 }

@@ -1213,9 +1213,14 @@ void updateResource(TextureUpdateDesc* pTextureUpdate, SyncToken* token)
 	desc.pTexture = pTextureUpdate->pTexture;
 	if (pTextureUpdate->pRawImageData)
 	{
-		Image* pImage = ResourceLoader::CreateImage(pTextureUpdate->pRawImageData->mFormat, pTextureUpdate->pRawImageData->mWidth, pTextureUpdate->pRawImageData->mHeight,
-			pTextureUpdate->pRawImageData->mDepth, pTextureUpdate->pRawImageData->mMipLevels, pTextureUpdate->pRawImageData->mArraySize,
-			pTextureUpdate->pRawImageData->pRawData);
+		Image *pImage = ResourceLoader::CreateImage(pTextureUpdate->pRawImageData->mFormat,
+																								pTextureUpdate->pRawImageData->mWidth,
+																								pTextureUpdate->pRawImageData->mHeight,
+																								pTextureUpdate->pRawImageData->mDepth,
+																								pTextureUpdate->pRawImageData->mMipLevels,
+																								pTextureUpdate->pRawImageData->mArraySize,
+																								pTextureUpdate->pRawImageData->pRawData);
+		pImage->SetMipsAfterSlices(pTextureUpdate->pRawImageData->mMipsAfterSlices);
 		desc.mFreeImage = true;
 		desc.pImage = pImage;
 	}
