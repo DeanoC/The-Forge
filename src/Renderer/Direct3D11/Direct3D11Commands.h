@@ -7,13 +7,13 @@
  * TODO: create a script to autogenerate this file
  */
 
-enum CmdType
-{
+enum CmdType {
 	CMD_TYPE_cmdBindRenderTargets,
 	CMD_TYPE_cmdSetViewport,
 	CMD_TYPE_cmdSetScissor,
 	CMD_TYPE_cmdBindPipeline,
-	CMD_TYPE_cmdBindDescriptors,
+	CMD_TYPE_cmdBindDescriptorSet,
+	CMD_TYPE_cmdBindPushConstants,
 	CMD_TYPE_cmdBindIndexBuffer,
 	CMD_TYPE_cmdBindVertexBuffer,
 	CMD_TYPE_cmdDraw,
@@ -57,26 +57,30 @@ struct SetScissorCmd
 	uint32_t height;
 };
 
-struct BindPipelineCmd
-{
-	Pipeline* pPipeline;
+struct BindPipelineCmd {
+	Pipeline *pPipeline;
 };
 
-struct BindDescriptorsCmd
-{
-	RootSignature*  pRootSignature;
-	uint32_t        numDescriptors;
-	DescriptorData* pDescParams;
+struct BindDescriptorsCmd {
+	DescriptorSet *pDescriptorSet;
+	void *pDynamicCBVs;
+	uint8_t mDynamicCBVCount;
+	uint8_t mIndex;
 };
 
-struct BindIndexBufferCmd
-{
-	Buffer*  pBuffer;
+struct BindPushConstantsCmd {
+	uint8_t mPushConstant[128];
+	uint8_t mBinding;
+	uint8_t mSize;
+	uint8_t mStage;
+};
+
+struct BindIndexBufferCmd {
+	Buffer *pBuffer;
 	uint32_t offset;
 };
 
-struct BindVertexBufferCmd
-{
+struct BindVertexBufferCmd {
 	uint32_t       bufferCount;
 	ID3D11Buffer** ppBuffers;
 	uint32_t*      pStrides;
@@ -152,24 +156,21 @@ struct ExecuteIndirectCmd
 	uint64_t          counterBufferOffset;
 };
 
-struct BeginQueryCmd
-{
+struct BeginQueryCmd {
 	QueryPool *pQueryPool;
-	QueryDesc  mQuery;
+	QueryDesc mQuery;
 };
 
-struct EndQueryCmd
-{
+struct EndQueryCmd {
 	QueryPool *pQueryPool;
-	QueryDesc  mQuery;
+	QueryDesc mQuery;
 };
 
-struct ResolveQueryCmd
-{
+struct ResolveQueryCmd {
 	QueryPool *pQueryPool;
-	Buffer*    pReadbackBuffer;
-	uint32_t   startQuery;
-	uint32_t   queryCount;
+	Buffer *pReadbackBuffer;
+	uint32_t startQuery;
+	uint32_t queryCount;
 };
 
 struct BeginDebugMarkerCmd
@@ -212,23 +213,23 @@ struct CachedCmd
 {
 	Cmd*    pCmd;
 	CmdType sType;
-	union
-	{
-		BindRenderTargetsCmd    mBindRenderTargetsCmd;
-		SetViewportCmd          mSetViewportCmd;
-		SetScissorCmd           mSetScissorCmd;
-		BindPipelineCmd         mBindPipelineCmd;
-		BindDescriptorsCmd      mBindDescriptorsCmd;
-		BindIndexBufferCmd      mBindIndexBufferCmd;
-		BindVertexBufferCmd     mBindVertexBufferCmd;
-		DrawCmd                 mDrawCmd;
-		DrawInstancedCmd        mDrawInstancedCmd;
-		DrawIndexedCmd          mDrawIndexedCmd;
+	union {
+		BindRenderTargetsCmd mBindRenderTargetsCmd;
+		SetViewportCmd mSetViewportCmd;
+		SetScissorCmd mSetScissorCmd;
+		BindPipelineCmd mBindPipelineCmd;
+		BindDescriptorsCmd mBindDescriptorSetCmd;
+		BindPushConstantsCmd mBindPushConstantsCmd;
+		BindIndexBufferCmd mBindIndexBufferCmd;
+		BindVertexBufferCmd mBindVertexBufferCmd;
+		DrawCmd mDrawCmd;
+		DrawInstancedCmd mDrawInstancedCmd;
+		DrawIndexedCmd mDrawIndexedCmd;
 		DrawIndexedInstancedCmd mDrawIndexedInstancedCmd;
-		DispatchCmd             mDispatchCmd;
-		BeginQueryCmd           mBeginQueryCmd;
-		EndQueryCmd             mEndQueryCmd;
-		ResolveQueryCmd         mResolveQueryCmd;
+		DispatchCmd mDispatchCmd;
+		BeginQueryCmd mBeginQueryCmd;
+		EndQueryCmd mEndQueryCmd;
+		ResolveQueryCmd mResolveQueryCmd;
 		BeginDebugMarkerCmd     mBeginDebugMarkerCmd;
 		EndDebugMarkerCmd       mEndDebugMarkerCmd;
 		AddDebugMarkerCmd       mAddDebugMarkerCmd;

@@ -47,14 +47,25 @@ struct VertexInput
 	uint32_t size;
 
 	// resource name
-	const char* name;
+	const char *name;
 
 	// name size
 	uint32_t name_size;
 };
 
-struct ShaderResource
-{
+#if defined(METAL)
+struct ArgumentDescriptor {
+	MTLDataType mDataType;
+	uint32_t mBufferIndex;
+	uint32_t mArgumentIndex;
+	uint32_t mArrayLength;
+	MTLArgumentAccess mAccessType;
+	MTLTextureType mTextureType;
+	size_t mAlignment;
+};
+#endif
+
+struct ShaderResource {
 	// resource Type
 	DescriptorType type;
 
@@ -71,7 +82,7 @@ struct ShaderResource
 	ShaderStage used_stages;
 
 	// resource name
-	const char* name;
+	const char *name;
 
 	// name size
 	uint32_t name_size;
@@ -80,8 +91,12 @@ struct ShaderResource
 	TextureDimension dim;
 
 #if defined(METAL)
+	uint32_t alignment;
+
 	uint32_t mtlTextureType;           // Needed to bind different types of textures as default resources on Metal.
-	uint32_t mtlArgumentBufferType;    // Needed to bind multiple resources under a same descriptor on Metal.
+	//    uint32_t            mtlArgumentBufferType;    // Needed to bind multiple resources under a same descriptor on Metal.
+	bool mIsArgumentBufferField;
+	ArgumentDescriptor mtlArgumentDescriptors;
 #endif
 #if defined(DIRECT3D11)
 	uint32_t constant_size;

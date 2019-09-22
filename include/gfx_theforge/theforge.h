@@ -64,13 +64,19 @@ AL2O3_EXTERN_C void TheForge_AddPipeline(TheForge_RendererHandle handle,
 																				 TheForge_PipelineHandle *pPipeline);
 
 AL2O3_EXTERN_C void TheForge_RemovePipeline(TheForge_RendererHandle handle, TheForge_PipelineHandle pipeline);
-AL2O3_EXTERN_C void TheForge_AddDescriptorBinder(TheForge_RendererHandle handle,
-																								 uint32_t gpuIndex,
-																								 uint32_t descCount,
-																								 const TheForge_DescriptorBinderDesc *pDescs,
-																								 TheForge_DescriptorBinderHandle *pDescriptorBinder);
-AL2O3_EXTERN_C void TheForge_RemoveDescriptorBinder(TheForge_RendererHandle handle,
-																										TheForge_DescriptorBinderHandle descriptorBinder);
+
+// Descriptor Set functions
+AL2O3_EXTERN_C void TheForge_AddDescriptorSet(TheForge_RendererHandle handle,
+																							TheForge_DescriptorSetDesc const *pDesc,
+																							TheForge_DescriptorSetHandle *pDescriptorSet);
+AL2O3_EXTERN_C void TheForge_RemoveDescriptorSet(TheForge_RendererHandle handle,
+																								 TheForge_DescriptorSetHandle descriptorSet);
+AL2O3_EXTERN_C void TheForge_UpdateDescriptorSet(TheForge_RendererHandle handle,
+																								 uint32_t index,
+																								 TheForge_DescriptorSetHandle descriptorSet,
+																								 uint32_t count,
+																								 TheForge_DescriptorData const *pParams);
+
 AL2O3_EXTERN_C void TheForge_AddBlendState(TheForge_RendererHandle handle,
 																					 const TheForge_BlendStateDesc *pDesc,
 																					 TheForge_BlendStateHandle *pBlendState);
@@ -122,11 +128,18 @@ AL2O3_EXTERN_C void TheForge_CmdSetScissor(TheForge_CmdHandle cmd,
 																					 uint32_t width,
 																					 uint32_t height);
 AL2O3_EXTERN_C void TheForge_CmdBindPipeline(TheForge_CmdHandle cmd, TheForge_PipelineHandle pipeline);
-AL2O3_EXTERN_C void TheForge_CmdBindDescriptors(TheForge_CmdHandle cmd,
-																								TheForge_DescriptorBinderHandle descriptorBinder,
-																								TheForge_RootSignatureHandle rootSignature,
-																								uint32_t numDescriptors,
-																								TheForge_DescriptorData *pDescParams);
+AL2O3_EXTERN_C void TheForge_CmdBindDescriptorSet(TheForge_CmdHandle pCmd,
+																									uint32_t index,
+																									TheForge_DescriptorSetHandle pDescriptorSet);
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstants(TheForge_CmdHandle pCmd,
+																									TheForge_RootSignatureHandle pRootSignature,
+																									const char *pName,
+																									const void *pConstants);
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstantsByIndex(TheForge_CmdHandle pCmd,
+																												 TheForge_RootSignatureHandle pRootSignature,
+																												 uint32_t paramIndex,
+																												 const void *pConstants);
+
 AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge_BufferHandle buffer, uint64_t offset);
 AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,
 																								 uint32_t bufferCount,

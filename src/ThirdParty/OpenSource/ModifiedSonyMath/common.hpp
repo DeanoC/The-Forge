@@ -1472,10 +1472,8 @@ inline float planeDistance(const Vector4 &plane, const Vector3 &point)
 }
 
 
-struct AABB
-{	// Bounding box 
-	AABB() 
-	{
+struct AABB {  // Bounding box
+	AABB() {
 		minBounds = Vector3(-0.001f, -0.001f, -0.001f);
 		maxBounds = Vector3(0.001f, 0.001f, 0.001f);
 	}
@@ -1485,8 +1483,7 @@ struct AABB
 		maxBounds = argsMaxBounds;
 	}
 
-	inline void Transform(Matrix4 const& mat)
-	{
+	inline void Transform(Matrix4 const &mat) {
 		minBounds = (mat * Vector4(minBounds.getX(), minBounds.getY(), minBounds.getZ(), 1.0f)).getXYZ();
 		maxBounds = (mat * Vector4(maxBounds.getX(), maxBounds.getY(), maxBounds.getZ(), 1.0f)).getXYZ();
 	}

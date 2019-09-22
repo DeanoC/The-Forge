@@ -392,14 +392,21 @@ typedef enum TheForge_ResourceFolders
 	TheForge_FSR_Builtin_Fonts,
 	TheForge_FSR_GpuConfig,
 	TheForge_FSR_Animation,    // NOT USED
-	TheForge_FSR_Audio,				// NOT USED
+	TheForge_FSR_Audio,        // NOT USED
 	TheForge_FSR_OtherFiles,
 } TheForge_ResourceFolders;
 
-typedef enum TheForge_ResourceType
-{
+typedef enum TheForge_ResourceType {
 	TheForge_RESOURCE_TYPE_BUFFER = 0,
 	TheForge_RESOURCE_TYPE_TEXTURE,
 } TheForge_ResourceType;
+
+typedef enum TheForge_DescriptorUpdateFrequency {
+	TheForge_DESCRIPTOR_UPDATE_FREQ_NONE = 0,
+	TheForge_DESCRIPTOR_UPDATE_FREQ_PER_FRAME,
+	TheForge_DESCRIPTOR_UPDATE_FREQ_PER_BATCH,
+	TheForge_DESCRIPTOR_UPDATE_FREQ_PER_DRAW,
+	TheForge_DESCRIPTOR_UPDATE_FREQ_COUNT,
+} TheForge_DescriptorUpdateFrequency;
 
 #endif

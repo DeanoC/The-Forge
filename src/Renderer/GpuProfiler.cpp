@@ -131,7 +131,7 @@ double getAverageCpuTime(struct GpuProfiler* pGpuProfiler, struct GpuTimer* pGpu
 
 void addGpuProfiler(Renderer* pRenderer, Queue* pQueue, GpuProfiler** ppGpuProfiler, const char * pName, uint32_t maxTimers)
 {
-	GpuProfiler* pGpuProfiler = (GpuProfiler*)conf_calloc(1, sizeof(*pGpuProfiler));
+	GpuProfiler *pGpuProfiler = (GpuProfiler *) conf_calloc(1, sizeof(*pGpuProfiler));
 	ASSERT(pGpuProfiler);
 
 	conf_placement_new<GpuProfiler>(pGpuProfiler);
@@ -287,19 +287,18 @@ void cmdEndGpuTimestampQuery(Cmd* pCmd, struct GpuProfiler* pGpuProfiler, GpuTim
 
 #if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11) || defined(METAL)
 #if defined(METAL)
-    if (isRoot)
-    {
+    if (isRoot) {
 #endif
-	// Record gpu time
-	QueryDesc desc = { 2 * pGpuProfiler->pCurrentNode->mGpuTimer.mIndex + 1 };
+			// Record gpu time
+			QueryDesc desc = {2 * pGpuProfiler->pCurrentNode->mGpuTimer.mIndex + 1};
 			cmdEndQuery(pCmd, pGpuProfiler->pQueryPool[pGpuProfiler->mBufferIndex], &desc);
 
 #if (PROFILE_ENABLED)
-	// Send data to MicroProfile
-	ProfileLeaveGpu(pGpuProfiler->pCurrentNode->mMicroProfileToken, desc.mIndex);
+			// Send data to MicroProfile
+			ProfileLeaveGpu(pGpuProfiler->pCurrentNode->mMicroProfileToken, desc.mIndex);
 #endif
 #if defined(METAL)
-    }
+		}
 #endif
 #endif
 
@@ -319,8 +318,7 @@ void cmdBeginGpuFrameProfile(Cmd* pCmd, GpuProfiler* pGpuProfiler, bool bUseMark
 #if defined(DIRECT3D12) || defined(VULKAN) || defined(DIRECT3D11)|| defined(METAL)
 	// Reset the query pool completely once
 	// After this we only reset the number of queries used during that frame to keep GPU and CPU overhead minimum
-	if (pGpuProfiler->mReset)
-	{
+	if (pGpuProfiler->mReset) {
 		for (uint32_t i = 0; i < GpuProfiler::NUM_OF_FRAMES; ++i)
 			cmdResetQueryPool(pCmd, pGpuProfiler->pQueryPool[i], 0, pGpuProfiler->pQueryPool[i]->mDesc.mQueryCount);
 

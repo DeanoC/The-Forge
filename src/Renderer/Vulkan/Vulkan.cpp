@@ -26,7 +26,6 @@
 
 #define RENDERER_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
-#define MAX_FRAMES_IN_FLIGHT 3U
 /************************************************************************/
 // Debugging Macros
 /************************************************************************/
@@ -86,7 +85,7 @@ extern void vk_destroyTexture(MemoryAllocator* pAllocator, struct Texture* pText
 
 #ifdef ENABLE_RAYTRACING
 extern void vk_addRaytracingPipeline(const RaytracingPipelineDesc*, Pipeline**);
-extern void vk_FillRaytracingDescriptorData(const AccelerationStructure* pAccelerationStructure, uint64_t* pHash, void* pWriteNV);
+extern void vk_FillRaytracingDescriptorData(const AccelerationStructure* pAccelerationStructure, void* pWriteNV);
 #endif
 
 // clang-format off
@@ -452,26 +451,37 @@ static uint32_t gDescriptorTypeRangeSize = VK_DESCRIPTOR_TYPE_RANGE_SIZE;
 // DescriptorInfo Heap Structures
 /************************************************************************/
 /// CPU Visible Heap to store all the resources needing CPU read / write operations - Textures/Buffers/RTV
-typedef struct DescriptorStoreHeap
+typedef struct DescriptorPool
 {
-	uint32_t mNumDescriptorSets;
-	uint32_t mUsedDescriptorSetCount;
-	/// VK Heap
-	VkDescriptorPool            pCurrentHeap;
-	VkDescriptorPoolCreateFlags mFlags;
-} DescriptorStoreHeap;
+	VkDevice                        pDevice;
+	VkDescriptorPool                pCurrentPool;
+	VkDescriptorPoolSize*           pPoolSizes;
+	eastl::vector<VkDescriptorPool> mDescriptorPools;
+	uint32_t                        mPoolSizeCount;
+	uint32_t                        mNumDescriptorSets;
+	uint32_t                        mUsedDescriptorSetCount;
+	VkDescriptorPoolCreateFlags     mFlags;
+	Mutex*                          pMutex;
+} DescriptorPool;
 
 /************************************************************************/
 // Static DescriptorInfo Heap Implementation
 /************************************************************************/
-static void add_descriptor_heap(
+static void add_descriptor_pool(
 	Renderer* pRenderer, uint32_t numDescriptorSets, VkDescriptorPoolCreateFlags flags, VkDescriptorPoolSize* pPoolSizes,
-	uint32_t numPoolSizes, DescriptorStoreHeap** ppHeap)
+	uint32_t numPoolSizes, DescriptorPool** ppPool)
 {
-	DescriptorStoreHeap* pHeap = (DescriptorStoreHeap*)conf_calloc(1, sizeof(*pHeap));
-	pHeap->mFlags = flags;
-	pHeap->mNumDescriptorSets = numDescriptorSets;
-	pHeap->mUsedDescriptorSetCount = 0;
+	DescriptorPool* pPool = (DescriptorPool*)conf_calloc(1, sizeof(*pPool));
+	pPool->mFlags = flags;
+	pPool->mNumDescriptorSets = numDescriptorSets;
+	pPool->mUsedDescriptorSetCount = 0;
+	pPool->pDevice = pRenderer->pVkDevice;
+	pPool->pMutex = conf_new(Mutex);
+
+	pPool->mPoolSizeCount = numPoolSizes;
+	pPool->pPoolSizes = (VkDescriptorPoolSize*)conf_calloc(numPoolSizes, sizeof(VkDescriptorPoolSize));
+	for (uint32_t i = 0; i < numPoolSizes; ++i)
+		pPool->pPoolSizes[i] = pPoolSizes[i];
 
 	VkDescriptorPoolCreateInfo poolCreateInfo = {};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -481,45 +491,80 @@ static void add_descriptor_heap(
 	poolCreateInfo.flags = flags;
 	poolCreateInfo.maxSets = numDescriptorSets;
 
-	VkResult res = vkCreateDescriptorPool(pRenderer->pVkDevice, &poolCreateInfo, NULL, &pHeap->pCurrentHeap);
+	VkResult res = vkCreateDescriptorPool(pPool->pDevice, &poolCreateInfo, NULL, &pPool->pCurrentPool);
 	ASSERT(VK_SUCCESS == res);
 
-	*ppHeap = pHeap;
+	pPool->mDescriptorPools.emplace_back(pPool->pCurrentPool);
+
+	*ppPool = pPool;
 }
 
-static void reset_descriptor_heap(Renderer* pRenderer, DescriptorStoreHeap* pHeap)
+static void reset_descriptor_pool(DescriptorPool* pPool)
 {
-	VkResult res = vkResetDescriptorPool(pRenderer->pVkDevice, pHeap->pCurrentHeap, pHeap->mFlags);
-	pHeap->mUsedDescriptorSetCount = 0;
+	VkResult res = vkResetDescriptorPool(pPool->pDevice, pPool->pCurrentPool, pPool->mFlags);
+	pPool->mUsedDescriptorSetCount = 0;
 	ASSERT(VK_SUCCESS == res);
 }
 
-static void remove_descriptor_heap(Renderer* pRenderer, DescriptorStoreHeap* pHeap)
+static void remove_descriptor_pool(Renderer* pRenderer, DescriptorPool* pPool)
 {
-	vkDestroyDescriptorPool(pRenderer->pVkDevice, pHeap->pCurrentHeap, NULL);
-	SAFE_FREE(pHeap);
+	for (uint32_t i = 0; i < (uint32_t)pPool->mDescriptorPools.size(); ++i)
+		vkDestroyDescriptorPool(pRenderer->pVkDevice, pPool->mDescriptorPools[i], NULL);
+
+	pPool->mDescriptorPools.~vector();
+
+	conf_delete(pPool->pMutex);
+	SAFE_FREE(pPool->pPoolSizes);
+	SAFE_FREE(pPool);
 }
 
-static void consume_descriptor_sets_lock_free(
-	Renderer* pRenderer, const VkDescriptorSetLayout* pLayouts, VkDescriptorSet** pSets, uint32_t numDescriptorSets,
-	DescriptorStoreHeap* pHeap)
+static void consume_descriptor_sets(DescriptorPool* pPool,
+	const VkDescriptorSetLayout* pLayouts, VkDescriptorSet** pSets, uint32_t numDescriptorSets)
 {
+	// Need a lock since vkAllocateDescriptorSets needs to be externally synchronized
+	// This is fine since this will only happen during Init time
+	MutexLock lock(*pPool->pMutex);
+
 	DECLARE_ZERO(VkDescriptorSetAllocateInfo, alloc_info);
 	alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	alloc_info.pNext = NULL;
-	alloc_info.descriptorPool = pHeap->pCurrentHeap;
+	alloc_info.descriptorPool = pPool->pCurrentPool;
 	alloc_info.descriptorSetCount = numDescriptorSets;
 	alloc_info.pSetLayouts = pLayouts;
 
-	VkResult vk_res = vkAllocateDescriptorSets(pRenderer->pVkDevice, &alloc_info, *pSets);
+	VkResult vk_res = vkAllocateDescriptorSets(pPool->pDevice, &alloc_info, *pSets);
+	if (VK_SUCCESS != vk_res)
+	{
+		VkDescriptorPool pDescriptorPool = VK_NULL_HANDLE;
+
+		VkDescriptorPoolCreateInfo poolCreateInfo = {};
+		poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolCreateInfo.pNext = NULL;
+		poolCreateInfo.poolSizeCount = pPool->mPoolSizeCount;
+		poolCreateInfo.pPoolSizes = pPool->pPoolSizes;
+		poolCreateInfo.flags = pPool->mFlags;
+		poolCreateInfo.maxSets = numDescriptorSets;
+
+		VkResult res = vkCreateDescriptorPool(pPool->pDevice, &poolCreateInfo, NULL, &pDescriptorPool);
+		ASSERT(VK_SUCCESS == res);
+
+		pPool->mDescriptorPools.emplace_back(pDescriptorPool);
+
+		pPool->pCurrentPool = pDescriptorPool;
+		pPool->mUsedDescriptorSetCount = 0;
+
+		vk_res = vkAllocateDescriptorSets(pPool->pDevice, &alloc_info, *pSets);
+	}
+
 	ASSERT(VK_SUCCESS == vk_res);
 
-	pHeap->mUsedDescriptorSetCount += numDescriptorSets;
+	pPool->mUsedDescriptorSetCount += numDescriptorSets;
 }
 
 /************************************************************************/
 /************************************************************************/
-VkPipelineBindPoint gPipelineBindPoint[PIPELINE_TYPE_COUNT] = {
+VkPipelineBindPoint gPipelineBindPoint[PIPELINE_TYPE_COUNT] =
+{
 	VK_PIPELINE_BIND_POINT_MAX_ENUM,
 	VK_PIPELINE_BIND_POINT_COMPUTE,
 	VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -528,8 +573,6 @@ VkPipelineBindPoint gPipelineBindPoint[PIPELINE_TYPE_COUNT] = {
 #endif
 };
 
-using HashMap = eastl::hash_map<uint64_t, uint32_t>;
-using ConstHashMapIterator = eastl::hash_map<uint64_t, uint32_t>::const_iterator;
 using DescriptorNameToIndexMap = eastl::string_hash_map<uint32_t>;
 
 union DescriptorUpdateData
@@ -540,41 +583,20 @@ union DescriptorUpdateData
 };
 
 /************************************************************************/
-// Descriptor Binder Structure
+// Descriptor Set Structure
 /************************************************************************/
-typedef struct DescriptorBinderNode
+typedef struct DescriptorSet
 {
-	uint32_t              mMaxUsagePerSet[DESCRIPTOR_UPDATE_FREQ_COUNT];
-
-	VkDescriptorSet*      pDescriptorSets_FrameFreqUsage[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	HashMap               mUpdatedHashes[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	/// VK_UNIFORM_BUFFER_DYNAMIC hash to avoid redundant calls to vkUpdateDescriptorSet
-	HashMap               mUpdatedDynamicUniformHashes[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t              mUpdateCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-
-	/// Array of Dynamic offsets per update frequency to pass the vkCmdBindDescriptorSet for binding dynamic uniform or storage buffers
-	uint32_t*             pDynamicOffsets[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	/// Array of flags to check whether a descriptor set of the update frequency is already bound to avoid unnecessary rebinding of descriptor sets
-	bool                  mBoundSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	VkDescriptorUpdateTemplate mUpdateTemplates[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	/// Compact Descriptor data which will be filled up and passed to vkUpdateDescriptorSetWithTemplate
-	DescriptorUpdateData* pUpdateData[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	DescriptorUpdateData* pDefaultUpdateData[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	VkDescriptorSet       pEmptyDescriptorSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
-
-	uint32_t              mFrameIdx;
-
-	uint32_t              mRaytracingDescriptorCount[DESCRIPTOR_UPDATE_FREQ_COUNT];
-} DescriptorBinderNode;
-
-using DescriptorBinderMap = eastl::hash_map<const RootSignature*, DescriptorBinderNode*>;
-using DescriptorBinderMapNode = DescriptorBinderMap::value_type;
-
-typedef struct DescriptorBinder
-{
-	DescriptorStoreHeap*  pDescriptorPool;
-	DescriptorBinderMap   mRootSignatureNodes;
-} DescriptorBinder;
+	VkDescriptorSet*     pHandles;
+	const RootSignature* pRootSignature;
+	uint32_t**           pDynamicOffsets;
+	uint32_t**           pDynamicSizes;
+	uint32_t             mMaxSets;
+	uint8_t              mDynamicOffsetCount;
+	uint8_t              mUpdateFrequency;
+	uint8_t              mNodeIndex;
+	uint8_t              mPadA;
+} DescriptorSet;
 
 static const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName)
 {
@@ -1166,9 +1188,7 @@ static void destroy_default_resources(Renderer* pRenderer)
 /************************************************************************/
 // Globals
 /************************************************************************/
-static tfrg_atomic64_t gBufferIds = 0;
 static tfrg_atomic64_t gTextureIds = 0;
-static tfrg_atomic64_t gSamplerIds = 0;
 /************************************************************************/
 // Internal utility functions
 /************************************************************************/
@@ -2025,6 +2045,7 @@ static void AddDevice(Renderer* pRenderer)
 	pRenderer->pVkActiveGPU = pRenderer->pVkGPUs[gpuIndex];
 	pRenderer->pVkActiveGPUProperties = &pRenderer->mVkGpuProperties[gpuIndex];
 	pRenderer->pVkActiveGpuMemoryProperties = &pRenderer->mVkGpuMemoryProperties[gpuIndex];
+	pRenderer->pVkActiveGpuFeatures = &pRenderer->mVkGpuFeatures[gpuIndex];
 	pRenderer->pActiveGpuSettings = &pRenderer->mGpuSettings[gpuIndex];
 #ifdef ENABLE_RAYTRACING
 	pRenderer->pVkActiveCPURaytracingProperties = &pRenderer->mVkRaytracingProperties[gpuIndex];
@@ -2385,6 +2406,28 @@ void initRenderer(const char* app_name, const RendererDesc* settings, Renderer**
 
 	create_default_resources(pRenderer);
 
+	VkDescriptorPoolSize descriptorPoolSizes[CONF_DESCRIPTOR_TYPE_RANGE_SIZE] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 8192 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1024 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1024 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1024 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 8192 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1024 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 },
+	};
+#ifdef VK_NV_RAY_TRACING_SPEC_VERSION
+	if (gNVRayTracingExtension)
+	{
+		descriptorPoolSizes[CONF_DESCRIPTOR_TYPE_RANGE_SIZE - 1] = { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1024 };
+	}
+#endif
+	add_descriptor_pool(pRenderer, 8192, (VkDescriptorPoolCreateFlags)0, descriptorPoolSizes, gDescriptorTypeRangeSize, &pRenderer->pDescriptorPool);
+
 	// Renderer is good! Assign it to result!
 	*(ppRenderer) = pRenderer;
 }
@@ -2395,6 +2438,7 @@ void removeRenderer(Renderer* pRenderer)
 
 	SAFE_FREE(pRenderer->pName);
 
+	remove_descriptor_pool(pRenderer, pRenderer->pDescriptorPool);
 	destroy_default_resources(pRenderer);
 
 	// Remove the renderpasses
@@ -3143,8 +3187,6 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 	}
 	/************************************************************************/
 	/************************************************************************/
-	pBuffer->mBufferId = tfrg_atomic32_add_relaxed(&gBufferIds, 1);
-
 	*pp_buffer = pBuffer;
 }
 
@@ -3447,6 +3489,12 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 	vkGetImageMemoryRequirements(pRenderer->pVkDevice, pTexture->pVkImage, &vk_mem_reqs);
 	pTexture->mTextureSize = vk_mem_reqs.size;
 
+	if (pDesc->pDebugName)
+	{
+		pTexture->mDesc.pDebugName = (wchar_t*)conf_calloc(wcslen(pDesc->pDebugName) + 1, sizeof(wchar_t));
+		wcscpy((wchar_t*)pTexture->mDesc.pDebugName, pDesc->pDebugName);
+	}
+
 	*ppTexture = pTexture;
 }
 
@@ -3474,6 +3522,7 @@ void removeTexture(Renderer* pRenderer, Texture* pTexture)
 		}
 	}
 
+	SAFE_FREE((wchar_t*)pTexture->mDesc.pDebugName);
 	SAFE_FREE(pTexture->pVkSRVStencilDescriptor);
 	SAFE_FREE(pTexture->pVkUAVDescriptors);
 	SAFE_FREE(pTexture);
@@ -3656,8 +3705,6 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** pp_samp
 	VkResult vk_res = vkCreateSampler(pRenderer->pVkDevice, &add_info, NULL, &(pSampler->pVkSampler));
 	ASSERT(VK_SUCCESS == vk_res);
 
-	pSampler->mSamplerId = tfrg_atomic32_add_relaxed(&gSamplerIds, 1);
-
 	pSampler->mVkSamplerView.sampler = pSampler->pVkSampler;
 
 	*pp_sampler = pSampler;
@@ -3700,294 +3747,434 @@ void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer)
 
 
 /************************************************************************/
-// Descriptor Binder Functions
+// Descriptor Set Functions
 /************************************************************************/
-
-void addDescriptorBinder(Renderer* pRenderer, uint32_t gpuIndex, uint32_t descCount, const DescriptorBinderDesc* pDescs, DescriptorBinder** ppDescriptorBinder)
+void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
 {
-	const uint32_t setCount = DESCRIPTOR_UPDATE_FREQ_COUNT;
+	ASSERT(pRenderer);
+	ASSERT(pDesc);
+	ASSERT(ppDescriptorSet);
 
-	DescriptorBinder* pDescriptorBinder = (DescriptorBinder*)conf_calloc(1, sizeof(DescriptorBinder));
-	
-	pDescriptorBinder->mRootSignatureNodes = *conf_placement_new<DescriptorBinderMap>(&pDescriptorBinder->mRootSignatureNodes);
+	DescriptorSet* pDescriptorSet = (DescriptorSet*)conf_calloc(1, sizeof(*pDescriptorSet));
+	ASSERT(pDescriptorSet);
 
-	// Allocate all unique root signatures in the map
-	for (uint32_t i = 0; i < descCount; i++)
+	const RootSignature* pRootSignature = pDesc->pRootSignature;
+	const DescriptorUpdateFrequency updateFreq = pDesc->mUpdateFrequency;
+	const uint32_t nodeIndex = pDesc->mNodeIndex;
+
+	pDescriptorSet->pRootSignature = pRootSignature;
+	pDescriptorSet->mUpdateFrequency = updateFreq;
+	pDescriptorSet->mDynamicOffsetCount = pRootSignature->mVkDynamicDescriptorCounts[updateFreq];
+	pDescriptorSet->mNodeIndex = nodeIndex;
+	pDescriptorSet->mMaxSets = pDesc->mMaxSets;
+
+	if (pDescriptorSet->mDynamicOffsetCount)
 	{
-		const RootSignature* rootSignature = pDescs[i].pRootSignature;
-
-		DescriptorBinderMap::const_iterator it = pDescriptorBinder->mRootSignatureNodes.find(rootSignature);
-		if (it != pDescriptorBinder->mRootSignatureNodes.end())
-			continue; // we want unique root signatures because we are going to get data indexing the map by root signature
-
-		DescriptorBinderNode* descriptorBinderNode = (DescriptorBinderNode*)conf_calloc(1, sizeof(DescriptorBinderNode));
-
-		conf_placement_new<DescriptorBinderNode>(descriptorBinderNode);
-
-		descriptorBinderNode->mFrameIdx = (uint32_t)-1;
-		pDescriptorBinder->mRootSignatureNodes.insert({{ rootSignature, descriptorBinderNode }});
-	}
-
-	// Calculate total required pool data based on root signature and usage data
-	VkDescriptorPoolSize descriptorHeapPoolSizes[CONF_DESCRIPTOR_TYPE_RANGE_SIZE] = {};
-	for (uint32_t i = 0; i < descCount; i++)
-	{
-		const DescriptorBinderDesc* pDesc = pDescs + i;
-		const RootSignature* rootSignature = pDesc->pRootSignature;
-		const uint32_t maxUpdatesPerFrequency[DESCRIPTOR_UPDATE_FREQ_COUNT] =
+		pDescriptorSet->pDynamicOffsets = (uint32_t**)conf_calloc(pDescriptorSet->mMaxSets, sizeof(uint32_t*));
+		pDescriptorSet->pDynamicSizes = (uint32_t**)conf_calloc(pDescriptorSet->mMaxSets, sizeof(uint32_t*));
+		for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
 		{
-			rootSignature->mVkDescriptorCounts[DESCRIPTOR_UPDATE_FREQ_NONE] ? 1U : 0U,
-			rootSignature->mVkDescriptorCounts[DESCRIPTOR_UPDATE_FREQ_PER_FRAME] ? 1U : 0U,
-			rootSignature->mVkDescriptorCounts[DESCRIPTOR_UPDATE_FREQ_PER_BATCH] ? pDesc->mMaxDynamicUpdatesPerBatch : 0U,
-			rootSignature->mVkDescriptorCounts[DESCRIPTOR_UPDATE_FREQ_PER_DRAW] ? pDesc->mMaxDynamicUpdatesPerDraw : 0U
-		};
-		DescriptorBinderNode* descriptorBinderNode = pDescriptorBinder->mRootSignatureNodes[rootSignature];
-
-		for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; setIndex++)
-			descriptorBinderNode->mMaxUsagePerSet[setIndex] += maxUpdatesPerFrequency[setIndex];
-
-		for (uint32_t d = 0; d < rootSignature->mDescriptorCount; d++)
-		{
-			DescriptorInfo* descriptorInfo = rootSignature->pDescriptors + d;
-			uint32_t descriptorTypeIndex = descriptorInfo->mVkType;
-#ifdef VK_NV_ray_tracing
-			if (descriptorTypeIndex == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV)
-				descriptorTypeIndex = VK_DESCRIPTOR_TYPE_RANGE_SIZE;
-#endif
-			uint32_t count = (maxUpdatesPerFrequency[descriptorInfo->mUpdateFrquency]) * MAX_FRAMES_IN_FLIGHT * descriptorInfo->mDesc.size;
-
-			descriptorHeapPoolSizes[descriptorTypeIndex].type = descriptorInfo->mVkType;
-			descriptorHeapPoolSizes[descriptorTypeIndex].descriptorCount += count;
+			pDescriptorSet->pDynamicOffsets[i] = (uint32_t*)conf_calloc(pDescriptorSet->mDynamicOffsetCount, sizeof(uint32_t));
+			pDescriptorSet->pDynamicSizes[i] = (uint32_t*)conf_calloc(pDescriptorSet->mDynamicOffsetCount, sizeof(uint32_t));
 		}
 	}
 
-	// Calculate max descriptor sets that will be consumed by the pool
-	uint32_t maxDescriptorSets = 0;
-	for (DescriptorBinderMapNode& it : pDescriptorBinder->mRootSignatureNodes)
-		for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; setIndex++)
-			maxDescriptorSets += (it.second->mMaxUsagePerSet[setIndex] + ((VK_NULL_HANDLE != it.first->mVkDescriptorSetLayouts[setIndex]) ? 1 : 0)) * MAX_FRAMES_IN_FLIGHT;  // +1 to make room for empty descriptor sets
-
-	maxDescriptorSets = max(1U, maxDescriptorSets);
-
-	// Ensure all pool types allocate at least one (Vulkan requirement)
-	for (uint32_t i = 0; i < gDescriptorTypeRangeSize; i++)
+	if (VK_NULL_HANDLE != pRootSignature->mVkDescriptorSetLayouts[updateFreq])
 	{
-		if (descriptorHeapPoolSizes[i].descriptorCount == 0) 
+		pDescriptorSet->pHandles = (VkDescriptorSet*)conf_calloc(pDesc->mMaxSets, sizeof(VkDescriptorSet));
+
+		uint32_t descriptorCount = pRootSignature->mVkCumulativeDescriptorCounts[updateFreq];
+		VkDescriptorSetLayout* pLayouts = (VkDescriptorSetLayout*)alloca(pDesc->mMaxSets * sizeof(VkDescriptorSetLayout));
+		VkDescriptorSet** pHandles = (VkDescriptorSet**)alloca(pDesc->mMaxSets * sizeof(VkDescriptorSet*));
+
+		for (uint32_t i = 0; i < pDesc->mMaxSets; ++i)
 		{
-#ifdef ENABLE_RAYTRACING
-			if (i <= VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
-				descriptorHeapPoolSizes[i].type = (VkDescriptorType)i;
-			else
-				descriptorHeapPoolSizes[i].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-#else
-			descriptorHeapPoolSizes[i].type = (VkDescriptorType)i;
-#endif
-			descriptorHeapPoolSizes[i].descriptorCount = 1;
+			pLayouts[i] = pRootSignature->mVkDescriptorSetLayouts[updateFreq];
+			pHandles[i] = &pDescriptorSet->pHandles[i];
 		}
+
+		consume_descriptor_sets(pRenderer->pDescriptorPool, pLayouts, pHandles, pDesc->mMaxSets);
+	}
+	else
+	{
+		LOGF(LogLevel::eERROR, "NULL Descriptor Set Layout for update frequency %u. Cannot allocate descriptor set", (uint32_t)updateFreq);
+		ASSERT(false && "NULL Descriptor Set Layout for update frequency. Cannot allocate descriptor set");
 	}
 
-	// Allocate pool total size for all descriptors
-	add_descriptor_heap(pRenderer, maxDescriptorSets, 0, descriptorHeapPoolSizes, gDescriptorTypeRangeSize, &pDescriptorBinder->pDescriptorPool);
-
-	// Consume all descriptor sets
-	for (DescriptorBinderMapNode& it : pDescriptorBinder->mRootSignatureNodes)
-	{
-		const RootSignature* rootSignature = it.first;
-		DescriptorBinderNode* node = it.second;
-		for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++)
-		{
-			for (uint32_t setIndex = 0; setIndex < setCount; setIndex++)
-			{
-				node->pDescriptorSets_FrameFreqUsage[frameIdx][setIndex] = (VkDescriptorSet*)conf_calloc(node->mMaxUsagePerSet[setIndex], sizeof(VkDescriptorSet));
-			
-				uint32_t usageCountThisSet = node->mMaxUsagePerSet[setIndex];
-
-				for (uint32_t usageIdx = 0; usageIdx < usageCountThisSet; usageIdx++)
-				{
-					VkDescriptorSet* pSets[] = { &node->pDescriptorSets_FrameFreqUsage[frameIdx][setIndex][usageIdx] };
-					consume_descriptor_sets_lock_free(pRenderer, &rootSignature->mVkDescriptorSetLayouts[setIndex], pSets, 1, pDescriptorBinder->pDescriptorPool);
-				}
-			}
-		}
-	}
-	
-	// Create descriptor update templates from descriptor set layouts
-	for (DescriptorBinderMapNode& it : pDescriptorBinder->mRootSignatureNodes)
-	{
-		const RootSignature* rootSignature = it.first;
-		DescriptorBinderNode* node = it.second;
-
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			// Allocate dynamic offsets array if the descriptor set of this update frequency uses descriptors of type uniform / storage buffer dynamic
-			if (rootSignature->mVkDynamicDescriptorCounts[setIndex])
-			{
-				node->pDynamicOffsets[setIndex] = (uint32_t*)conf_calloc(rootSignature->mVkDynamicDescriptorCounts[setIndex], sizeof(uint32_t));
-			}
-
-			if (rootSignature->mVkDescriptorCounts[setIndex])
-			{
-				VkDescriptorUpdateTemplateEntry* pEntries = (VkDescriptorUpdateTemplateEntry*)alloca(rootSignature->mVkDescriptorCounts[setIndex] * sizeof(VkDescriptorUpdateTemplateEntry));
-				uint32_t entryCount = 0;
-
-				node->pDefaultUpdateData[setIndex] = (DescriptorUpdateData*)conf_calloc(rootSignature->mVkCumulativeDescriptorCounts[setIndex], sizeof(DescriptorUpdateData));
-
-				// Fill the write descriptors with default values during initialize so the only thing we change in cmdBindDescriptors is the the VkBuffer / VkImageView objects
-				for (uint32_t i = 0; i < rootSignature->mVkDescriptorCounts[setIndex]; ++i)
-				{
-					const DescriptorInfo* pDesc = &rootSignature->pDescriptors[rootSignature->pVkDescriptorIndices[setIndex][i]];
-					const uint64_t        offset = pDesc->mHandleIndex * sizeof(DescriptorUpdateData);
-
-#ifdef ENABLE_RAYTRACING
-					if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RAY_TRACING)
-					{
-						node->mRaytracingDescriptorCount[setIndex] += pDesc->mDesc.size;
-						continue;
-					}
-#endif
-
-					pEntries[i].descriptorCount = pDesc->mDesc.size;
-					pEntries[i].descriptorType = pDesc->mVkType;
-					pEntries[i].dstArrayElement = 0;
-					pEntries[i].dstBinding = pDesc->mDesc.reg;
-					pEntries[i].offset = offset;
-					pEntries[i].stride = sizeof(DescriptorUpdateData);
-
-					if (pDesc->mDesc.type == DESCRIPTOR_TYPE_SAMPLER)
-					{
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mImageInfo = pRenderer->pDefaultSampler->mVkSamplerView;
-					}
-					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_TEXTURE)
-					{
-						VkImageView srvDescriptor = pRenderer->pDefaultTextureSRV[gpuIndex][pDesc->mDesc.dim]->pVkSRVDescriptor;
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mImageInfo = {
-								VK_NULL_HANDLE, srvDescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-						};
-					}
-					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
-					{
-						if (TEXTURE_DIM_2DMS == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
-						else if (TEXTURE_DIM_2DMS_ARRAY == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
-						else if (TEXTURE_DIM_CUBE == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
-						else if (TEXTURE_DIM_CUBE_ARRAY == pDesc->mDesc.dim)
-							LOGF(LogLevel::eWARNING, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
-
-						VkImageView uavDescriptor = pRenderer->pDefaultTextureUAV[gpuIndex][pDesc->mDesc.dim]->pVkUAVDescriptors[0];
-
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mImageInfo = { VK_NULL_HANDLE,
-																									  uavDescriptor,
-																									  VK_IMAGE_LAYOUT_GENERAL };
-					}
-					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_TEXEL_BUFFER)
-					{
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mBuferView =
-							pRenderer->pDefaultBufferSRV[gpuIndex]->pVkUniformTexelView;
-					}
-					else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXEL_BUFFER)
-					{
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mBuferView =
-							pRenderer->pDefaultBufferUAV[gpuIndex]->pVkStorageTexelView;
-					}
-					else
-					{
-						VkDescriptorBufferInfo bufferDescriptor = {};
-						if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_BUFFER)
-							bufferDescriptor = pRenderer->pDefaultBufferUAV[gpuIndex]->mVkBufferInfo;
-						else
-							bufferDescriptor = pRenderer->pDefaultBufferSRV[gpuIndex]->mVkBufferInfo;
-
-						for (uint32_t arr = 0; arr < pDesc->mDesc.size; ++arr)
-							node->pDefaultUpdateData[setIndex][pDesc->mHandleIndex + arr].mBufferInfo = bufferDescriptor;
-					}
-
-					++entryCount;
-				}
-
-				VkDescriptorUpdateTemplateCreateInfoKHR createInfo = {};
-				createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR;
-				createInfo.pNext = NULL;
-				createInfo.descriptorSetLayout = rootSignature->mVkDescriptorSetLayouts[setIndex];
-				createInfo.descriptorUpdateEntryCount = entryCount;
-				createInfo.pDescriptorUpdateEntries = pEntries;
-				createInfo.pipelineBindPoint = gPipelineBindPoint[rootSignature->mPipelineType];
-				createInfo.pipelineLayout = rootSignature->pPipelineLayout;
-				createInfo.set = setIndex;
-				createInfo.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR;
-				VkResult vkRes = vkCreateDescriptorUpdateTemplateKHR(pRenderer->pVkDevice, &createInfo, NULL, &node->mUpdateTemplates[setIndex]);
-				ASSERT(VK_SUCCESS == vkRes);
-
-				node->pUpdateData[setIndex] = (DescriptorUpdateData*)conf_calloc(rootSignature->mVkCumulativeDescriptorCounts[setIndex], sizeof(DescriptorUpdateData));
-				memcpy(node->pUpdateData[setIndex], node->pDefaultUpdateData[setIndex], rootSignature->mVkCumulativeDescriptorCounts[setIndex] * sizeof(DescriptorUpdateData));
-			}
-			else if (VK_NULL_HANDLE != rootSignature->mVkDescriptorSetLayouts[setIndex])
-			{
-				// Consume empty descriptor sets from empty descriptor set pool
-				VkDescriptorSet* pSets[] = { &node->pEmptyDescriptorSets[setIndex] };
-				consume_descriptor_sets_lock_free(pRenderer, &rootSignature->mVkDescriptorSetLayouts[setIndex], pSets, 1, pDescriptorBinder->pDescriptorPool);
-			}
-		}
-	}
-	*ppDescriptorBinder = pDescriptorBinder;
+	*ppDescriptorSet = pDescriptorSet;
 }
 
-void removeDescriptorBinder(Renderer* pRenderer, DescriptorBinder* pDescriptorBinder)
+void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
 {
-	reset_descriptor_heap(pRenderer, pDescriptorBinder->pDescriptorPool);
-	remove_descriptor_heap(pRenderer, pDescriptorBinder->pDescriptorPool);
+	ASSERT(pRenderer);
+	ASSERT(pDescriptorSet);
 
-	for (DescriptorBinderMapNode& it : pDescriptorBinder->mRootSignatureNodes)
+	if (pDescriptorSet->mDynamicOffsetCount)
 	{
-		DescriptorBinderNode* node = it.second;
-		// Clean up descriptor update templates
+		for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
+		{
+			SAFE_FREE(pDescriptorSet->pDynamicOffsets[i]);
+			SAFE_FREE(pDescriptorSet->pDynamicSizes[i]);
+		}
+	}
+
+	SAFE_FREE(pDescriptorSet->pHandles);
+	SAFE_FREE(pDescriptorSet->pDynamicOffsets);
+	SAFE_FREE(pDescriptorSet->pDynamicSizes);
+	SAFE_FREE(pDescriptorSet);
+}
+
+void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams)
+{
+#ifdef _DEBUG
+#define VALIDATE_DESCRIPTOR(descriptor,...)																\
+	if (!(descriptor))																					\
+	{																									\
+		eastl::string msg = __FUNCTION__ + eastl::string(" : ") + eastl::string().sprintf(__VA_ARGS__);	\
+		LOGF(LogLevel::eERROR, msg.c_str());															\
+		_FailedAssert(__FILE__, __LINE__, msg.c_str());													\
+		continue;																						\
+	}
+#else
+#define VALIDATE_DESCRIPTOR(descriptor,...)
+#endif
+
+	ASSERT(pRenderer);
+	ASSERT(pDescriptorSet);
+	ASSERT(pDescriptorSet->pHandles);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
+	DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)pDescriptorSet->mUpdateFrequency;
+	DescriptorUpdateData* pUpdateData = (DescriptorUpdateData*)alloca(pRootSignature->mVkCumulativeDescriptorCounts[updateFreq] * sizeof(DescriptorUpdateData));
+	memcpy(pUpdateData, pRootSignature->pUpdateTemplateData[updateFreq][pDescriptorSet->mNodeIndex], pRootSignature->mVkCumulativeDescriptorCounts[updateFreq] * sizeof(DescriptorUpdateData));
+	bool update = false;
+
+#ifdef ENABLE_RAYTRACING
+	VkWriteDescriptorSet* raytracingWrites = NULL;
+	VkWriteDescriptorSetAccelerationStructureNV* raytracingWritesNV = NULL;
+	uint32_t raytracingWriteCount = 0;
+
+	if (pRootSignature->mVkRaytracingDescriptorCounts[updateFreq])
+	{
+		raytracingWrites = (VkWriteDescriptorSet*)alloca(pRootSignature->mVkRaytracingDescriptorCounts[updateFreq] * sizeof(VkWriteDescriptorSet));
+		raytracingWritesNV = (VkWriteDescriptorSetAccelerationStructureNV*)alloca(pRootSignature->mVkRaytracingDescriptorCounts[updateFreq] * sizeof(VkWriteDescriptorSetAccelerationStructureNV));
+	}
+#endif
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		const DescriptorData* pParam = pParams + i;
+		uint32_t paramIndex = pParam->mIndex;
+
+		VALIDATE_DESCRIPTOR(pParam->pName || (paramIndex != -1), "DescriptorData has NULL name and invalid index");
+
+		const DescriptorInfo* pDesc = (paramIndex != -1) ? (pRootSignature->pDescriptors + paramIndex) : get_descriptor(pRootSignature, pParam->pName);
+		if (paramIndex != -1)
+		{
+			VALIDATE_DESCRIPTOR(pDesc, "Invalid descriptor with param index (%u)", paramIndex);
+		}
+		else
+		{
+			VALIDATE_DESCRIPTOR(pDesc, "Invalid descriptor with param name (%s)", pParam->pName);
+		}
+
+		const DescriptorType type = pDesc->mDesc.type;
+		const uint32_t arrayCount = max(1U, pParam->mCount);
+
+		VALIDATE_DESCRIPTOR(pDesc->mDesc.set == updateFreq,
+			"Descriptor (%s) - Mismatching update frequency and set index", pDesc->mDesc.name);
+
+		switch (type)
+		{
+		case DESCRIPTOR_TYPE_SAMPLER:
+		{
+			// Index is invalid when descriptor is a static sampler
+			VALIDATE_DESCRIPTOR(pDesc->mIndexInParent != -1,
+				"Trying to update a static sampler (%s). All static samplers must be set in addRootSignature and cannot be updated later",
+				pDesc->mDesc.name);
+
+			VALIDATE_DESCRIPTOR(pParam->ppSamplers, "NULL Sampler (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppSamplers[arr], "NULL Sampler (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pUpdateData[pDesc->mHandleIndex + arr].mImageInfo = pParam->ppSamplers[arr]->mVkSamplerView;
+				update = true;
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_TEXTURE:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL Texture (%s)", pDesc->mDesc.name);
+
+			if (!pParam->mBindStencilResource)
+			{
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL Texture (%s [%u] )", pDesc->mDesc.name, arr);
+
+					pUpdateData[pDesc->mHandleIndex + arr].mImageInfo =
+					{
+						VK_NULL_HANDLE,                                    // Sampler
+						pParam->ppTextures[arr]->pVkSRVDescriptor,         // Image View
+						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL           // Image Layout
+					};
+
+					update = true;
+				}
+			}
+			else
+			{
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL Texture (%s [%u] )", pDesc->mDesc.name, arr);
+
+					pUpdateData[pDesc->mHandleIndex + arr].mImageInfo =
+					{
+						VK_NULL_HANDLE,                                    // Sampler
+						*pParam->ppTextures[arr]->pVkSRVStencilDescriptor, // Image View
+						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL           // Image Layout
+					};
+
+					update = true;
+				}
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_RW_TEXTURE:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL RW Texture (%s)", pDesc->mDesc.name);
+			const uint32_t mipSlice = pParam->mUAVMipSlice;
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL RW Texture (%s [%u] )", pDesc->mDesc.name, arr);
+				VALIDATE_DESCRIPTOR(mipSlice < pParam->ppTextures[arr]->mDesc.mMipLevels, "Descriptor : (%s [%u] ) Mip Slice (%u) exceeds mip levels (%u)",
+					pDesc->mDesc.name, arr, mipSlice, pParam->ppTextures[arr]->mDesc.mMipLevels);
+
+				pUpdateData[pDesc->mHandleIndex + arr].mImageInfo =
+				{
+					VK_NULL_HANDLE,                                        // Sampler
+					pParam->ppTextures[arr]->pVkUAVDescriptors[mipSlice],  // Image View
+					VK_IMAGE_LAYOUT_GENERAL                                // Image Layout
+				};
+
+				update = true;
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+		{
+			if (pDesc->mVkType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Uniform Buffer (%s)", pDesc->mDesc.name);
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[0], "NULL Uniform Buffer (%s [%u] )", pDesc->mDesc.name, 0);
+				VALIDATE_DESCRIPTOR(arrayCount == 1, "Descriptor (%s) : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC does not support arrays", pDesc->mDesc.name);
+				VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) : Must provide pSizes for VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC", pDesc->mDesc.name);
+				VALIDATE_DESCRIPTOR(pParam->pSizes[0] > 0, "Descriptor (%s) - pSizes[%u] is zero", pDesc->mDesc.name, 0);
+				VALIDATE_DESCRIPTOR(pParam->pSizes[0] <= pRenderer->pVkActiveGPUProperties->properties.limits.maxUniformBufferRange,
+					"Descriptor (%s) - pSizes[%u] is %ull which exceeds max size %u", pDesc->mDesc.name, 0,
+					pParam->pSizes[0],
+					pRenderer->pVkActiveGPUProperties->properties.limits.maxUniformBufferRange);
+
+				pDescriptorSet->pDynamicOffsets[index][pDesc->mDynamicUniformIndex] = pParam->pOffsets ? (uint32_t)pParam->pOffsets[0] : 0;
+				pUpdateData[pDesc->mHandleIndex + 0].mBufferInfo = pParam->ppBuffers[0]->mVkBufferInfo;
+				pUpdateData[pDesc->mHandleIndex + 0].mBufferInfo.range = pParam->pSizes[0];
+
+				// If this is a different size we have to update the VkDescriptorBufferInfo::range so a call to vkUpdateDescriptorSet is necessary
+				if (pParam->pSizes[0] != (uint32_t)pDescriptorSet->pDynamicSizes[index][pDesc->mDynamicUniformIndex])
+				{
+					pDescriptorSet->pDynamicSizes[index][pDesc->mDynamicUniformIndex] = (uint32_t)pParam->pSizes[0];
+					update = true;
+				}
+
+				break;
+			}
+		case DESCRIPTOR_TYPE_BUFFER:
+		case DESCRIPTOR_TYPE_BUFFER_RAW:
+		case DESCRIPTOR_TYPE_RW_BUFFER:
+		case DESCRIPTOR_TYPE_RW_BUFFER_RAW:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Buffer (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pUpdateData[pDesc->mHandleIndex + arr].mBufferInfo = pParam->ppBuffers[arr]->mVkBufferInfo;
+				if (pParam->pOffsets)
+				{
+					VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) - pSizes must be provided with pOffsets", pDesc->mDesc.name);
+					VALIDATE_DESCRIPTOR(pParam->pSizes[arr] > 0, "Descriptor (%s) - pSizes[%u] is zero", pDesc->mDesc.name, arr);
+					VALIDATE_DESCRIPTOR(pParam->pSizes[arr] <= pRenderer->pVkActiveGPUProperties->properties.limits.maxUniformBufferRange,
+						"Descriptor (%s) - pSizes[%u] is %ull which exceeds max size %u", pDesc->mDesc.name, arr,
+						pParam->pSizes[arr],
+						pRenderer->pVkActiveGPUProperties->properties.limits.maxUniformBufferRange);
+
+					pUpdateData[pDesc->mHandleIndex + arr].mBufferInfo.offset = pParam->pOffsets[arr];
+					pUpdateData[pDesc->mHandleIndex + arr].mBufferInfo.range = pParam->pSizes[arr];
+				}
+
+				update = true;
+			}
+
+		}
+			break;
+		}
+		case DESCRIPTOR_TYPE_TEXEL_BUFFER:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Texel Buffer (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Texel Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+				pUpdateData[pDesc->mHandleIndex + arr].mBuferView = pParam->ppBuffers[arr]->pVkUniformTexelView;
+				update = true;
+			}
+
+			break;
+		}
+		case DESCRIPTOR_TYPE_RW_TEXEL_BUFFER:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL RW Texel Buffer (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL RW Texel Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+				pUpdateData[pDesc->mHandleIndex + arr].mBuferView = pParam->ppBuffers[arr]->pVkStorageTexelView;
+				update = true;
+			}
+
+			break;
+		}
+#ifdef ENABLE_RAYTRACING
+		case DESCRIPTOR_TYPE_RAY_TRACING:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppAccelerationStructures, "NULL Acceleration Structure (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppAccelerationStructures[arr], "Acceleration Structure (%s [%u] )", pDesc->mDesc.name, arr);
+
+				VkWriteDescriptorSet* pWrite = raytracingWrites + raytracingWriteCount;
+				VkWriteDescriptorSetAccelerationStructureNV* pWriteNV = raytracingWritesNV + raytracingWriteCount;
+
+				pWrite->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				pWrite->pNext = pWriteNV;
+				pWrite->dstSet = pDescriptorSet->pHandles[index];
+				pWrite->descriptorCount = 1;
+				pWrite->descriptorType = pDesc->mVkType;
+				pWrite->dstArrayElement = arr;
+				pWrite->dstBinding = pDesc->mDesc.reg;
+
+				vk_FillRaytracingDescriptorData(pParam->ppAccelerationStructures[arr], pWriteNV);
+
+				++raytracingWriteCount;
+			}
+			break;
+		}
+#endif
+		default:
+			break;
+		}
+	}
+
+	// If this was called to just update a dynamic offset skip the update
+	if (update)
+		vkUpdateDescriptorSetWithTemplateKHR(pRenderer->pVkDevice, pDescriptorSet->pHandles[index],
+			pRootSignature->mUpdateTemplates[updateFreq], pUpdateData);
+
+#ifdef ENABLE_RAYTRACING
+	// Raytracing Update Descriptor Set since it does not support update template
+	if (raytracingWriteCount)
+		vkUpdateDescriptorSets(pRenderer->pVkDevice, raytracingWriteCount, raytracingWrites, 0, NULL);
+#endif
+}
+
+void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
+{
+	ASSERT(pCmd);
+	ASSERT(pDescriptorSet);
+	ASSERT(pDescriptorSet->pHandles);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
+
+	if (pCmd->pBoundRootSignature != pRootSignature)
+	{
+		pCmd->pBoundRootSignature = pRootSignature;
+
+		// Vulkan requires to bind all descriptor sets upto the highest set number even if they are empty
+		// Example: If shader uses only set 2, we still have to bind empty sets for set=0 and set=1
 		for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; ++setIndex)
 		{
-			SAFE_FREE(node->pDynamicOffsets[setIndex]);
-			SAFE_FREE(node->pUpdateData[setIndex]);
-			SAFE_FREE(node->pDefaultUpdateData[setIndex]);
-		
-			if (VK_NULL_HANDLE != node->mUpdateTemplates[setIndex])
-				vkDestroyDescriptorUpdateTemplateKHR(pRenderer->pVkDevice, node->mUpdateTemplates[setIndex], NULL);
-		}
-
-		for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++)
-		{
-			for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; setIndex++)
+			if (pRootSignature->mVkEmptyDescriptorSets[setIndex] != VK_NULL_HANDLE)
 			{
-				node->mUpdatedHashes[frameIdx][setIndex].~hash_map();
-				node->mUpdatedDynamicUniformHashes[frameIdx][setIndex].~hash_map();
-				SAFE_FREE(node->pDescriptorSets_FrameFreqUsage[frameIdx][setIndex]);
+				vkCmdBindDescriptorSets(
+					pCmd->pVkCmdBuf, gPipelineBindPoint[pRootSignature->mPipelineType], pRootSignature->pPipelineLayout, setIndex, 1,
+					&pRootSignature->mVkEmptyDescriptorSets[setIndex], 0, NULL);
 			}
-		}			
-		SAFE_FREE(node);
+		}
 	}
 
-	pDescriptorBinder->mRootSignatureNodes.~hash_map();
-	SAFE_FREE(pDescriptorBinder);
+	vkCmdBindDescriptorSets(pCmd->pVkCmdBuf, gPipelineBindPoint[pRootSignature->mPipelineType],
+		pRootSignature->pPipelineLayout, pDescriptorSet->mUpdateFrequency, 1, &pDescriptorSet->pHandles[index],
+		pDescriptorSet->mDynamicOffsetCount, pDescriptorSet->mDynamicOffsetCount ? pDescriptorSet->pDynamicOffsets[index] : NULL);
 }
 
+void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pConstants);
+	ASSERT(pRootSignature);
+	ASSERT(pName);
+	
+	const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pName);
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
+
+	vkCmdPushConstants(pCmd->pVkCmdBuf, pRootSignature->pPipelineLayout,
+		pDesc->mVkStages, 0, pDesc->mDesc.size, pConstants);
+}
+
+void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pConstants);
+	ASSERT(pRootSignature);
+	ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
+
+	const DescriptorInfo* pDesc = pRootSignature->pDescriptors + paramIndex;
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
+
+	vkCmdPushConstants(pCmd->pVkCmdBuf, pRootSignature->pPipelineLayout,
+		pDesc->mVkStages, 0, pDesc->mDesc.size, pConstants);
+}
 /************************************************************************/
 // Shader Functions
 /************************************************************************/
 // renderer shader macros allocated on stack
-ShaderMacro                     gRendererShaderDefines[2];
 const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer)
 {
 	// Set shader macro based on runtime information
-	gRendererShaderDefines[0].definition = "VK_EXT_DESCRIPTOR_INDEXING_ENABLED";
-	gRendererShaderDefines[0].value = eastl::string().sprintf("%d", static_cast<int>(gDescriptorIndexingExtension));
+	static ShaderMacro rendererShaderDefines[] =
+	{
+		{ "VK_EXT_DESCRIPTOR_INDEXING_ENABLED", eastl::string().sprintf("%u", (uint32_t)(gDescriptorIndexingExtension)) },
+		{
+			"VK_FEATURE_TEXTURE_ARRAY_DYNAMIC_INDEXING_ENABLED",
+			eastl::string().sprintf("%u", (uint32_t)(pRenderer->pVkActiveGpuFeatures->shaderSampledImageArrayDynamicIndexing))
+		},
+		// Descriptor set indices
+		{ "UPDATE_FREQ_NONE",      "set = 0" },
+		{ "UPDATE_FREQ_PER_FRAME", "set = 1" },
+		{ "UPDATE_FREQ_PER_BATCH", "set = 2" },
+		{ "UPDATE_FREQ_PER_DRAW",  "set = 3" },
+	};
 
-	gRendererShaderDefines[1].definition = "VK_FEATURE_TEXTURE_ARRAY_DYNAMIC_INDEXING_ENABLED";
-	gRendererShaderDefines[1].value = eastl::string().sprintf("%d", static_cast<int>(pRenderer->mVkGpuFeatures[0].shaderSampledImageArrayDynamicIndexing));
-
-	RendererShaderDefinesDesc defineDesc = { gRendererShaderDefines, 2 };
+	RendererShaderDefinesDesc defineDesc = { rendererShaderDefines, sizeof(rendererShaderDefines) / sizeof(rendererShaderDefines[0]) };
 	return defineDesc;
 }
 
@@ -4186,14 +4373,13 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	eastl::vector<UpdateFrequencyLayoutInfo> layouts(DESCRIPTOR_UPDATE_FREQ_COUNT);
 	eastl::vector<DescriptorInfo*>           pushConstantDescriptors;
 	eastl::vector<ShaderResource>            shaderResources;
-
 	eastl::hash_map<eastl::string, Sampler*> staticSamplerMap;
-	eastl::vector<eastl::string>                  dynamicUniformBuffers;
 
 	for (uint32_t i = 0; i < pRootSignatureDesc->mStaticSamplerCount; ++i)
-		staticSamplerMap.insert({{ pRootSignatureDesc->ppStaticSamplerNames[i], pRootSignatureDesc->ppStaticSamplers[i] }});
-	for (uint32_t i = 0; i < pRootSignatureDesc->mDynamicUniformBufferCount; ++i)
-		dynamicUniformBuffers.push_back(pRootSignatureDesc->ppDynamicUniformBufferNames[i]);
+	{
+		ASSERT(pRootSignatureDesc->ppStaticSamplers[i]);
+		staticSamplerMap.insert({ { pRootSignatureDesc->ppStaticSamplerNames[i], pRootSignatureDesc->ppStaticSamplers[i] } });
+	}
 
 	conf_placement_new<eastl::hash_map<uint32_t, uint32_t> >(&pRootSignature->pDescriptorNameToIndexMap);
 
@@ -4293,12 +4479,11 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			VkDescriptorSetLayoutBinding binding = {};
 			binding.binding = pDesc->mDesc.reg;
 			binding.descriptorCount = pDesc->mDesc.size;
-
 			binding.descriptorType = util_to_vk_descriptor_type(pDesc->mDesc.type);
 
 			// If a user specified a uniform buffer to be used as a dynamic uniform buffer change its type to VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
 			// Also log a message for debugging purpose
-			if (eastl::find(dynamicUniformBuffers.begin(), dynamicUniformBuffers.end(), pDesc->mDesc.name) != dynamicUniformBuffers.end())
+			if (eastl::string(pDesc->mDesc.name).find("rootcbv") != eastl::string::npos)
 			{
 				if (pDesc->mDesc.size == 1)
 				{
@@ -4411,7 +4596,6 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			continue;
 
 		pRootSignature->mVkDescriptorCounts[i] = (uint32_t)layout.mDescriptors.size();
-		pRootSignature->pVkDescriptorIndices[i] = (uint32_t*)conf_calloc(layout.mDescriptors.size(), sizeof(uint32_t));
 
 		// Loop through descriptors belonging to this update frequency and increment the cumulative descriptor count
 		for (uint32_t descIndex = 0; descIndex < (uint32_t)layout.mDescriptors.size(); ++descIndex)
@@ -4419,7 +4603,6 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			DescriptorInfo* pDesc = layout.mDescriptors[descIndex];
 			pDesc->mIndexInParent = descIndex;
 			pDesc->mHandleIndex = pRootSignature->mVkCumulativeDescriptorCounts[i];
-			pRootSignature->pVkDescriptorIndices[i][descIndex] = layout.mDescriptorIndexMap[pDesc];
 			pRootSignature->mVkCumulativeDescriptorCounts[i] += pDesc->mDesc.size;
 		}
 
@@ -4456,7 +4639,125 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	VkResult vk_res = vkCreatePipelineLayout(pRenderer->pVkDevice, &add_info, NULL, &(pRootSignature->pPipelineLayout));
 	ASSERT(VK_SUCCESS == vk_res);
 	/************************************************************************/
+	// Update templates
 	/************************************************************************/
+	for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; ++setIndex)
+	{
+		if (pRootSignature->mVkDescriptorCounts[setIndex])
+		{
+			const UpdateFrequencyLayoutInfo& layout = layouts[setIndex];
+			VkDescriptorUpdateTemplateEntry* pEntries = (VkDescriptorUpdateTemplateEntry*)alloca(pRootSignature->mVkDescriptorCounts[setIndex] * sizeof(VkDescriptorUpdateTemplateEntry));
+			uint32_t entryCount = 0;
+
+			for (uint32_t nodeIndex = 0; nodeIndex < pRenderer->mLinkedNodeCount; ++nodeIndex)
+			{
+				pRootSignature->pUpdateTemplateData[setIndex][nodeIndex] = conf_calloc(pRootSignature->mVkCumulativeDescriptorCounts[setIndex], sizeof(DescriptorUpdateData));
+			}
+
+			// Fill the write descriptors with default values during initialize so the only thing we change in cmdBindDescriptors is the the VkBuffer / VkImageView objects
+			for (uint32_t i = 0; i < (uint32_t)layout.mDescriptors.size(); ++i)
+			{
+				const DescriptorInfo* pDesc  = layout.mDescriptors[i];
+				const uint64_t        offset = pDesc->mHandleIndex * sizeof(DescriptorUpdateData);
+
+#ifdef VK_NV_RAY_TRACING_SPEC_VERSION
+				// Raytracing descriptors dont support update template so we ignore them
+				if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RAY_TRACING)
+				{
+					pRootSignature->mVkRaytracingDescriptorCounts[setIndex] += pDesc->mDesc.size;
+					continue;
+				}
+#endif
+
+				++entryCount;
+
+				pEntries[i].descriptorCount = pDesc->mDesc.size;
+				pEntries[i].descriptorType = pDesc->mVkType;
+				pEntries[i].dstArrayElement = 0;
+				pEntries[i].dstBinding = pDesc->mDesc.reg;
+				pEntries[i].offset = offset;
+				pEntries[i].stride = sizeof(DescriptorUpdateData);
+
+				for (uint32_t nodeIndex = 0; nodeIndex < pRenderer->mLinkedNodeCount; ++nodeIndex)
+				{
+					DescriptorUpdateData* pUpdateData = (DescriptorUpdateData*)pRootSignature->pUpdateTemplateData[setIndex][nodeIndex];
+
+					const DescriptorType type = pDesc->mDesc.type;
+					const uint32_t arrayCount = pDesc->mDesc.size;
+
+					switch (type)
+					{
+					case DESCRIPTOR_TYPE_SAMPLER:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mImageInfo = pRenderer->pDefaultSampler->mVkSamplerView;
+						break;
+					}
+					case DESCRIPTOR_TYPE_TEXTURE:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mImageInfo = { VK_NULL_HANDLE, pRenderer->pDefaultTextureSRV[nodeIndex][pDesc->mDesc.dim]->pVkSRVDescriptor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+						break;
+					}
+					case DESCRIPTOR_TYPE_RW_TEXTURE:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mImageInfo = { VK_NULL_HANDLE, pRenderer->pDefaultTextureUAV[nodeIndex][pDesc->mDesc.dim]->pVkUAVDescriptors[0], VK_IMAGE_LAYOUT_GENERAL };
+						break;
+					}
+					case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+					case DESCRIPTOR_TYPE_BUFFER:
+					case DESCRIPTOR_TYPE_BUFFER_RAW:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mBufferInfo = pRenderer->pDefaultBufferSRV[nodeIndex]->mVkBufferInfo;
+						break;
+					}
+					case DESCRIPTOR_TYPE_RW_BUFFER:
+					case DESCRIPTOR_TYPE_RW_BUFFER_RAW:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mBufferInfo = pRenderer->pDefaultBufferUAV[nodeIndex]->mVkBufferInfo;
+						break;
+					}
+					case DESCRIPTOR_TYPE_TEXEL_BUFFER:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mBuferView = pRenderer->pDefaultBufferSRV[nodeIndex]->pVkUniformTexelView;
+						break;
+					}
+					case DESCRIPTOR_TYPE_RW_TEXEL_BUFFER:
+					{
+						for (uint32_t arr = 0; arr < arrayCount; ++arr)
+							pUpdateData[pDesc->mHandleIndex + arr].mBuferView = pRenderer->pDefaultBufferUAV[nodeIndex]->pVkStorageTexelView;
+						break;
+					}
+					default:
+						break;
+					}
+				}
+			}
+
+			VkDescriptorUpdateTemplateCreateInfoKHR createInfo = {};
+			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR;
+			createInfo.pNext = NULL;
+			createInfo.descriptorSetLayout = pRootSignature->mVkDescriptorSetLayouts[setIndex];
+			createInfo.descriptorUpdateEntryCount = entryCount;
+			createInfo.pDescriptorUpdateEntries = pEntries;
+			createInfo.pipelineBindPoint = gPipelineBindPoint[pRootSignature->mPipelineType];
+			createInfo.pipelineLayout = pRootSignature->pPipelineLayout;
+			createInfo.set = setIndex;
+			createInfo.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR;
+			VkResult vkRes = vkCreateDescriptorUpdateTemplateKHR(pRenderer->pVkDevice, &createInfo, NULL, &pRootSignature->mUpdateTemplates[setIndex]);
+			ASSERT(VK_SUCCESS == vkRes);
+		}
+		else if (VK_NULL_HANDLE != pRootSignature->mVkDescriptorSetLayouts[setIndex])
+		{
+			// Consume empty descriptor sets from empty descriptor set pool
+			VkDescriptorSet* pSets[] = { &pRootSignature->mVkEmptyDescriptorSets[setIndex] };
+			consume_descriptor_sets(pRenderer->pDescriptorPool, &pRootSignature->mVkDescriptorSetLayouts[setIndex], pSets, 1);
+		}
+	}
 
 	*ppRootSignature = pRootSignature;
 }
@@ -4466,8 +4767,13 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 	for (uint32_t i = 0; i < DESCRIPTOR_UPDATE_FREQ_COUNT; ++i)
 	{
 		vkDestroyDescriptorSetLayout(pRenderer->pVkDevice, pRootSignature->mVkDescriptorSetLayouts[i], NULL);
+		if (VK_NULL_HANDLE != pRootSignature->mUpdateTemplates[i])
+			vkDestroyDescriptorUpdateTemplateKHR(pRenderer->pVkDevice, pRootSignature->mUpdateTemplates[i], NULL);
 
-		SAFE_FREE(pRootSignature->pVkDescriptorIndices[i]);
+		for (uint32_t nodeIndex = 0; nodeIndex < pRenderer->mLinkedNodeCount; ++nodeIndex)
+		{
+			SAFE_FREE(pRootSignature->pUpdateTemplateData[i][nodeIndex]);
+		}
 	}
 
 	for (uint32_t i = 0; i < pRootSignature->mDescriptorCount; ++i)
@@ -5020,8 +5326,7 @@ void beginCmd(Cmd* pCmd)
 	ASSERT(VK_SUCCESS == vk_res);
 
 	// Reset CPU side data
-	pCmd->pBoundDescriptorBinder = NULL;
-	pCmd->pBoundDescriptorBinderNode = NULL;
+	pCmd->pBoundRootSignature = NULL;
 }
 
 void endCmd(Cmd* pCmd)
@@ -5308,393 +5613,6 @@ void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t
 	ASSERT(pCmd->pVkCmdBuf != VK_NULL_HANDLE);
 
 	vkCmdDispatch(pCmd->pVkCmdBuf, groupCountX, groupCountY, groupCountZ);
-}
-
-void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSignature* pRootSignature, uint32_t numDescriptors, DescriptorData* pDescParams)
-{
-	ASSERT(pDescriptorBinder);
-	ASSERT(pRootSignature);
-
-	Renderer*             pRenderer = pCmd->pRenderer;
-	const uint32_t        setCount = DESCRIPTOR_UPDATE_FREQ_COUNT;
-	const uint32_t        frameIdx = pRenderer->mCurrentFrameIdx;
-	DescriptorBinderNode* node = pDescriptorBinder->mRootSignatureNodes.find(pRootSignature)->second;
-	const VkDeviceSize    maxUniformRange = (VkDeviceSize)pRenderer->pVkActiveGPUProperties->properties.limits.maxUniformBufferRange;
-
-#ifdef ENABLE_RAYTRACING
-	VkWriteDescriptorSet* raytracingWrites[setCount] = {};
-	VkWriteDescriptorSetAccelerationStructureNV* raytracingWritesNV[setCount] = {};
-	uint32_t raytracingWriteCount[setCount] = {};
-
-	// Logic to detect beginning of a new frame so we dont run this code everytime user calls cmdBindDescriptors
-	for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-	{
-		// Reset other data
-		node->mBoundSets[setIndex] = true;
-		if (node->mRaytracingDescriptorCount[setIndex])
-		{
-			raytracingWrites[setIndex] = (VkWriteDescriptorSet*)alloca(node->mRaytracingDescriptorCount[setIndex] * sizeof(VkWriteDescriptorSet));
-			raytracingWritesNV[setIndex] = (VkWriteDescriptorSetAccelerationStructureNV*)alloca(node->mRaytracingDescriptorCount[setIndex] * sizeof(VkWriteDescriptorSetAccelerationStructureNV));
-		}
-	}
-#endif
-
-	pCmd->pBoundDescriptorBinder = pDescriptorBinder;
-
-	if (node->mFrameIdx != frameIdx)
-	{
-		// Frame changed: reuse descriptors from the beginning since all allocations are per frame
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			node->mUpdateCount[frameIdx][setIndex] = 0;
-			if (setIndex != DESCRIPTOR_UPDATE_FREQ_NONE)
-			{
-				node->mUpdatedHashes[frameIdx][setIndex].clear();
-				node->mUpdatedDynamicUniformHashes[frameIdx][setIndex].clear();
-			}
-		}
-		node->mFrameIdx = frameIdx;
-	}
-
-	if (pCmd->pBoundDescriptorBinderNode != node)
-	{
-		pCmd->pBoundDescriptorBinderNode = node;
-
-		// Vulkan requires to bind all descriptor sets upto the highest set number even if they are empty
-		// Example: If shader uses only set 1, we still have to bind an empty set 0
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			if (node->pEmptyDescriptorSets[setIndex] != VK_NULL_HANDLE)
-			{
-				vkCmdBindDescriptorSets(
-					pCmd->pVkCmdBuf, gPipelineBindPoint[pRootSignature->mPipelineType], pRootSignature->pPipelineLayout, setIndex, 1,
-					&node->pEmptyDescriptorSets[setIndex], 0, NULL);    // Reset other data
-			}
-			node->mBoundSets[setIndex] = true;
-		}
-	}
-
-	// 64 bit hash value for hashing the mTextureId / mBufferId / mSamplerId of the input descriptors
-	// This value will be later used as look up to find if a descriptor set with the given hash already exists
-	// This way we will call updateDescriptorSet for a particular set of descriptors only once
-	// Then we only need to do a look up into the mDescriptorSetMap with pHash[setIndex] as the key and retrieve the DescriptorSet* value
-	uint64_t pHash[setCount] = {};
-	uint64_t pDynamicUniformHash[setCount] = {};
-
-	// Loop through input params to check for new data
-	for (uint32_t i = 0; i < numDescriptors; ++i)
-	{
-		const DescriptorData* pParam = &pDescParams[i];
-		ASSERT(pParam);
-		if (!pParam->pName)
-		{
-			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
-			return;
-		}
-
-		const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pParam->pName);
-		if (!pDesc)
-			continue;
-
-		// Find the update frequency of the descriptor
-		// This is also the set index to be used in vkCmdBindDescriptorSets
-		const DescriptorUpdateFrequency setIndex = pDesc->mUpdateFrquency;
-		const uint32_t                  arrayCount = max(1U, pParam->mCount);
-
-		// If input param is a root constant no need to do any further checks
-		if (pDesc->mDesc.type == DESCRIPTOR_TYPE_ROOT_CONSTANT)
-		{
-			vkCmdPushConstants(pCmd->pVkCmdBuf, pRootSignature->pPipelineLayout, 
-									pDesc->mVkStages, 0, pDesc->mDesc.size, pParam->pRootConstant);
-			continue;
-		}
-
-		// Generate hash of all the resource ids
-		if (pDesc->mDesc.type == DESCRIPTOR_TYPE_SAMPLER)
-		{
-			if (pDesc->mIndexInParent == -1)
-			{
-				LOGF(LogLevel::eERROR, 
-					"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
-					"RootSignatureDesc::mStaticSamplers",
-					pParam->pName);
-				continue;
-			}
-			if (!pParam->ppSamplers)
-			{
-				LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
-				return;
-			}
-			for (uint32_t i = 0; i < arrayCount; ++i)
-			{
-				if (!pParam->ppSamplers[i])
-				{
-					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
-					return;
-				}
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[i]->mSamplerId, 1, pHash[setIndex]);
-				node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo = pParam->ppSamplers[i]->mVkSamplerView;
-			}
-		}
-		else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_TEXTURE)
-		{
-			if (!pParam->ppTextures)
-			{
-				LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
-				return;
-			}
-
-			for (uint32_t i = 0; i < arrayCount; ++i)
-			{
-				if (!pParam->ppTextures[i])
-				{
-					LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
-					return;
-				}
-
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppTextures[i]->mTextureId, 1, pHash[setIndex]);
-				uint64_t bindStencilResource = (uint64_t)pParam->mBindStencilResource;	// Needed to meet alignment requirements
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&bindStencilResource, 1, pHash[setIndex]);
-
-				// Store the new descriptor so we can use it in vkUpdateDescriptorSet later
-				if(!pParam->mBindStencilResource)
-					node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo.imageView = pParam->ppTextures[i]->pVkSRVDescriptor;
-				else
-					node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo.imageView = *pParam->ppTextures[i]->pVkSRVStencilDescriptor;
-				// SRVs need to be in VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-				node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			}
-		}
-		else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
-		{
-			if (!pParam->ppTextures)
-			{
-				LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
-				return;
-			}
-
-			if (pParam->mUAVMipSlice)
-				pHash[setIndex] = eastl::mem_hash<uint32_t>()(&pParam->mUAVMipSlice, 1, pHash[setIndex]);
-
-			for (uint32_t i = 0; i < arrayCount; ++i)
-			{
-				if (!pParam->ppTextures[i])
-				{
-					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
-					return;
-				}
-
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppTextures[i]->mTextureId, 1, pHash[setIndex]);
-
-				// Store the new descriptor so we can use it in vkUpdateDescriptorSet later
-				node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo.imageView =
-					pParam->ppTextures[i]->pVkUAVDescriptors[pParam->mUAVMipSlice];
-				// UAVs need to be in VK_IMAGE_LAYOUT_GENERAL
-				node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			}
-		}
-		else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-		{
-			if (!pParam->ppBuffers)
-			{
-				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
-				return;
-			}
-			for (uint32_t i = 0; i < arrayCount; ++i)
-			{
-				if (!pParam->ppBuffers[i])
-				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
-					return;
-				}
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
-
-				// Store the new descriptor so we can use it in vkUpdateDescriptorSet later
-				node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBufferInfo = pParam->ppBuffers[i]->mVkBufferInfo;
-
-				// Only store the offset provided in pParam if the descriptor is not dynamic
-				// For dynamic descriptors the offsets are bound in vkCmdBindDescriptorSets
-				// If descriptor is of type uniform buffer dynamic, we dont need to hash the offset
-				if (pDesc->mVkType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-				{
-					ASSERT(arrayCount == 1 && "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC does not support arrays");
-					ASSERT(pParam->pSizes && "Must provide pSizes for VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC");
-					ASSERT(pParam->pSizes[i] <= maxUniformRange);
-
-					uint32_t offset = pParam->pOffsets ? (uint32_t)pParam->pOffsets[i] : 0U;
-					// Dynamic uniform buffer descriptors using the same VkBuffer object can be bound at different offsets without the need for vkUpdateDescriptorSets
-					node->pDynamicOffsets[setIndex][pDesc->mDynamicUniformIndex] = offset;
-					node->pUpdateData[setIndex][pDesc->mHandleIndex].mBufferInfo.range = pParam->pSizes[i];
-
-					pDynamicUniformHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pDynamicUniformHash[setIndex]);
-					pDynamicUniformHash[setIndex] = eastl::mem_hash<uint64_t>()(pParam->pSizes, arrayCount, pDynamicUniformHash[setIndex]);
-				}
-				// If descriptor is not of type uniform buffer dynamic, hash the offset value
-				// Non dynamic uniform buffer descriptors using the same VkBuffer object but different offset values are considered as different descriptors
-				else
-				{
-					if (pParam->pOffsets)
-					{
-						node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBufferInfo.offset = pParam->pOffsets[i];
-						node->pUpdateData[setIndex][pDesc->mHandleIndex].mBufferInfo.range = min(pParam->ppBuffers[i]->mDesc.mSize - pParam->pOffsets[i], maxUniformRange);
-					}
-					if (pParam->pSizes)
-					{
-						node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBufferInfo.range = pParam->pSizes[i];
-					}
-
-					if (pParam->pOffsets)
-						pHash[setIndex] = eastl::mem_hash<uint64_t>()(pParam->pOffsets, arrayCount, pHash[setIndex]);
-					if (pParam->pSizes)
-						pHash[setIndex] = eastl::mem_hash<uint64_t>()(pParam->pSizes, arrayCount, pHash[setIndex]);
-				}
-			}
-		}
-		else
-		{
-#ifdef ENABLE_RAYTRACING
-			if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RAY_TRACING)
-			{
-				for (uint32_t i = 0; i < arrayCount; ++i)
-				{
-					VkWriteDescriptorSet* pWrite = raytracingWrites[setIndex] + raytracingWriteCount[setIndex];
-					VkWriteDescriptorSetAccelerationStructureNV* pWriteNV = raytracingWritesNV[setIndex] + raytracingWriteCount[setIndex];
-
-					pWrite->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					pWrite->pNext = pWriteNV;
-					pWrite->descriptorCount = 1;
-					pWrite->descriptorType = pDesc->mVkType;
-					pWrite->dstArrayElement = i;
-					pWrite->dstBinding = pDesc->mDesc.reg;
-
-					vk_FillRaytracingDescriptorData(pParam->ppAccelerationStructures[i], pHash, pWriteNV);
-
-					++raytracingWriteCount[setIndex];
-				}
-
-				continue;
-			}
-#endif
-
-			if (!pParam->ppBuffers)
-			{
-				LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
-				return;
-			}
-			for (uint32_t i = 0; i < arrayCount; ++i)
-			{
-				if (!pParam->ppBuffers[i])
-				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, i);
-					return;
-				}
-				pHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[i]->mBufferId, 1, pHash[setIndex]);
-
-				if (pDesc->mVkType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER)
-					node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBuferView = pParam->ppBuffers[i]->pVkUniformTexelView;
-				else if (pDesc->mVkType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)
-					node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBuferView = pParam->ppBuffers[i]->pVkStorageTexelView;
-				else
-					node->pUpdateData[setIndex][pDesc->mHandleIndex + i].mBufferInfo = pParam->ppBuffers[i]->mVkBufferInfo;
-			}
-		}
-
-		// Unbind current descriptor set so we can bind a new one
-		node->mBoundSets[setIndex] = false;
-	}
-
-	for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-	{
-		uint32_t descCount = pRootSignature->mVkDescriptorCounts[setIndex];
-		uint32_t rootDescCount = pRootSignature->mVkDynamicDescriptorCounts[setIndex];
-
-		if (descCount && !node->mBoundSets[setIndex])
-		{
-			const uint64_t setIndexHash = pHash[setIndex];
-			VkDescriptorSet pDescriptorSet = VK_NULL_HANDLE;
-			uint32_t descriptorSetSlotToUse = 0;
-
-			// Determine if we have to update the descriptor set depending on the hashed states. Frequencies BATCH and DRAW are considered dynamic (multiple updates per frame). 
-			// DRAW and are always updated to a new (pre-allocated) slot every time they are bound. This allows to avoid a dictionary lookup for them. 
-			// BATCH use a dictionary lookup to reuse descriptors that are already updated. This avoids updating them every time.
-			// Frequencies NONE and FRAME only allow 1 update per frame by definition. They allow for 1 update per frame each.
-			bool mustUpdateDescriptorSet = (setIndex == DESCRIPTOR_UPDATE_FREQ_PER_DRAW);
-
-			if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-			{
-				HashMap& activeSet = node->mUpdatedHashes[frameIdx][setIndex];
-				ConstHashMapIterator it = activeSet.find(setIndexHash);
-				if (it != activeSet.end())
-				{
-					descriptorSetSlotToUse = it->second;
-					mustUpdateDescriptorSet = false;
-				}
-				// Check if this is just to update the dynamic offset of a dynamic uniform buffer descriptor (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-				// If true, we dont need to call update descriptor set with the new offsets as the offsets are passed directly to bind descriptor set
-				else if (rootDescCount && pDynamicUniformHash[setIndex])
-				{
-					HashMap& activeSet = node->mUpdatedDynamicUniformHashes[frameIdx][setIndex];
-					ConstHashMapIterator it = activeSet.find(pDynamicUniformHash[setIndex]);
-					mustUpdateDescriptorSet = it == activeSet.end();
-					if (!mustUpdateDescriptorSet)
-						descriptorSetSlotToUse = it->second;
-				}
-				else
-				{
-					mustUpdateDescriptorSet = true;
-				}
-			}
-
-			if (mustUpdateDescriptorSet)
-			{
-				descriptorSetSlotToUse = node->mUpdateCount[frameIdx][setIndex]++;
-				if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
-				{
-					LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex); ASSERT(0);
-					return;
-				}
-
-				pDescriptorSet = node->pDescriptorSets_FrameFreqUsage[frameIdx][setIndex][descriptorSetSlotToUse];
-				vkUpdateDescriptorSetWithTemplateKHR(pRenderer->pVkDevice, pDescriptorSet, node->mUpdateTemplates[setIndex], node->pUpdateData[setIndex]);
-
-#ifdef ENABLE_RAYTRACING
-				// Raytracing Update Descriptor Set since it does not support update template
-				if (raytracingWriteCount[setIndex])
-				{
-					for (uint32_t i = 0; i < raytracingWriteCount[setIndex]; ++i)
-					{
-						raytracingWrites[setIndex][i].dstSet = pDescriptorSet;
-					}
-
-					vkUpdateDescriptorSets(pRenderer->pVkDevice, raytracingWriteCount[setIndex], raytracingWrites[setIndex], 0, NULL);
-				}
-#endif
-
-				if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-				{
-					node->mUpdatedHashes[frameIdx][setIndex].insert({ { setIndexHash, descriptorSetSlotToUse } });
-					if (rootDescCount && pDynamicUniformHash[setIndex])
-						node->mUpdatedDynamicUniformHashes[frameIdx][setIndex].insert({ { pDynamicUniformHash[setIndex], descriptorSetSlotToUse } });
-				}
-
-				// Reset all descriptor data to default descriptors
-				memcpy(node->pUpdateData[setIndex], node->pDefaultUpdateData[setIndex], pRootSignature->mVkCumulativeDescriptorCounts[setIndex] * sizeof(DescriptorUpdateData));
-			}
-			else
-			{
-				// No need to update descriptors. Just point to a pre-allocated available descriptor set given by descriptorSetSlotToUse.
-				pDescriptorSet = node->pDescriptorSets_FrameFreqUsage[frameIdx][setIndex][descriptorSetSlotToUse];
-			}
-
-			vkCmdBindDescriptorSets(
-				pCmd->pVkCmdBuf, gPipelineBindPoint[pRootSignature->mPipelineType], pRootSignature->pPipelineLayout, setIndex, 1,
-				&pDescriptorSet, rootDescCount, node->pDynamicOffsets[setIndex]);
-
-			// Set the bound flag for the descriptor set of this update frequency
-			// This way in the future if user tries to bind the same descriptor set, we can avoid unnecessary rebinds
-			node->mBoundSets[setIndex] = true;
-		}
-	}
 }
 
 void cmdResourceBarrier(Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)

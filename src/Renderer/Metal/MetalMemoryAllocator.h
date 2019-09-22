@@ -1901,13 +1901,14 @@ static void AllocatorPostprocessCalcStatInfo(AllocatorStatInfo& inoutInfo)
 // ResourceAllocation functionality implementation.
 // -------------------------------------------------------------------------------------------------
 
-id<MTLHeap> ResourceAllocation::GetMemory() const { return (m_Type == ALLOCATION_TYPE_BLOCK) ? m_BlockAllocation.m_Block->m_hMemory : nil; }
+id <MTLHeap> ResourceAllocation::GetMemory() const {
+	return (m_Type == ALLOCATION_TYPE_BLOCK) ? m_BlockAllocation.m_Block->m_hMemory : nil;
+}
 
 id<MTLBuffer> ResourceAllocation::GetResource() const
 {
-	if (m_Type == ALLOCATION_TYPE_OWN)
-	{
-		return NULL;
+	if (m_Type == ALLOCATION_TYPE_OWN) {
+		return nil;
 	}
 	return (m_SuballocationType == RESOURCE_SUBALLOCATION_TYPE_BUFFER) ? m_BlockAllocation.m_Block->m_Buffer : nil;
 }
@@ -3514,42 +3515,38 @@ long createBuffer(
 	bool res = allocator->AllocateMemory(info, *pMemoryRequirements, suballocType, &pBuffer->pMtlAllocation);
 	if (res)
 	{
-		if (pBuffer->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK)
-		{
-			pBuffer->mtlBuffer = [pBuffer->pMtlAllocation->GetMemory() newBufferWithLength:pCreateInfo->mSize options:mtlResourceOptions];
+		if (pBuffer->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK) {
+			pBuffer->mtlBuffer =
+					[pBuffer->pMtlAllocation->GetMemory() newBufferWithLength:pCreateInfo->mSize options:mtlResourceOptions];
 			assert(pBuffer->mtlBuffer);
-			pBuffer->mtlBuffer.label = @"Placed Texture";
+			pBuffer->mtlBuffer.label = [NSString stringWithFormat:@"Placed Buffer %llx", (uint64_t) pBuffer->mtlBuffer];
 
-			if (pMemoryRequirements->flags & RESOURCE_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT)
-			{
-				if (pMemoryRequirements->usage == RESOURCE_MEMORY_USAGE_GPU_ONLY)
-				{
-                    LOGF(LogLevel::eWARNING,
-						"Cannot map memory not visible on CPU. Use a readback buffer instead for reading the memory to a cpu visible "
-						"buffer");
-				}
-				else
+			if (pMemoryRequirements->flags & RESOURCE_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT) {
+				if (pMemoryRequirements->usage == RESOURCE_MEMORY_USAGE_GPU_ONLY) {
+					LOGF(LogLevel::eWARNING,
+							 "Cannot map memory not visible on CPU. Use a readback buffer instead for reading the memory to a cpu visible "
+							 "buffer");
+				} else
 				{
 					pBuffer->pMtlAllocation->GetBlock()->m_pMappedData = pBuffer->mtlBuffer.contents;
 				}
 			}
 		}
-		else
-		{
+		else {
 			pBuffer->mtlBuffer = [allocator->m_Device newBufferWithLength:pCreateInfo->mSize options:mtlResourceOptions];
 			assert(pBuffer->mtlBuffer);
-			pBuffer->mtlBuffer.label = @"Owned Texture";
-			
+			pBuffer->mtlBuffer.label = [NSString stringWithFormat:@"Owned Buffer %llx", (uint64_t) pBuffer->mtlBuffer];
+
 			if (pMemoryRequirements->flags & RESOURCE_MEMORY_REQUIREMENT_PERSISTENT_MAP_BIT &&
-				pMemoryRequirements->usage != RESOURCE_MEMORY_USAGE_GPU_ONLY)
-			{
+					pMemoryRequirements->usage != RESOURCE_MEMORY_USAGE_GPU_ONLY) {
 				pBuffer->pMtlAllocation->GetOwnAllocation()->m_pMappedData = pBuffer->mtlBuffer.contents;
 			}
 		}
 		
-		if (pCreateInfo->pDebugName)
-		{
-			pBuffer->mtlBuffer.label = [[NSString alloc] initWithBytesNoCopy:(void*)pCreateInfo->pDebugName length: wcslen(pCreateInfo->pDebugName)*4 encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO];
+		if (pCreateInfo->pDebugName) {
+			pBuffer->mtlBuffer.label =
+					[[[NSString alloc] initWithBytesNoCopy:(void *) pCreateInfo->pDebugName length:wcslen(pCreateInfo->pDebugName)
+							* 4                       encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO] stringByAppendingFormat:@" %llx", (uint64_t) pBuffer->mtlBuffer];
 		}
 
 		// Bind buffer with memory.
@@ -3610,22 +3607,22 @@ long createTexture(
 	bool res = allocator->AllocateMemory(info, *pMemoryRequirements, suballocType, &pTexture->pMtlAllocation);
 	if (res)
 	{
-		if (pTexture->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK)
-		{
+		if (pTexture->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK) {
 			pTexture->mtlTexture = [pTexture->pMtlAllocation->GetMemory() newTextureWithDescriptor:pCreateInfo->pDesc];
 			assert(pTexture->mtlTexture);
-			pTexture->mtlTexture.label = @"Placed Texture";
+			pTexture->mtlTexture.label = [NSString stringWithFormat:@"Placed Texture %llx", (uint64_t) pTexture->mtlTexture];
 		}
-		else
-		{
+		else {
 			pTexture->mtlTexture = [allocator->m_Device newTextureWithDescriptor:pCreateInfo->pDesc];
 			assert(pTexture->mtlTexture);
-			pTexture->mtlTexture.label = @"Owned Texture";
+			pTexture->mtlTexture.label = [NSString stringWithFormat:@"Owned Texture %llx", (uint64_t) pTexture->mtlTexture];
 		}
 
-		if (pCreateInfo->pDebugName)
-		{
-			pTexture->mtlTexture.label = [[NSString alloc] initWithBytesNoCopy:(void*)pCreateInfo->pDebugName length: wcslen(pCreateInfo->pDebugName)*4 encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO];
+		if (pCreateInfo->pDebugName) {
+			pTexture->mtlTexture.label =
+					[[[NSString alloc] initWithBytesNoCopy:(void *) pCreateInfo->pDebugName length:wcslen(pCreateInfo->pDebugName)
+							* 4                       encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO] stringByAppendingFormat:@" %llx", (uint64_t) pTexture->mtlTexture];
+			//[pTexture->mtlTexture.label ];
 		}
 		
 		// Bind texture with memory.

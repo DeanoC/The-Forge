@@ -213,35 +213,30 @@ void iDecodeCompressedImage(unsigned char* dest, unsigned char* src, const int w
 			if (format == TinyImageFormat_DXBC2_UNORM || format == TinyImageFormat_DXBC2_SRGB)
 			{
 				iDecodeDXT3Block(dst + 3, sx, sy, nChannels, width * nChannels, src);
-				src += 8;
 			}
 			else if (format == TinyImageFormat_DXBC3_UNORM || format == TinyImageFormat_DXBC3_SRGB)
 			{
 				iDecodeDXT5Block(dst + 3, sx, sy, nChannels, width * nChannels, src);
-				src += 8;
 			}
 			if ((format == TinyImageFormat_DXBC1_RGBA_UNORM || format == TinyImageFormat_DXBC1_RGB_UNORM) ||
 					(format == TinyImageFormat_DXBC1_RGBA_SRGB || format == TinyImageFormat_DXBC1_RGB_SRGB))
-					{
+            {
 				iDecodeColorBlock(dst, sx, sy, nChannels, width * nChannels, format, 0, 2, src);
-				src += 8;
 			}
 			else
 			{
 				if (format == TinyImageFormat_DXBC4_UNORM || format == TinyImageFormat_DXBC4_SNORM)
 				{
 					iDecodeDXT5Block(dst, sx, sy, 1, width, src);
-					src += 8;
-				}
-				else if (format == TinyImageFormat_DXBC5_UNORM || format == TinyImageFormat_DXBC5_SNORM)
-				{
+				} else if (format == TinyImageFormat_DXBC5_UNORM || format == TinyImageFormat_DXBC5_SNORM) {
 					iDecodeDXT5Block(dst, sx, sy, 2, width * 2, src + 8);
 					iDecodeDXT5Block(dst + 1, sx, sy, 2, width * 2, src);
-					src += 16;
-				}
-				else
+				} else {
 					return;
+				}
 			}
+			src += TinyImageFormat_BitSizeOfBlock(format) / 8;
+
 		}
 	}
 }
@@ -386,19 +381,19 @@ unsigned char* Image::GetPixels(const uint mipMapLevel) const
 	return (mipMapLevel < mMipMapCount) ? pData + GetMipMappedSize(0, mipMapLevel) : NULL;
 }
 
-unsigned char* Image::GetPixels(const uint mipMapLevel, const uint arraySlice) const
-{
-	if (mipMapLevel > mMipMapCount || arraySlice > mArrayCount)
+unsigned char* Image::GetPixels(const uint mipMapLevel, const uint arraySlice) const {
+	if (mipMapLevel >= mMipMapCount || arraySlice >= mArrayCount) {
 		return NULL;
-    
-    // two ways of storing slices and mipmaps
-    // 1. Old Image way. memory slices * ((w*h*d)*mipmaps)
-    // 2. Mips after slices way. There are w*h*d*s*mipmaps where slices stays constant(doesn't reduce)
-    if(!mMipsAfterSlices) {
-        return pData + GetMipMappedSize(0, mMipMapCount) * arraySlice + GetMipMappedSize(0, mipMapLevel);
-    } else {
-        return pData + GetMipMappedSize(0, mipMapLevel) + arraySlice * GetArraySliceSize(mipMapLevel);
-    }
+	}
+
+	// two ways of storing slices and mipmaps
+	// 1. Old Image way. memory slices * ((w*h*d)*mipmaps)
+	// 2. Mips after slices way. There are w*h*d*s*mipmaps where slices stays constant(doesn't reduce)
+	if (!mMipsAfterSlices) {
+		return pData + GetMipMappedSize(0, mMipMapCount) * arraySlice + GetMipMappedSize(0, mipMapLevel);
+	} else {
+		return pData + GetMipMappedSize(0, mipMapLevel) + arraySlice * GetArraySliceSize(mipMapLevel);
+	}
 
 }
 
@@ -722,21 +717,27 @@ uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLe
 		d >>= 1;
 		if (w + h + d == 0)
 			break;
-		if (w == 0)
+		if (w == 0) {
 			w = 1;
-		if (h == 0)
+		}
+		if (h == 0) {
 			h = 1;
-		if (d == 0)
+		}
+		if (d == 0) {
 			d = 1;
+		}
 
 		nMipMapLevels--;
 	}
 
 	size *= TinyImageFormat_BitSizeOfBlock(srcFormat) / 8;
-    // mips after slices means the slice count is included in mipsize but slices doesn't reduce
-    // as slices are included, cubemaps also just fall out
-    if(mMipsAfterSlices) return size * s;
-    else return (mDepth == 0) ? 6 * size : size;
+	// mips after slices means the slice count is included in mipsize but slices doesn't reduce
+	// as slices are included, cubemaps also just fall out
+	if (mMipsAfterSlices) {
+		return (mDepth == 0) ? 6 * size * s : size * s;
+	} else {
+		return (mDepth == 0) ? 6 * size : size;
+	}
 }
 
 static void tinyktxddsCallbackError(void *user, char const *msg) {
@@ -799,7 +800,7 @@ bool iLoadDDSFromMemory(Image* pImage,
 	uint32_t s = TinyDDS_ArraySlices(ctx);
 	uint32_t mm = TinyDDS_NumberOfMipmaps(ctx);
 	TinyImageFormat fmt = TinyImageFormat_FromTinyDDSFormat(TinyDDS_GetFormat(ctx));
-	if(fmt == TinyImageFormat_UNDEFINED) {
+	if (fmt == TinyImageFormat_UNDEFINED) {
 		TinyDDS_DestroyContext(ctx);
 		return false;
 	}
@@ -839,6 +840,7 @@ bool iLoadDDSFromMemory(Image* pImage,
 		memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), fileSize);
 	}
 
+	TinyDDS_DestroyContext(ctx);
 	return true;
 }
 
@@ -883,22 +885,18 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 	uint32_t depth = (psPVRHeader->mNumFaces > 1) ? 0 : psPVRHeader->mDepth;
 	uint32_t mipMapCount = psPVRHeader->mNumMipMaps;
 	uint32_t arrayCount = psPVRHeader->mNumSurfaces;
-	bool srgb = (psPVRHeader->mColorSpace == 1);
-	ImageFormat::Enum imageFormat = ImageFormat::NONE;
+	bool const srgb = (psPVRHeader->mColorSpace == 1);
+	TinyImageFormat imageFormat = TinyImageFormat_UNDEFINED;
 
 	switch (psPVRHeader->mPixelFormat)
 	{
 	case 0:
-		imageFormat = ImageFormat::PVR_2BPP;
-		break;
-	case 1:
-		imageFormat = ImageFormat::PVR_2BPPA;
+    case 1:
+            imageFormat = srgb ? TinyImageFormat_PVRTC1_2BPP_SRGB : TinyImageFormat_PVRTC1_2BPP_UNORM;
 		break;
 	case 2:
-		imageFormat = ImageFormat::PVR_4BPP;
-		break;
-	case 3:
-		imageFormat = ImageFormat::PVR_4BPPA;
+    case 3:
+            imageFormat = srgb ? TinyImageFormat_PVRTC1_4BPP_SRGB : TinyImageFormat_PVRTC1_4BPP_UNORM;
 		break;
 	default:    // NOT SUPPORTED
 		LOGF(LogLevel::eERROR, "Load PVR failed: pixel type not supported. ");
@@ -909,7 +907,7 @@ bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memory
 	if (depth != 0)
 		arrayCount *= psPVRHeader->mNumFaces;
 
-	pImage->RedefineDimensions(imageFormat, width, height, depth, mipMapCount, arrayCount, srgb);
+	pImage->RedefineDimensions(imageFormat, width, height, depth, mipMapCount, arrayCount);
 
 
 	// Extract the pixel data
@@ -957,7 +955,7 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 	uint32_t s = TinyKtx_ArraySlices(ctx);
 	uint32_t mm = TinyKtx_NumberOfMipmaps(ctx);
 	TinyImageFormat fmt = TinyImageFormat_FromTinyKtxFormat(TinyKtx_GetFormat(ctx));
-	if(fmt == TinyImageFormat_UNDEFINED) {
+	if (fmt == TinyImageFormat_UNDEFINED) {
 		TinyKtx_DestroyContext(ctx);
 		return false;
 	}
@@ -1015,6 +1013,8 @@ bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, mem
 			memcpy(dst, src, fileSize);
 		}
 	}
+
+	TinyKtx_DestroyContext(ctx);
 	return true;
 }
 

@@ -66,16 +66,15 @@ typedef struct GpuTimerTree
 	bool                           mDebugMarker;
 } GpuTimerTree;
 
-typedef struct GpuProfiler
-{
+typedef struct GpuProfiler {
 	// double buffered
 	const static uint32_t NUM_OF_FRAMES = 2;
-	Buffer*               pReadbackBuffer[NUM_OF_FRAMES];
+	Buffer *pReadbackBuffer[NUM_OF_FRAMES];
 	QueryPool *pQueryPool[NUM_OF_FRAMES];
-	uint64_t*             pTimeStamp;
-	uint64_t*             pTimeStampBuffer;
-	double                mGpuTimeStampFrequency;
-	double                mCpuTimeStampFrequency;
+	uint64_t *pTimeStamp;
+	uint64_t *pTimeStampBuffer;
+	double mGpuTimeStampFrequency;
+	double mCpuTimeStampFrequency;
 
 	uint32_t mBufferIndex;
 	uint32_t mMaxTimerCount;

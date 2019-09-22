@@ -1270,9 +1270,7 @@ void removeCmd(CmdPool* pCmdPool, Cmd* pCmd)
 	if (pCmd->pTransientConstantBuffer)
 		removeBuffer(pCmd->pRenderer, pCmd->pTransientConstantBuffer);
 
-	SAFE_FREE(pCmd->pDescriptorStructPool);
-	SAFE_FREE(pCmd->pDescriptorNamePool);
-	SAFE_FREE(pCmd->pDescriptorResourcesPool);
+	SAFE_FREE(pCmd->pDescriptorCache);
 
 	//delete command
 	SAFE_FREE(pCmd);
@@ -2423,14 +2421,8 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 			{
 				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified Static Sampler", pDesc->mDesc.name);
 				// Set the index to invalid value so we can use this later for error checking if user tries to update a static sampler
-				pDesc->mIndexInParent = ~0u;
+				pDesc->mIndexInParent = -1;
 				staticSamplers.push_back({ pDesc, pNode->second });
-			}
-			else
-			{
-				// In D3D12, sampler descriptors cannot be placed in a table containing view descriptors
-				// TODO
-				//layouts[setIndex].mSamplerTable.emplace_back(pDesc);
 			}
 		}
 		// No support for arrays of constant buffers to be used as root descriptors as this might bloat the root signature size
@@ -2446,23 +2438,11 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				pDesc->mDesc.type = DESCRIPTOR_TYPE_ROOT_CONSTANT;
 				pDesc->mDesc.size = constantSizes[i] / sizeof(uint32_t);
 			}
-			else
+			else if (name.find("rootcbv", 0) != eastl::string::npos)
 			{
-				// By default DESCRIPTOR_TYPE_UNIFORM_BUFFER maps to D3D12_ROOT_PARAMETER_TYPE_CBV
-				// But since the size of root descriptors is 2 DWORDS, some of these uniform buffers might get placed in descriptor tables
-				// if the size of the root signature goes over the max recommended size on the specific hardware
-				// TODO
-				//layouts[setIndex].mConstantParams.emplace_back(pDesc);
+				pDesc->mIndexInParent = -1;
 			}
 		}
-		else
-		{
-			// TODO
-			//layouts[setIndex].mCbvSrvUavTable.emplace_back (pDesc);
-		}
-
-		// TODO
-		//layouts[setIndex].mDescriptorIndexMap[pDesc] = i;
 	}
 
 	pRootSignature->mStaticSamplerCount = (uint32_t)staticSamplers.size();
@@ -2855,25 +2835,290 @@ void removeRasterizerState(RasterizerState* pRasterizerState)
 }
 
 /************************************************************************/
-// Descriptor Binder Implementation
+// Descriptor Set Implementation
 /************************************************************************/
-typedef struct DescriptorBinder
+const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName)
 {
-	DescriptorBinderDesc mDesc;
-} DescriptorBinder;
-
-void addDescriptorBinder(Renderer* pRenderer, uint32_t gpuIndex, uint32_t descCount, const DescriptorBinderDesc* pDescs, DescriptorBinder** ppDescriptorBinder)
-{
-	DescriptorBinder* pDescriptorBinder = (DescriptorBinder*)conf_calloc(1, sizeof(*pDescriptorBinder));
-	*ppDescriptorBinder = pDescriptorBinder;
+	using DescriptorNameToIndexMap = eastl::string_hash_map<uint32_t>;
+	DescriptorNameToIndexMap::const_iterator it = pRootSignature->pDescriptorNameToIndexMap.find(pResName);
+	if (it != pRootSignature->pDescriptorNameToIndexMap.end())
+	{
+		return &pRootSignature->pDescriptors[it->second];
+	}
+	else
+	{
+		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
+		return NULL;
+	}
 }
 
-void removeDescriptorBinder(Renderer* pRenderer, DescriptorBinder* pDescriptorBinder)
+typedef struct DescriptorSet
 {
-	UNREF_PARAM(pRenderer);
-	SAFE_FREE(pDescriptorBinder);
+	typedef struct CBV
+	{
+		ID3D11Buffer* pHandle;
+		uint32_t      mOffset;
+		uint32_t      mSize;
+		ShaderStage   mStage;
+		uint32_t      mBinding;
+	} CBV;
+
+	typedef struct DescriptorHandle
+	{
+		void*       pHandle;
+		ShaderStage mStage;
+		uint32_t    mBinding;
+	} DescriptorHandle;
+
+	eastl::unordered_map<uint32_t, DescriptorHandle>*    pSRVs;
+	eastl::unordered_map<uint32_t, DescriptorHandle>*    pUAVs;
+	eastl::unordered_map<uint32_t, CBV>*                 pCBVs;
+	eastl::vector<CBV>*                                  pDynamicCBVs;
+	uint32_t*                                            pDynamicCBVsPrevCount;
+	eastl::unordered_map<uint32_t, DescriptorHandle>*    pSamplers;
+	const RootSignature*                                 pRootSignature;
+	uint16_t                                             mMaxSets;
+} DescriptorSet;
+
+void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
+{
+	ASSERT(pRenderer);
+	ASSERT(pDesc);
+	ASSERT(ppDescriptorSet);
+
+	DescriptorSet* pDescriptorSet = (DescriptorSet*)conf_calloc(1, sizeof(*pDescriptorSet));
+	ASSERT(pDescriptorSet);
+
+	const RootSignature* pRootSignature = pDesc->pRootSignature;
+
+	pDescriptorSet->mMaxSets = pDesc->mMaxSets;
+	pDescriptorSet->pRootSignature = pRootSignature;
+
+	pDescriptorSet->pSRVs = (decltype(pDescriptorSet->pSRVs))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pSRVs));
+	pDescriptorSet->pUAVs = (decltype(pDescriptorSet->pUAVs))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pUAVs));
+	pDescriptorSet->pCBVs = (decltype(pDescriptorSet->pCBVs))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pCBVs));
+	pDescriptorSet->pDynamicCBVs = (decltype(pDescriptorSet->pDynamicCBVs))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pDynamicCBVs));
+	pDescriptorSet->pDynamicCBVsPrevCount = (decltype(pDescriptorSet->pDynamicCBVsPrevCount))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pDynamicCBVsPrevCount));
+	pDescriptorSet->pSamplers = (decltype(pDescriptorSet->pSamplers))conf_calloc(pDesc->mMaxSets, sizeof(*pDescriptorSet->pSamplers));
+	for (uint32_t i = 0; i < pDesc->mMaxSets; ++i)
+	{
+		conf_placement_new<eastl::unordered_map<uint32_t, DescriptorSet::DescriptorHandle> >(pDescriptorSet->pSRVs + i);
+		conf_placement_new<eastl::unordered_map<uint32_t, DescriptorSet::DescriptorHandle> >(pDescriptorSet->pUAVs + i);
+		conf_placement_new<eastl::unordered_map<uint32_t, DescriptorSet::CBV> >(pDescriptorSet->pCBVs + i);
+		conf_placement_new<eastl::vector<DescriptorSet::CBV> >(pDescriptorSet->pDynamicCBVs + i);
+		conf_placement_new<eastl::unordered_map<uint32_t, DescriptorSet::DescriptorHandle> >(pDescriptorSet->pSamplers + i);
+	}
+
+	*ppDescriptorSet = pDescriptorSet;
 }
 
+void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
+{
+	for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
+	{
+		pDescriptorSet->pSRVs[i].~hash_map();
+		pDescriptorSet->pUAVs[i].~hash_map();
+		pDescriptorSet->pCBVs[i].~hash_map();
+		pDescriptorSet->pSamplers[i].~hash_map();
+		pDescriptorSet->pDynamicCBVs[i].~vector();
+	}
+
+	SAFE_FREE(pDescriptorSet->pSRVs);
+	SAFE_FREE(pDescriptorSet->pUAVs);
+	SAFE_FREE(pDescriptorSet->pCBVs);
+	SAFE_FREE(pDescriptorSet->pSamplers);
+	SAFE_FREE(pDescriptorSet->pDynamicCBVs);
+	SAFE_FREE(pDescriptorSet->pDynamicCBVsPrevCount);
+	SAFE_FREE(pDescriptorSet);
+}
+
+void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams)
+{
+#ifdef _DEBUG
+#define VALIDATE_DESCRIPTOR(descriptor,...)																\
+	if (!(descriptor))																					\
+	{																									\
+		eastl::string msg = __FUNCTION__ + eastl::string(" : ") + eastl::string().sprintf(__VA_ARGS__);	\
+		LOGF(LogLevel::eERROR, msg.c_str());															\
+		_FailedAssert(__FILE__, __LINE__, msg.c_str());													\
+		continue;																						\
+	}
+#else
+#define VALIDATE_DESCRIPTOR(descriptor,...)
+#endif
+
+	ASSERT(pRenderer);
+	ASSERT(pDescriptorSet);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		uint32_t paramIndex = pParams->mIndex;
+		const DescriptorData* pParam = pParams + i;
+		const DescriptorInfo* pDesc = (paramIndex != -1) ? (pRootSignature->pDescriptors + paramIndex) : get_descriptor(pRootSignature, pParam->pName);
+		paramIndex = (uint32_t)(pDesc - pRootSignature->pDescriptors);
+		const DescriptorType type = pDesc->mDesc.type;
+		const uint32_t arrayCount = max(1U, pParam->mCount);
+
+		switch (type)
+		{
+		case DESCRIPTOR_TYPE_SAMPLER:
+		{
+			// Index is invalid when descriptor is a static sampler
+			VALIDATE_DESCRIPTOR(pDesc->mIndexInParent != -1,
+				"Trying to update a static sampler (%s). All static samplers must be set in addRootSignature and cannot be updated later",
+				pDesc->mDesc.name);
+
+			VALIDATE_DESCRIPTOR(pParam->ppSamplers, "NULL Sampler (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppSamplers[arr], "NULL Sampler (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pDescriptorSet->pSamplers[index][paramIndex] =(DescriptorSet::DescriptorHandle
+					{
+						pParam->ppSamplers[arr]->pSamplerState,
+						pDesc->mDesc.used_stages,
+						pDesc->mDesc.reg + arr
+					});
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_TEXTURE:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL Texture (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL Texture (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pDescriptorSet->pSRVs[index][paramIndex] = (DescriptorSet::DescriptorHandle
+					{
+						pParam->ppTextures[arr]->pDxSRVDescriptor,
+						pDesc->mDesc.used_stages,
+						pDesc->mDesc.reg + arr
+					});
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_RW_TEXTURE:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL RW Texture (%s)", pDesc->mDesc.name);
+			const uint32_t mipSlice = pParam->mUAVMipSlice;
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL RW Texture (%s [%u] )", pDesc->mDesc.name, arr);
+				VALIDATE_DESCRIPTOR(mipSlice < pParam->ppTextures[arr]->mDesc.mMipLevels, "Descriptor : (%s [%u] ) Mip Slice (%u) exceeds mip levels (%u)",
+					pDesc->mDesc.name, arr, mipSlice, pParam->ppTextures[arr]->mDesc.mMipLevels);
+
+				pDescriptorSet->pUAVs[index][paramIndex] = (DescriptorSet::DescriptorHandle
+					{
+						pParam->ppTextures[arr]->pDxUAVDescriptors[pParam->mUAVMipSlice],
+						pDesc->mDesc.used_stages,
+						pDesc->mDesc.reg + arr
+					});
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_BUFFER:
+		case DESCRIPTOR_TYPE_BUFFER_RAW:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Buffer (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pDescriptorSet->pSRVs[index][paramIndex] = (DescriptorSet::DescriptorHandle
+					{
+						pParam->ppBuffers[arr]->pDxSrvHandle,
+						pDesc->mDesc.used_stages,
+						pDesc->mDesc.reg + arr
+					});
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_RW_BUFFER:
+		case DESCRIPTOR_TYPE_RW_BUFFER_RAW:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Buffer (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+
+				pDescriptorSet->pUAVs[index][paramIndex] = (DescriptorSet::DescriptorHandle
+					{
+						pParam->ppBuffers[arr]->pDxUavHandle,
+						pDesc->mDesc.used_stages,
+						pDesc->mDesc.reg + arr
+					});
+			}
+			break;
+		}
+		case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+		{
+			VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Uniform Buffer (%s)", pDesc->mDesc.name);
+
+			if (pDesc->mIndexInParent == -1)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers[0], "NULL Uniform Buffer (%s [%u] )", pDesc->mDesc.name, 0);
+				VALIDATE_DESCRIPTOR(arrayCount == 1, "Descriptor (%s) : RootCBV does not support arrays", pDesc->mDesc.name);
+				VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) : Must provide pSizes for RootCBV", pDesc->mDesc.name);
+				VALIDATE_DESCRIPTOR(pParam->pSizes[0] > 0, "Descriptor (%s) - pSizes[%u] is zero", pDesc->mDesc.name, 0);
+				VALIDATE_DESCRIPTOR(pParam->pSizes[0] <= 65536,
+					"Descriptor (%s) - pSizes[%u] is %ull which exceeds max size %u", pDesc->mDesc.name, 0,
+					pParam->pSizes[0],
+					65536);
+
+				uint32_t offset = pParam->pOffsets ? (uint32_t)pParam->pOffsets[0] : 0;
+				uint32_t size = (uint32_t)pParam->pSizes[0];
+				DescriptorSet::CBV cbv =
+				{
+					pParam->ppBuffers[0]->pDxResource,
+					offset,
+					size,
+					pDesc->mDesc.used_stages,
+					pDesc->mDesc.reg
+				};
+
+				pDescriptorSet->pDynamicCBVs[index].emplace_back(cbv);
+			}
+			else
+			{
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Uniform Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+					if (pParam->pOffsets || pParam->pSizes)
+					{
+						VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) - pSizes must be provided with pOffsets", pDesc->mDesc.name);
+						VALIDATE_DESCRIPTOR(pParam->pSizes[arr] > 0, "Descriptor (%s) - pSizes[%u] is zero", pDesc->mDesc.name, arr);
+						VALIDATE_DESCRIPTOR(pParam->pSizes[arr] <= 65536,
+							"Descriptor (%s) - pSizes[%u] is %ull which exceeds max size %u", pDesc->mDesc.name, arr,
+							pParam->pSizes[arr],
+							65536);
+					}
+
+					pDescriptorSet->pCBVs[index][paramIndex] = (DescriptorSet::CBV
+						{
+							pParam->ppBuffers[arr]->pDxResource,
+							pParam->pOffsets ? (uint32_t)pParam->pOffsets[i] : 0U,
+							pParam->pSizes ? (uint32_t)pParam->pSizes[i] : 0U,
+							pDesc->mDesc.used_stages,
+							pDesc->mDesc.reg + arr,
+						});
+				}
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
 /************************************************************************/
 // Command buffer Functions
 /************************************************************************/
@@ -2887,9 +3132,7 @@ void beginCmd(Cmd* pCmd)
 	else
 		gCachedCmds[pCmd];    // create a new cached cmd list
 
-	pCmd->mDescriptorStructPoolOffset = 0;
-	pCmd->mDescriptorNamePoolOffset = 0;
-	pCmd->mDescriptorResourcePoolOffset = 0;
+	pCmd->mDescriptorCacheOffset = 0;
 }
 
 void endCmd(Cmd* pCmd)
@@ -3027,25 +3270,54 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 	cachedCmdsIter->second.push_back(cmd);
 }
 
-const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName, uint32_t* pIndex)
-{
-	using DescriptorNameToIndexMap = eastl::string_hash_map<uint32_t>;
-	DescriptorNameToIndexMap::const_iterator it = pRootSignature->pDescriptorNameToIndexMap.find(pResName);
-	if (it != pRootSignature->pDescriptorNameToIndexMap.end())
-	{
-		*pIndex = it->second;
-		return &pRootSignature->pDescriptors[it->second];
-	}
-	else
-	{
-		LOGF(LogLevel::eERROR, "Invalid descriptor param (%s)", pResName);
-		return NULL;
-	}
-}
-
-void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSignature* pRootSignature, uint32_t numDescriptors, DescriptorData* pDescParams)
+void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
 {
 	ASSERT(pCmd);
+	ASSERT(pDescriptorSet);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	// Ensure beingCmd was actually called
+	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
+	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	if (cachedCmdsIter == gCachedCmds.end())
+	{
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		return;
+	}
+
+	DECLARE_ZERO(CachedCmd, cmd);
+	cmd.pCmd = pCmd;
+	cmd.sType = CMD_TYPE_cmdBindDescriptorSet;
+	cmd.mBindDescriptorSetCmd.pDescriptorSet = pDescriptorSet;
+	cmd.mBindDescriptorSetCmd.mIndex = index;
+
+	if (pDescriptorSet->pDynamicCBVs[index].size() != pDescriptorSet->pDynamicCBVsPrevCount[index])
+	{
+		// Create descriptor pool for storing the descriptor data
+		if (!pCmd->pDescriptorCache)
+		{
+			pCmd->pDescriptorCache = (uint8_t*)conf_calloc(1024, sizeof(DescriptorSet::CBV));
+		}
+		cmd.mBindDescriptorSetCmd.mDynamicCBVCount = (uint32_t)(pDescriptorSet->pDynamicCBVs[index].size() - pDescriptorSet->pDynamicCBVsPrevCount[index]);
+		cmd.mBindDescriptorSetCmd.pDynamicCBVs = (DescriptorSet::CBV*)(pCmd->pDescriptorCache + pCmd->mDescriptorCacheOffset);
+		pCmd->mDescriptorCacheOffset += sizeof(DescriptorSet::CBV) * cmd.mBindDescriptorSetCmd.mDynamicCBVCount;
+		for (uint32_t i = 0; i < cmd.mBindDescriptorSetCmd.mDynamicCBVCount; ++i)
+		{
+			DescriptorSet::CBV* pCbv = (DescriptorSet::CBV*)cmd.mBindDescriptorSetCmd.pDynamicCBVs + i;
+			*pCbv = pDescriptorSet->pDynamicCBVs[index][pDescriptorSet->pDynamicCBVsPrevCount[index] + i];
+		}
+
+		pDescriptorSet->pDynamicCBVsPrevCount[index] = (uint32_t)pDescriptorSet->pDynamicCBVs[index].size();
+	}
+
+	cachedCmdsIter->second.push_back(cmd);
+}
+
+void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pName);
+	ASSERT(pConstants);
 	ASSERT(pRootSignature);
 
 	// Ensure beingCmd was actually called
@@ -3057,75 +3329,47 @@ void cmdBindDescriptors(Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSign
 		return;
 	}
 
-	// Create descriptor pool for storing the descriptor data
-	if (!pCmd->pDescriptorNamePool)
-	{
-		pCmd->pDescriptorNamePool = (uint8_t*)conf_calloc(1024 * 32, sizeof(uint8_t));
-		pCmd->pDescriptorStructPool = (uint8_t*)conf_calloc(1024 * 32, sizeof(uint8_t));
-		pCmd->pDescriptorResourcesPool = (uint8_t*)conf_calloc(1024 * 32, sizeof(uint8_t));
-	}
-
-	DescriptorData* pBegin = NULL;
-
-	for (uint32_t i = 0; i < numDescriptors; ++i)
-	{
-		uint8_t*              pPool = pCmd->pDescriptorStructPool + pCmd->mDescriptorStructPoolOffset;
-		const DescriptorData* pSrc = &pDescParams[i];
-		DescriptorData*       pDst = (DescriptorData*)pPool;
-		uint32_t              index = 0;
-		const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pSrc->pName, &index);
-    if (!pDesc)
-      continue;
-
-		if (i == 0)
-			pBegin = pDst;
-
-		memcpy(pDst, pSrc, sizeof(DescriptorData));
-		pDst->mCount = max(1U, pDst->mCount);
-		pCmd->mDescriptorStructPoolOffset += sizeof(DescriptorData);
-
-		pDst->pName = (char*)(pCmd->pDescriptorNamePool + pCmd->mDescriptorNamePoolOffset);
-		memcpy((void*)pDst->pName, pSrc->pName, strlen(pSrc->pName));
-		((char*)pDst->pName)[strlen(pSrc->pName)] = '\0';
-		pCmd->mDescriptorNamePoolOffset += strlen(pSrc->pName) + 1;
-
-		const uint32_t count = max(1U, pSrc->mCount);
-
-		if (pDesc->mDesc.type == DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-		{
-			if (pSrc->pOffsets)
-			{
-				pDst->pOffsets = (uint64_t*)(pCmd->pDescriptorResourcesPool + pCmd->mDescriptorResourcePoolOffset);
-				memcpy(pDst->pOffsets, pSrc->pOffsets, count * sizeof(uint64_t));
-				pCmd->mDescriptorResourcePoolOffset += round_up_64(count * sizeof(uint64_t), 16);
-			}
-			if (pSrc->pSizes)
-			{
-				pDst->pSizes = (uint64_t*)(pCmd->pDescriptorResourcesPool + pCmd->mDescriptorResourcePoolOffset);
-				memcpy(pDst->pSizes, pSrc->pSizes, count * sizeof(uint64_t));
-				pCmd->mDescriptorResourcePoolOffset += round_up_64(count * sizeof(uint64_t), 16);
-			}
-		}
-		if (pDesc && pDesc->mDesc.type == DESCRIPTOR_TYPE_ROOT_CONSTANT)
-		{
-			pDst->pRootConstant = pCmd->pDescriptorResourcesPool + pCmd->mDescriptorResourcePoolOffset;
-			memcpy(pDst->pRootConstant, pSrc->pRootConstant, pDesc->mDesc.size * sizeof(uint32_t));
-			pCmd->mDescriptorResourcePoolOffset += round_up_64(pDesc->mDesc.size * sizeof(uint32_t), 16);
-		}
-		else
-		{
-			pDst->ppTextures = (Texture**)(pCmd->pDescriptorResourcesPool + pCmd->mDescriptorResourcePoolOffset);
-			memcpy(pDst->ppTextures, pSrc->ppTextures, count * sizeof(Texture*));
-			pCmd->mDescriptorResourcePoolOffset += round_up_64(count * sizeof(Texture*), 16);
-		}
-	}
+	const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pName);
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
 
 	DECLARE_ZERO(CachedCmd, cmd);
 	cmd.pCmd = pCmd;
-	cmd.sType = CMD_TYPE_cmdBindDescriptors;
-	cmd.mBindDescriptorsCmd.pRootSignature = pRootSignature;
-	cmd.mBindDescriptorsCmd.numDescriptors = numDescriptors;
-	cmd.mBindDescriptorsCmd.pDescParams = pBegin;
+	cmd.sType = CMD_TYPE_cmdBindPushConstants;
+	memcpy(cmd.mBindPushConstantsCmd.mPushConstant, pConstants, pDesc->mDesc.size * sizeof(uint32_t));
+	cmd.mBindPushConstantsCmd.mSize = (uint8_t)pDesc->mDesc.size * sizeof(uint32_t);
+	cmd.mBindPushConstantsCmd.mBinding = pDesc->mDesc.reg;
+	cmd.mBindPushConstantsCmd.mStage = pDesc->mDesc.used_stages;
+	cachedCmdsIter->second.push_back(cmd);
+}
+
+void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pConstants);
+	ASSERT(pRootSignature);
+	ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
+
+	// Ensure beingCmd was actually called
+	CachedCmds::iterator cachedCmdsIter = gCachedCmds.find(pCmd);
+	ASSERT(cachedCmdsIter != gCachedCmds.end());
+	if (cachedCmdsIter == gCachedCmds.end())
+	{
+		LOGF(LogLevel::eERROR, "beginCmd was never called for that specific Cmd buffer!");
+		return;
+	}
+
+	const DescriptorInfo* pDesc = pRootSignature->pDescriptors + paramIndex;
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
+
+	DECLARE_ZERO(CachedCmd, cmd);
+	cmd.pCmd = pCmd;
+	cmd.sType = CMD_TYPE_cmdBindPushConstants;
+	memcpy(cmd.mBindPushConstantsCmd.mPushConstant, pConstants, pDesc->mDesc.size * sizeof(uint32_t));
+	cmd.mBindPushConstantsCmd.mSize = (uint8_t)pDesc->mDesc.size * sizeof(uint32_t);
+	cmd.mBindPushConstantsCmd.mBinding = pDesc->mDesc.reg;
+	cmd.mBindPushConstantsCmd.mStage = pDesc->mDesc.used_stages;
 	cachedCmdsIter->second.push_back(cmd);
 }
 
@@ -3342,6 +3586,28 @@ void set_constant_buffers(ID3D11DeviceContext* pContext, ShaderStage used_stages
 		pContext->CSSetConstantBuffers(reg, count, pCBVs);
 }
 
+void set_dynamic_constant_buffer(Cmd* pCmd, ID3D11DeviceContext* pContext, const DescriptorSet::CBV* pHandle)
+{
+	if (!pCmd->pTransientConstantBuffer)
+	{
+		BufferDesc bufDesc = {};
+		bufDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		bufDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
+		// Max Constant Buffer Size
+		bufDesc.mSize = 65536;
+		addBuffer(pCmd->pRenderer, &bufDesc, &pCmd->pTransientConstantBuffer);
+	}
+
+	D3D11_MAPPED_SUBRESOURCE read = {};
+	pContext->Map(pHandle->pHandle, 0, D3D11_MAP_READ, 0, &read);
+	D3D11_MAPPED_SUBRESOURCE sub = {};
+	pContext->Map(pCmd->pTransientConstantBuffer->pDxResource, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
+	memcpy(sub.pData, (uint8_t*)read.pData + pHandle->mOffset, pHandle->mSize);
+	pContext->Unmap(pCmd->pTransientConstantBuffer->pDxResource, 0);
+	pContext->Unmap(pHandle->pHandle, 0);
+	set_constant_buffers(pContext, pHandle->mStage, pHandle->mBinding, 1, &pCmd->pTransientConstantBuffer->pDxResource);
+}
+
 void set_shader_resources(
 	ID3D11DeviceContext* pContext, ShaderStage used_stages, uint32_t reg, uint32_t count, ID3D11ShaderResourceView** pSRVs)
 {
@@ -3474,13 +3740,15 @@ void queueSubmit(
 					}
 					break;
 				}
-				case CMD_TYPE_cmdBindDescriptors:
+				case CMD_TYPE_cmdBindDescriptorSet:
 				{
 					/************************************************************************/
 					// Bind static samplers
 					/************************************************************************/
-					const BindDescriptorsCmd& bind = cmd.mBindDescriptorsCmd;
-					const RootSignature*      pRootSignature = bind.pRootSignature;
+					const BindDescriptorsCmd& bind = cmd.mBindDescriptorSetCmd;
+					DescriptorSet* pDescriptorSet = bind.pDescriptorSet;
+					const uint32_t index = bind.mIndex;
+					const RootSignature*      pRootSignature = pDescriptorSet->pRootSignature;
 					for (uint32_t i = 0; i < pRootSignature->mStaticSamplerCount; ++i)
 					{
 						set_samplers(
@@ -3490,131 +3758,63 @@ void queueSubmit(
 					/************************************************************************/
 					// Bind regular shader variables
 					/************************************************************************/
-					for (uint32_t i = 0; i < bind.numDescriptors; ++i)
+					for (eastl::pair<uint32_t, DescriptorSet::DescriptorHandle> handle : pDescriptorSet->pSRVs[index])
 					{
-						const DescriptorData* pParam = &bind.pDescParams[i];
-
-						ASSERT(pParam);
-						if (!pParam->pName)
+						DescriptorSet::DescriptorHandle* pHandle = &handle.second;
+						set_shader_resources(pContext, pHandle->mStage, pHandle->mBinding, 1, (ID3D11ShaderResourceView**)&pHandle->pHandle);
+					}
+					for (eastl::pair<uint32_t, DescriptorSet::DescriptorHandle> handle : pDescriptorSet->pUAVs[index])
+					{
+						DescriptorSet::DescriptorHandle* pHandle = &handle.second;
+						pContext->CSSetUnorderedAccessViews(pHandle->mBinding, 1, (ID3D11UnorderedAccessView**)&pHandle->pHandle, NULL);
+					}
+					for (eastl::pair<uint32_t, DescriptorSet::CBV> handle : pDescriptorSet->pCBVs[index])
+					{
+						DescriptorSet::CBV* pHandle = &handle.second;
+						if (pHandle->mOffset || pHandle->mSize)
 						{
-							LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
-							return;
+							set_dynamic_constant_buffer(pCmd, pContext, pHandle);
 						}
-
-						uint32_t              descIndex = ~0u;
-						const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pParam->pName, &descIndex);
-						if (!pDesc)
-							continue;
-						const ShaderResource* pRes = &pDesc->mDesc;
-						const DescriptorType  type = pRes->type;
-						switch (type)
+						else
 						{
-							case DESCRIPTOR_TYPE_BUFFER:
-							{
-								ID3D11ShaderResourceView** pSRVs =
-									(ID3D11ShaderResourceView**)alloca(pParam->mCount * sizeof(ID3D11ShaderResourceView*));
-								for (uint32_t i = 0; i < pParam->mCount; ++i)
-									pSRVs[i] = pParam->ppBuffers[i]->pDxSrvHandle;
-								set_shader_resources(pContext, pRes->used_stages, pRes->reg, pParam->mCount, pSRVs);
-								break;
-							}
-							case DESCRIPTOR_TYPE_RW_BUFFER:
-							{
-								ID3D11UnorderedAccessView** pUAVs =
-									(ID3D11UnorderedAccessView**)alloca(pParam->mCount * sizeof(ID3D11UnorderedAccessView*));
-								for (uint32_t i = 0; i < pParam->mCount; ++i)
-									pUAVs[i] = pParam->ppBuffers[i]->pDxUavHandle;
-
-								ASSERT(pRes->used_stages == SHADER_STAGE_COMP);
-								pContext->CSSetUnorderedAccessViews(pRes->reg, pParam->mCount, pUAVs, NULL);
-								break;
-							}
-							case DESCRIPTOR_TYPE_ROOT_CONSTANT:
-							{
-								if (!pCmd->pRootConstantBuffer)
-								{
-									BufferDesc bufDesc = {};
-									bufDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-									bufDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-									bufDesc.mSize = 256;
-									addBuffer(pCmd->pRenderer, &bufDesc, &pCmd->pRootConstantBuffer);
-								}
-
-								D3D11_MAPPED_SUBRESOURCE sub = {};
-								pContext->Map(pCmd->pRootConstantBuffer->pDxResource, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
-								memcpy(sub.pData, pParam->pRootConstant, pDesc->mDesc.size * sizeof(uint32_t));
-								pContext->Unmap(pCmd->pRootConstantBuffer->pDxResource, 0);
-								set_constant_buffers(pContext, pRes->used_stages, pRes->reg, 1, &pCmd->pRootConstantBuffer->pDxResource);
-								break;
-							}
-							case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-							{
-								if (pParam->pOffsets || pParam->pSizes)
-								{
-									if (!pCmd->pTransientConstantBuffer)
-									{
-										BufferDesc bufDesc = {};
-										bufDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-										bufDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-										// Max Constant Buffer Size
-										bufDesc.mSize = 65536;
-										addBuffer(pCmd->pRenderer, &bufDesc, &pCmd->pTransientConstantBuffer);
-									}
-									for (uint32_t i = 0; i < pParam->mCount; ++i)
-									{
-										D3D11_MAPPED_SUBRESOURCE read = {};
-										pContext->Map(pParam->ppBuffers[i]->pDxResource, 0, D3D11_MAP_READ, 0, &read);
-										D3D11_MAPPED_SUBRESOURCE sub = {};
-										pContext->Map(pCmd->pTransientConstantBuffer->pDxResource, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
-										memcpy(sub.pData, (uint8_t*)read.pData + pParam->pOffsets[i], pRes->constant_size);
-										pContext->Unmap(pCmd->pTransientConstantBuffer->pDxResource, 0);
-										pContext->Unmap(pParam->ppBuffers[i]->pDxResource, 0);
-										set_constant_buffers(
-											pContext, pRes->used_stages, pRes->reg + i, 1, &pCmd->pTransientConstantBuffer->pDxResource);
-									}
-								}
-								else
-								{
-									ID3D11Buffer** pCBVs = (ID3D11Buffer**)alloca(pParam->mCount * sizeof(ID3D11Buffer*));
-									for (uint32_t i = 0; i < pParam->mCount; ++i)
-										pCBVs[i] = pParam->ppBuffers[i]->pDxResource;
-									set_constant_buffers(pContext, pRes->used_stages, pRes->reg, pParam->mCount, pCBVs);
-								}
-								break;
-							}
-							case DESCRIPTOR_TYPE_TEXTURE:
-							{
-								ID3D11ShaderResourceView** pSRVs =
-									(ID3D11ShaderResourceView**)alloca(pParam->mCount * sizeof(ID3D11ShaderResourceView*));
-								for (uint32_t i = 0; i < pParam->mCount; ++i)
-									pSRVs[i] = pParam->ppTextures[i]->pDxSRVDescriptor;
-								set_shader_resources(pContext, pRes->used_stages, pRes->reg, pParam->mCount, pSRVs);
-								break;
-							}
-							case DESCRIPTOR_TYPE_RW_TEXTURE:
-							{
-								ID3D11UnorderedAccessView** pUAVs =
-									(ID3D11UnorderedAccessView**)alloca(pParam->mCount * sizeof(ID3D11UnorderedAccessView*));
-								for (uint32_t i = 0; i < pParam->mCount; ++i)
-									pUAVs[i] = pParam->ppTextures[i]->pDxUAVDescriptors[pParam->mUAVMipSlice];
-
-								ASSERT(pRes->used_stages == SHADER_STAGE_COMP);
-								pContext->CSSetUnorderedAccessViews(pRes->reg, pParam->mCount, pUAVs, NULL);
-								break;
-							}
-							case DESCRIPTOR_TYPE_SAMPLER:
-							{
-								ID3D11SamplerState** pSamplers = (ID3D11SamplerState**)alloca(pParam->mCount * sizeof(ID3D11SamplerState*));
-								for (uint32_t i = 0; i < pParam->mCount; ++i)
-									pSamplers[i] = pParam->ppSamplers[i]->pSamplerState;
-								set_samplers(pContext, pRes->used_stages, pRes->reg, pParam->mCount, pSamplers);
-								break;
-							}
-							default: break;
+							set_constant_buffers(pContext, pHandle->mStage, pHandle->mBinding, 1, (ID3D11Buffer**)&pHandle->pHandle);
 						}
 					}
+					for (uint32_t i = 0; i < bind.mDynamicCBVCount; ++i)
+					{
+						DescriptorSet::CBV* pHandle = (DescriptorSet::CBV*)bind.pDynamicCBVs + i;
+						set_dynamic_constant_buffer(pCmd, pContext, pHandle);
+					}
+					for (eastl::pair<uint32_t, DescriptorSet::DescriptorHandle> handle : pDescriptorSet->pSamplers[index])
+					{
+						DescriptorSet::DescriptorHandle* pHandle = &handle.second;
+						set_samplers(pContext, pHandle->mStage, pHandle->mBinding, 1, (ID3D11SamplerState**)&pHandle->pHandle);
+					}
+
+					pDescriptorSet->pDynamicCBVs[index].clear();
+					pDescriptorSet->pDynamicCBVsPrevCount[index] = 0;
 					/************************************************************************/
 					/************************************************************************/
+					break;
+				}
+				case CMD_TYPE_cmdBindPushConstants:
+				{
+					const BindPushConstantsCmd& bind = cmd.mBindPushConstantsCmd;
+
+					if (!pCmd->pRootConstantBuffer)
+					{
+						BufferDesc bufDesc = {};
+						bufDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+						bufDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
+						bufDesc.mSize = 256;
+						addBuffer(pCmd->pRenderer, &bufDesc, &pCmd->pRootConstantBuffer);
+					}
+
+					D3D11_MAPPED_SUBRESOURCE sub = {};
+					pContext->Map(pCmd->pRootConstantBuffer->pDxResource, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
+					memcpy(sub.pData, bind.mPushConstant, bind.mSize);
+					pContext->Unmap(pCmd->pRootConstantBuffer->pDxResource, 0);
+					set_constant_buffers(pContext, (ShaderStage)bind.mStage, bind.mBinding, 1, &pCmd->pRootConstantBuffer->pDxResource);
 					break;
 				}
 				case CMD_TYPE_cmdBindIndexBuffer:

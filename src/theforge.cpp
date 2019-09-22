@@ -7,16 +7,24 @@
 static void API_CHECK();
 
 // these are hidden but we want them
-extern void addBuffer(Renderer* pRenderer, const BufferDesc* desc, Buffer** pp_buffer);
-extern void removeBuffer(Renderer* pRenderer, Buffer* p_buffer);
-extern void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** pp_texture);
-extern void removeTexture(Renderer* pRenderer, Texture* p_texture);
+extern void addBuffer(Renderer *pRenderer, const BufferDesc *desc, Buffer **pp_buffer);
+extern void removeBuffer(Renderer *pRenderer, Buffer *p_buffer);
+extern void addTexture(Renderer *pRenderer, const TextureDesc *pDesc, Texture **pp_texture);
+extern void removeTexture(Renderer *pRenderer, Texture *p_texture);
 
-extern void mapBuffer(Renderer* pRenderer, Buffer* pBuffer, ReadRange* pRange);
-extern void unmapBuffer(Renderer* pRenderer, Buffer* pBuffer);
-extern void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
-extern void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
-extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer);
+extern void mapBuffer(Renderer *pRenderer, Buffer *pBuffer, ReadRange *pRange);
+extern void unmapBuffer(Renderer *pRenderer, Buffer *pBuffer);
+extern void cmdUpdateBuffer(Cmd *pCmd,
+														Buffer *pBuffer,
+														uint64_t dstOffset,
+														Buffer *pSrcBuffer,
+														uint64_t srcOffset,
+														uint64_t size);
+extern void cmdUpdateSubresource(Cmd *pCmd,
+																 Texture *pTexture,
+																 Buffer *pSrcBuffer,
+																 SubresourceDataDesc *pSubresourceDesc);
+extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer *pRenderer);
 
 #ifdef METAL
 // account for app directory
@@ -63,12 +71,12 @@ static void LogFunc(LogType type, const char *m0, const char *m1) {
 static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage) {
 #if defined(METAL)
 	switch (stage) {
-	case TheForge_SS_NONE: return SHADER_STAGE_NONE;
-	case TheForge_SS_VERT: return SHADER_STAGE_VERT;
-	case TheForge_SS_FRAG: return SHADER_STAGE_FRAG;
-	case TheForge_SS_COMP: return SHADER_STAGE_COMP;
+		case TheForge_SS_NONE: return SHADER_STAGE_NONE;
+		case TheForge_SS_VERT: return SHADER_STAGE_VERT;
+		case TheForge_SS_FRAG: return SHADER_STAGE_FRAG;
+		case TheForge_SS_COMP: return SHADER_STAGE_COMP;
 		default: LOGERROR("Shader stage is not supported on Metal backend");
-		return SHADER_STAGE_NONE;
+			return SHADER_STAGE_NONE;
 	}
 #else
 	switch(stage) {
@@ -90,12 +98,15 @@ static ShaderStage TheForge_ShaderStageToShaderStage(TheForge_ShaderStage stage)
 static ShaderStage TheForge_ShaderStageFlagsToShaderStage(uint32_t flags) {
 	uint32_t stage = SHADER_STAGE_NONE;
 #if defined(METAL)
-	if (flags & TheForge_SS_VERT)
+	if (flags & TheForge_SS_VERT) {
 		stage |= SHADER_STAGE_VERT;
-	if (flags & TheForge_SS_FRAG)
+	}
+	if (flags & TheForge_SS_FRAG) {
 		stage |= SHADER_STAGE_FRAG;
-	if (flags & TheForge_SS_COMP)
+	}
+	if (flags & TheForge_SS_COMP) {
 		stage |= SHADER_STAGE_COMP;
+	}
 #else
 	if(flags & TheForge_SS_VERT) stage |= SHADER_STAGE_VERT;
 	if(flags & TheForge_SS_FRAG) stage |= SHADER_STAGE_FRAG;
@@ -140,14 +151,14 @@ static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc co
 
 #ifdef METAL
 		switch (i) {
-		case 0: srcStage = &src->stages[0];
-			break;
-		case 1: srcStage = &src->stages[1];
-			break;
-		case 2: srcStage = &src->stages[5];
-			break;
+			case 0: srcStage = &src->stages[0];
+				break;
+			case 1: srcStage = &src->stages[1];
+				break;
+			case 2: srcStage = &src->stages[5];
+				break;
 			default: LOGERROR("Shader stage is not supported on Metal backend");
-			return;
+				return;
 		}
 #else
 		srcStage = &src->stages[i];
@@ -169,7 +180,7 @@ AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(
 
 	API_CHECK(); // windows static_assert(offsetof) is broken so do it at runtime there
 
-	RendererDesc desc {
+	RendererDesc desc{
 			&LogFunc,
 			(RendererApi) 0,
 			(ShaderTarget) settings->shaderTarget,
@@ -183,16 +194,18 @@ AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(
 
 AL2O3_EXTERN_C void TheForge_RendererDestroy(TheForge_RendererHandle handle) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeRenderer(renderer);
 }
 
 AL2O3_EXTERN_C void TheForge_AddFence(TheForge_RendererHandle handle, TheForge_FenceHandle *pFence) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addFence(renderer, (Fence **) pFence);
 
@@ -200,23 +213,26 @@ AL2O3_EXTERN_C void TheForge_AddFence(TheForge_RendererHandle handle, TheForge_F
 
 AL2O3_EXTERN_C void TheForge_RemoveFence(TheForge_RendererHandle handle, TheForge_FenceHandle fence) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	removeFence(renderer, (Fence *) fence);
 
 }
 AL2O3_EXTERN_C void TheForge_AddSemaphore(TheForge_RendererHandle handle, TheForge_SemaphoreHandle *pSemaphore) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addSemaphore(renderer, (Semaphore **) pSemaphore);
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveSemaphore(TheForge_RendererHandle handle, TheForge_SemaphoreHandle semaphore) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeSemaphore(renderer, (Semaphore *) semaphore);
 }
@@ -225,8 +241,9 @@ AL2O3_EXTERN_C void TheForge_AddQueue(TheForge_RendererHandle handle,
 																			TheForge_QueueDesc *pQDesc,
 																			TheForge_QueueHandle *pQueue) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addQueue(renderer, (QueueDesc *) pQDesc, (Queue **) pQueue);
 }
@@ -240,32 +257,36 @@ AL2O3_EXTERN_C void TheForge_AddCmdPool(TheForge_RendererHandle handle,
 																				bool transient,
 																				TheForge_CmdPoolHandle *pCmdPool) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addCmdPool(renderer, (Queue *) queue, transient, (CmdPool **) pCmdPool);
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveCmdPool(TheForge_RendererHandle handle, TheForge_CmdPoolHandle cmdPool) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeCmdPool(renderer, (CmdPool *) cmdPool);
 }
 
 AL2O3_EXTERN_C void TheForge_AddCmd(TheForge_CmdPoolHandle handle, bool secondary, TheForge_CmdHandle *pCmd) {
 	auto cmdPool = (CmdPool *) handle;
-	if (!cmdPool)
+	if (!cmdPool) {
 		return;
+	}
 
 	addCmd(cmdPool, secondary, (Cmd **) pCmd);
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveCmd(TheForge_CmdPoolHandle handle, TheForge_CmdHandle cmd) {
 	auto cmdPool = (CmdPool *) handle;
-	if (!cmdPool)
+	if (!cmdPool) {
 		return;
+	}
 
 	removeCmd(cmdPool, (Cmd *) cmd);
 }
@@ -275,8 +296,9 @@ AL2O3_EXTERN_C void TheForge_AddCmd_n(TheForge_CmdPoolHandle handle,
 																			uint32_t cmdCount,
 																			TheForge_CmdHandle **ppCmds) {
 	auto cmdPool = (CmdPool *) handle;
-	if (!cmdPool)
+	if (!cmdPool) {
 		return;
+	}
 
 	addCmd_n(cmdPool, secondary, cmdCount, (Cmd ***) ppCmds);
 
@@ -284,8 +306,9 @@ AL2O3_EXTERN_C void TheForge_AddCmd_n(TheForge_CmdPoolHandle handle,
 
 AL2O3_EXTERN_C void TheForge_RemoveCmd_n(TheForge_CmdPoolHandle handle, uint32_t cmdCount, TheForge_CmdHandle *pCmds) {
 	auto cmdPool = (CmdPool *) handle;
-	if (!cmdPool)
+	if (!cmdPool) {
 		return;
+	}
 
 	removeCmd_n(cmdPool, cmdCount, (Cmd **) pCmds);
 }
@@ -294,8 +317,9 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 																						 TheForge_RenderTargetDesc const *pDesc,
 																						 TheForge_RenderTargetHandle *pRenderTarget) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	TinyImageFormat tfif = pDesc->format;
 	ClearValue cv;
@@ -326,8 +350,9 @@ AL2O3_EXTERN_C void TheForge_AddRenderTarget(TheForge_RendererHandle handle,
 AL2O3_EXTERN_C void TheForge_RemoveRenderTarget(TheForge_RendererHandle handle,
 																								TheForge_RenderTargetHandle renderTarget) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeRenderTarget(renderer, (RenderTarget *) renderTarget);
 }
@@ -336,15 +361,17 @@ AL2O3_EXTERN_C void TheForge_AddSampler(TheForge_RendererHandle handle,
 																				const TheForge_SamplerDesc *pDesc,
 																				TheForge_SamplerHandle *pSampler) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addSampler(renderer, (SamplerDesc *) pDesc, (Sampler **) pSampler);
 }
 AL2O3_EXTERN_C void TheForge_RemoveSampler(TheForge_RendererHandle handle, TheForge_SamplerHandle sampler) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeSampler(renderer, (Sampler *) sampler);
 }
@@ -353,17 +380,21 @@ AL2O3_EXTERN_C void TheForge_AddShader(TheForge_RendererHandle handle,
 																			 const TheForge_ShaderDesc *pDesc,
 																			 TheForge_ShaderHandle *pShader) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 #ifdef METAL
 	ShaderDesc desc{};
 	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
-	if (desc.mStages & SHADER_STAGE_VERT)
+	if (desc.mStages & SHADER_STAGE_VERT) {
 		TheForge_ShaderStageToShaderStage(&pDesc->vert, &desc.mVert);
-	if (desc.mStages & SHADER_STAGE_FRAG)
+	}
+	if (desc.mStages & SHADER_STAGE_FRAG) {
 		TheForge_ShaderStageToShaderStage(&pDesc->frag, &desc.mFrag);
-	if (desc.mStages & SHADER_STAGE_COMP)
+	}
+	if (desc.mStages & SHADER_STAGE_COMP) {
 		TheForge_ShaderStageToShaderStage(&pDesc->comp, &desc.mComp);
+	}
 
 	addShader(renderer, &desc, (Shader **) pShader);
 #else
@@ -375,15 +406,18 @@ AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
 																						 const TheForge_BinaryShaderDesc *pDesc,
 																						 TheForge_ShaderHandle *pShader) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	BinaryShaderDesc desc{};
 	desc.mStages = TheForge_ShaderStageFlagsToShaderStage(pDesc->stages);
-	if (desc.mStages & SHADER_STAGE_VERT)
+	if (desc.mStages & SHADER_STAGE_VERT) {
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->vert, &desc.mVert);
-	if (desc.mStages & SHADER_STAGE_FRAG)
+	}
+	if (desc.mStages & SHADER_STAGE_FRAG) {
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->frag, &desc.mFrag);
+	}
 #ifndef METAL
 	if(desc.mStages & SHADER_STAGE_GEOM)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->geom, &desc.mGeom);
@@ -392,16 +426,18 @@ AL2O3_EXTERN_C void TheForge_AddShaderBinary(TheForge_RendererHandle handle,
 	if(desc.mStages & SHADER_STAGE_DOMN)
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->domain, &desc.mDomain);
 #endif
-	if (desc.mStages & SHADER_STAGE_COMP)
+	if (desc.mStages & SHADER_STAGE_COMP) {
 		TheForge_BinaryShaderStageToBinaryShaderStage(&pDesc->comp, &desc.mComp);
+	}
 
 	addShaderBinary(renderer, &desc, (Shader **) pShader);
 }
 
 AL2O3_EXTERN_C void TheForge_RemoveShader(TheForge_RendererHandle handle, TheForge_ShaderHandle pShader) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeShader(renderer, (Shader *) pShader);
 }
@@ -410,8 +446,9 @@ AL2O3_EXTERN_C void TheForge_AddRootSignature(TheForge_RendererHandle handle,
 																							const TheForge_RootSignatureDesc *pRootDesc,
 																							TheForge_RootSignatureHandle *pRootSignature) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addRootSignature(renderer, (RootSignatureDesc *) pRootDesc, (RootSignature **) pRootSignature);
 }
@@ -419,8 +456,9 @@ AL2O3_EXTERN_C void TheForge_AddRootSignature(TheForge_RendererHandle handle,
 AL2O3_EXTERN_C void TheForge_RemoveRootSignature(TheForge_RendererHandle handle,
 																								 TheForge_RootSignatureHandle rootSignature) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeRootSignature(renderer, (RootSignature *) rootSignature);
 }
@@ -430,57 +468,36 @@ AL2O3_EXTERN_C void TheForge_AddPipeline(TheForge_RendererHandle handle,
 																				 const TheForge_PipelineDesc *pPipelineDesc,
 																				 TheForge_PipelineHandle *pPipeline) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addPipeline(renderer, (PipelineDesc *) pPipelineDesc, (Pipeline **) pPipeline);
 }
 AL2O3_EXTERN_C void TheForge_RemovePipeline(TheForge_RendererHandle handle, TheForge_PipelineHandle pipeline) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removePipeline(renderer, (Pipeline *) pipeline);
-}
-
-AL2O3_EXTERN_C void TheForge_AddDescriptorBinder(TheForge_RendererHandle handle,
-																								 uint32_t gpuIndex,
-																								 uint32_t descCount,
-																								 const TheForge_DescriptorBinderDesc *pDescs,
-																								 TheForge_DescriptorBinderHandle *pDescriptorBinder) {
-	auto renderer = (Renderer *) handle;
-	if (!renderer)
-		return;
-
-	addDescriptorBinder(renderer,
-											gpuIndex,
-											descCount,
-											(DescriptorBinderDesc *) pDescs,
-											(DescriptorBinder **) pDescriptorBinder);
-}
-
-AL2O3_EXTERN_C void TheForge_RemoveDescriptorBinder(TheForge_RendererHandle handle,
-																										TheForge_DescriptorBinderHandle descriptorBinder) {
-	auto renderer = (Renderer *) handle;
-	if (!renderer)
-		return;
-
-	removeDescriptorBinder(renderer, (DescriptorBinder *) descriptorBinder);
 }
 
 void TheForge_AddBlendState(TheForge_RendererHandle handle,
 														const TheForge_BlendStateDesc *pDesc,
 														TheForge_BlendStateHandle *pBlendState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addBlendState(renderer, (BlendStateDesc *) pDesc, (BlendState **) pBlendState);
 }
 void TheForge_RemoveBlendState(TheForge_RendererHandle handle, TheForge_BlendStateHandle blendState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	// renderer isn't currently used by TheForge?
 	removeBlendState((BlendState *) blendState);
@@ -490,15 +507,17 @@ void TheForge_AddDepthState(TheForge_RendererHandle handle,
 														const TheForge_DepthStateDesc *pDesc,
 														TheForge_DepthStateHandle *pDepthState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addDepthState(renderer, (DepthStateDesc *) pDesc, (DepthState **) pDepthState);
 }
 void TheForge_RemoveDepthState(TheForge_RendererHandle handle, TheForge_DepthStateHandle depthState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	// renderer isn't currently used by TheForge?
 	removeDepthState((DepthState *) depthState);
 }
@@ -507,19 +526,56 @@ void TheForge_AddRasterizerState(TheForge_RendererHandle handle,
 																 const TheForge_RasterizerStateDesc *pDesc,
 																 TheForge_RasterizerStateHandle *pRasterizerState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	addRasterizerState(renderer, (RasterizerStateDesc *) pDesc, (RasterizerState **) pRasterizerState);
 }
 
 void TheForge_RemoveRasterizerState(TheForge_RendererHandle handle, TheForge_RasterizerStateHandle rasterizerState) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	// renderer isn't currently used by TheForge?
 	removeRasterizerState((RasterizerState *) rasterizerState);
 }
+
+AL2O3_EXTERN_C void TheForge_AddDescriptorSet(TheForge_RendererHandle handle,
+																							TheForge_DescriptorSetDesc const *pDesc,
+																							TheForge_DescriptorSetHandle *pDescriptorSet) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer) {
+		return;
+	}
+
+	addDescriptorSet(renderer, (DescriptorSetDesc const *) pDesc, (DescriptorSet **) pDescriptorSet);
+}
+
+AL2O3_EXTERN_C void TheForge_RemoveDescriptorSet(TheForge_RendererHandle handle,
+																								 TheForge_DescriptorSetHandle descriptorSet) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer) {
+		return;
+	}
+
+	removeDescriptorSet(renderer, (DescriptorSet *) descriptorSet);
+}
+
+AL2O3_EXTERN_C void TheForge_UpdateDescriptorSet(TheForge_RendererHandle handle,
+																								 uint32_t index,
+																								 TheForge_DescriptorSetHandle descriptorSet,
+																								 uint32_t count,
+																								 TheForge_DescriptorData const *pParams) {
+	auto renderer = (Renderer *) handle;
+	if (!renderer) {
+		return;
+	}
+
+	updateDescriptorSet(renderer, index, (DescriptorSet *) descriptorSet, count, (DescriptorData const *) pParams);
+}
+
 AL2O3_EXTERN_C void TheForge_BeginCmd(TheForge_CmdHandle cmd) {
 	beginCmd((Cmd *) cmd);
 }
@@ -569,17 +625,12 @@ AL2O3_EXTERN_C void TheForge_CmdBindPipeline(TheForge_CmdHandle cmd, TheForge_Pi
 	cmdBindPipeline((Cmd *) cmd, (Pipeline *) pipeline);
 }
 
-AL2O3_EXTERN_C void TheForge_CmdBindDescriptors(TheForge_CmdHandle cmd,
-																								TheForge_DescriptorBinderHandle descriptorBinder,
-																								TheForge_RootSignatureHandle rootSignature,
-																								uint32_t numDescriptors,
-																								TheForge_DescriptorData *pDescParams) {
-	cmdBindDescriptors((Cmd *) cmd,
-										 (DescriptorBinder *) descriptorBinder,
-										 (RootSignature *) rootSignature,
-										 numDescriptors,
-										 (DescriptorData *) pDescParams);
+AL2O3_EXTERN_C void TheForge_CmdBindDescriptorSet(TheForge_CmdHandle cmd,
+																									uint32_t index,
+																									TheForge_DescriptorSetHandle descriptorSet) {
+	cmdBindDescriptorSet((Cmd *) cmd, index, (DescriptorSet *) descriptorSet);
 }
+
 AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge_BufferHandle buffer, uint64_t offset) {
 
 	cmdBindIndexBuffer((Cmd *) cmd, (Buffer *) buffer, offset);
@@ -588,7 +639,7 @@ AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,
 																								 uint32_t bufferCount,
 																								 TheForge_BufferHandle *pBuffers,
 																								 uint64_t const *pOffsets) {
-	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, (uint64_t*)pOffsets);
+	cmdBindVertexBuffer((Cmd *) cmd, bufferCount, (Buffer **) pBuffers, (uint64_t *) pOffsets);
 }
 AL2O3_EXTERN_C void TheForge_CmdDraw(TheForge_CmdHandle cmd, uint32_t vertexCount, uint32_t firstVertex) {
 	cmdDraw((Cmd *) cmd, vertexCount, firstVertex);
@@ -641,8 +692,9 @@ AL2O3_EXTERN_C void TheForge_GetFenceStatus(TheForge_RendererHandle handle,
 																						TheForge_FenceHandle fence,
 																						TheForge_FenceStatus *pFenceStatus) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	getFenceStatus(renderer, (Fence *) fence, (FenceStatus *) pFenceStatus);
 }
 
@@ -650,8 +702,9 @@ AL2O3_EXTERN_C void TheForge_WaitForFences(TheForge_RendererHandle handle,
 																					 uint32_t fenceCount,
 																					 TheForge_FenceHandle *pFences) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	waitForFences(renderer, fenceCount, (Fence **) pFences);
 }
@@ -737,8 +790,9 @@ AL2O3_EXTERN_C void TheForge_AddIndirectCommandSignature(TheForge_RendererHandle
 																												 const TheForge_CommandSignatureDesc *pDesc,
 																												 TheForge_CommandSignatureHandle *pCommandSignature) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	addIndirectCommandSignature(renderer,
 															(CommandSignatureDesc const *) pDesc,
@@ -748,8 +802,9 @@ AL2O3_EXTERN_C void TheForge_AddIndirectCommandSignature(TheForge_RendererHandle
 AL2O3_EXTERN_C void TheForge_RemoveIndirectCommandSignature(TheForge_RendererHandle handle,
 																														TheForge_CommandSignatureHandle commandSignature) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	removeIndirectCommandSignature(renderer, (CommandSignature *) commandSignature);
 }
@@ -757,16 +812,18 @@ AL2O3_EXTERN_C void TheForge_RemoveIndirectCommandSignature(TheForge_RendererHan
 
 AL2O3_EXTERN_C void TheForge_CalculateMemoryStats(TheForge_RendererHandle handle, char **stats) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	calculateMemoryStats(renderer, stats);
 }
 
 AL2O3_EXTERN_C void TheForge_FreeMemoryStats(TheForge_RendererHandle handle, char *stats) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	freeMemoryStats(renderer, stats);
 }
@@ -798,14 +855,15 @@ AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
 																					const TheForge_SwapChainDesc *pDesc,
 																					TheForge_SwapChainHandle *pSwapChain) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	// we don't use virtually any of the the forges windows desc as we just want
 	// the swap chain to attached (WindowsDesc is if you used TheForges OS to
 	// allocate teh window)
 	WindowsDesc windowsDesc;
-	windowsDesc.handle = (WindowHandle)pDesc->pWindow->handle;
+	windowsDesc.handle = (WindowHandle) pDesc->pWindow->handle;
 	SwapChainDesc scDesc;
 	memcpy(&scDesc, pDesc, sizeof(TheForge_SwapChainDesc));
 	scDesc.pWindow = &windowsDesc;
@@ -816,15 +874,17 @@ AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
 
 AL2O3_EXTERN_C void TheForge_RemoveSwapChain(TheForge_RendererHandle handle, TheForge_SwapChainHandle swapChain) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	removeSwapChain(renderer, (SwapChain *) swapChain);
 }
 
 AL2O3_EXTERN_C void TheForge_ToggleVSync(TheForge_RendererHandle handle, TheForge_SwapChainHandle *pSwapchain) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	toggleVSync(renderer, (SwapChain **) pSwapchain);
 }
@@ -838,8 +898,9 @@ AL2O3_EXTERN_C void TheForge_AcquireNextImage(TheForge_RendererHandle handle,
 																							TheForge_FenceHandle fence,
 																							uint32_t *pImageIndex) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	acquireNextImage(renderer, (SwapChain *) swapChain, (Semaphore *) signalSemaphore, (Fence *) fence, pImageIndex);
 }
@@ -868,74 +929,89 @@ AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_R
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const *TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget) {
 	return (TheForge_RenderTargetDesc const *) &((RenderTarget *) renderTarget)->mDesc;
 }
-AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader) {
+AL2O3_EXTERN_C TheForge_PipelineReflection const *TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader) {
 	return (TheForge_PipelineReflection const *) &((Shader *) shader)->mReflection;
 
 }
 
-AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle, TheForge_BufferDesc const* pDesc, TheForge_BufferHandle* pBuffer) {
+AL2O3_EXTERN_C void TheForge_AddBuffer(TheForge_RendererHandle handle,
+																			 TheForge_BufferDesc const *pDesc,
+																			 TheForge_BufferHandle *pBuffer) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
-	addBuffer(renderer, (BufferDesc const*)pDesc, (Buffer**)pBuffer);
+	addBuffer(renderer, (BufferDesc const *) pDesc, (Buffer **) pBuffer);
 }
-AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_RendererHandle handle, TheForge_TextureDesc const* pDesc, TheForge_TextureHandle* pTexture) {
+AL2O3_EXTERN_C void TheForge_AddTexture(TheForge_RendererHandle handle,
+																				TheForge_TextureDesc const *pDesc,
+																				TheForge_TextureHandle *pTexture) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
-	addTexture(renderer, (TextureDesc const*)pDesc, (Texture**)pTexture);
+	addTexture(renderer, (TextureDesc const *) pDesc, (Texture **) pTexture);
 }
 AL2O3_EXTERN_C void TheForge_RemoveBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
-	removeBuffer(renderer, (Buffer*)buffer);
+	}
+	removeBuffer(renderer, (Buffer *) buffer);
 }
 AL2O3_EXTERN_C void TheForge_RemoveTexture(TheForge_RendererHandle handle, TheForge_TextureHandle texture) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
-	removeTexture(renderer, (Texture*)texture);
+	removeTexture(renderer, (Texture *) texture);
 }
 
-AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer, TheForge_ReadRange* pRange) {
+AL2O3_EXTERN_C void TheForge_MapBuffer(TheForge_RendererHandle handle,
+																			 TheForge_BufferHandle buffer,
+																			 TheForge_ReadRange *pRange) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
-	mapBuffer(renderer, (Buffer*)buffer, (ReadRange*)pRange);
+	}
+	mapBuffer(renderer, (Buffer *) buffer, (ReadRange *) pRange);
 }
 
 AL2O3_EXTERN_C void TheForge_UnmapBuffer(TheForge_RendererHandle handle, TheForge_BufferHandle buffer) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
-	unmapBuffer(renderer, (Buffer*)buffer);
+	}
+	unmapBuffer(renderer, (Buffer *) buffer);
 
 }
 
 AL2O3_EXTERN_C void TheForge_InitResourceLoaderInterface(TheForge_RendererHandle handle,
 																												 TheForge_ResourceLoaderDesc *pDesc) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 
 	initResourceLoaderInterface(renderer, (ResourceLoaderDesc *) pDesc);
 }
 AL2O3_EXTERN_C void TheForge_RemoveResourceLoaderInterface(TheForge_RendererHandle handle) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	removeResourceLoaderInterface(renderer);
 }
 AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle,
 																				const TheForge_ShaderLoadDesc *pDesc,
 																				TheForge_ShaderHandle *pShader) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return;
+	}
 	ShaderLoadDesc desc;
 	TheForge_ShaderLoadStageToShaderLoadStage(pDesc, &desc);
 	addShader(renderer, &desc, (Shader **) pShader);
@@ -947,11 +1023,12 @@ AL2O3_EXTERN_C void TheForge_LoadBuffer(TheForge_BufferLoadDesc const *pBufferLo
 AL2O3_EXTERN_C void TheForge_LoadTexture(TheForge_TextureLoadDesc const *pTextureLoadDesc, bool batch) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, batch);
 }
-AL2O3_EXTERN_C void TheForge_LoadBufferWithToken(TheForge_BufferLoadDesc const *pBufferLoadDesc, TheForge_SyncToken *token) {
+AL2O3_EXTERN_C void TheForge_LoadBufferWithToken(TheForge_BufferLoadDesc const *pBufferLoadDesc,
+																								 TheForge_SyncToken *token) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, (SyncToken *) token);
 }
 AL2O3_EXTERN_C void TheForge_LoadTextureWithToken(TheForge_TextureLoadDesc const *pTextureLoadDesc,
-																								 TheForge_SyncToken *token) {
+																									TheForge_SyncToken *token) {
 	addResource((TextureLoadDesc *) pTextureLoadDesc, (SyncToken *) token);
 }
 AL2O3_EXTERN_C void TheForge_UpdateBuffer(TheForge_BufferUpdateDesc const *pBuffer, bool batch) {
@@ -996,30 +1073,34 @@ AL2O3_EXTERN_C void TheForge_FinishResourceLoading() {
 
 AL2O3_EXTERN_C TheForge_RendererApi TheForge_GetRendererApi(TheForge_RendererHandle handle) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return TheForge_API_D3D11;
+	}
 
-	return (TheForge_RendererApi)renderer->mSettings.mApi;
+	return (TheForge_RendererApi) renderer->mSettings.mApi;
 }
 
 AL2O3_EXTERN_C bool TheForge_CanShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return false;
+	}
 
 	return renderer->capBits.canShaderReadFrom[format];
 }
 AL2O3_EXTERN_C bool TheForge_CanColorWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return false;
+	}
 	return renderer->capBits.canShaderWriteTo[format];
 }
 
 AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, TinyImageFormat format) {
 	auto renderer = (Renderer *) handle;
-	if (!renderer)
+	if (!renderer) {
 		return false;
+	}
 	return renderer->capBits.canColorWriteTo[format];
 }
 
@@ -1055,21 +1136,21 @@ static void API_CHECK() {
 	API_CHK(
 			offsetof(TheForge_GraphicsPipelineDesc, sampleQuality) == offsetof(GraphicsPipelineDesc, mSampleQuality));
 	API_CHK(offsetof(TheForge_GraphicsPipelineDesc, depthStencilFormat)
-										== offsetof(GraphicsPipelineDesc, mDepthStencilFormat));
+							== offsetof(GraphicsPipelineDesc, mDepthStencilFormat));
 	API_CHK(
 			offsetof(TheForge_GraphicsPipelineDesc, primitiveTopo) == offsetof(GraphicsPipelineDesc, mPrimitiveTopo));
 
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, raytracing) == offsetof(RaytracingPipelineDesc, pRaytracing));
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, globalRootSignature)
-										== offsetof(RaytracingPipelineDesc, pGlobalRootSignature));
+							== offsetof(RaytracingPipelineDesc, pGlobalRootSignature));
 	API_CHK(
 			offsetof(TheForge_RaytracingPipelineDesc, rayGenShader) == offsetof(RaytracingPipelineDesc, pRayGenShader));
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, rayGenRootSignature)
-										== offsetof(RaytracingPipelineDesc, pRayGenRootSignature));
+							== offsetof(RaytracingPipelineDesc, pRayGenRootSignature));
 	API_CHK(
 			offsetof(TheForge_RaytracingPipelineDesc, pMissShaders) == offsetof(RaytracingPipelineDesc, ppMissShaders));
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, pMissRootSignatures)
-										== offsetof(RaytracingPipelineDesc, ppMissRootSignatures));
+							== offsetof(RaytracingPipelineDesc, ppMissRootSignatures));
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, hitGroups) == offsetof(RaytracingPipelineDesc, pHitGroups));
 	API_CHK(
 			offsetof(TheForge_RaytracingPipelineDesc, missShaderCount) == offsetof(RaytracingPipelineDesc, mMissShaderCount));
@@ -1080,7 +1161,7 @@ static void API_CHECK() {
 	API_CHK(
 			offsetof(TheForge_RaytracingPipelineDesc, attributeSize) == offsetof(RaytracingPipelineDesc, mAttributeSize));
 	API_CHK(offsetof(TheForge_RaytracingPipelineDesc, maxTraceRecursionDepth)
-										== offsetof(RaytracingPipelineDesc, mMaxTraceRecursionDepth));
+							== offsetof(RaytracingPipelineDesc, mMaxTraceRecursionDepth));
 	API_CHK(
 			offsetof(TheForge_RaytracingPipelineDesc, maxRaysCount) == offsetof(RaytracingPipelineDesc, mMaxRaysCount));
 
@@ -1157,19 +1238,17 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, cullMode) == offsetof(RasterizerStateDesc, mCullMode));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, depthBias) == offsetof(RasterizerStateDesc, mDepthBias));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, slopeScaledDepthBias)
-										== offsetof(RasterizerStateDesc, mSlopeScaledDepthBias));
+							== offsetof(RasterizerStateDesc, mSlopeScaledDepthBias));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, fillMode) == offsetof(RasterizerStateDesc, mFillMode));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, multiSample) == offsetof(RasterizerStateDesc, mMultiSample));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, scissor) == offsetof(RasterizerStateDesc, mScissor));
 	API_CHK(offsetof(TheForge_RasterizerStateDesc, frontFace) == offsetof(RasterizerStateDesc, mFrontFace));
 
-	API_CHK(sizeof(TheForge_DescriptorBinderDesc) == sizeof(DescriptorBinderDesc));
-	API_CHK(
-			offsetof(TheForge_DescriptorBinderDesc, rootSignature) == offsetof(DescriptorBinderDesc, pRootSignature));
-	API_CHK(offsetof(TheForge_DescriptorBinderDesc, maxDynamicUpdatesPerBatch)
-										== offsetof(DescriptorBinderDesc, mMaxDynamicUpdatesPerBatch));
-	API_CHK(offsetof(TheForge_DescriptorBinderDesc, maxDynamicUpdatesPerDraw)
-										== offsetof(DescriptorBinderDesc, mMaxDynamicUpdatesPerDraw));
+	API_CHK(sizeof(TheForge_DescriptorSetDesc) == sizeof(DescriptorSetDesc));
+	API_CHK(offsetof(TheForge_DescriptorSetDesc, rootSignature) == offsetof(DescriptorSetDesc, pRootSignature));
+	API_CHK(offsetof(TheForge_DescriptorSetDesc, updateFrequency) == offsetof(DescriptorSetDesc, mUpdateFrequency));
+	API_CHK(offsetof(TheForge_DescriptorSetDesc, maxSets) == offsetof(DescriptorSetDesc, mMaxSets));
+	API_CHK(offsetof(TheForge_DescriptorSetDesc, nodeIndex) == offsetof(DescriptorSetDesc, mNodeIndex));
 
 	API_CHK(sizeof(TheForge_LoadActionsDesc) == sizeof(LoadActionsDesc));
 	API_CHK(offsetof(TheForge_LoadActionsDesc, clearColorValues) == offsetof(LoadActionsDesc, mClearColorValues));
@@ -1183,12 +1262,10 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_DescriptorData, pOffsets) == offsetof(DescriptorData, pOffsets));
 	API_CHK(offsetof(TheForge_DescriptorData, pSizes) == offsetof(DescriptorData, pSizes));
 	API_CHK(offsetof(TheForge_DescriptorData, UAVMipSlice) == offsetof(DescriptorData, mUAVMipSlice));
-	API_CHK(
-			offsetof(TheForge_DescriptorData, bindStencilResource) == offsetof(DescriptorData, mBindStencilResource));
+	API_CHK(offsetof(TheForge_DescriptorData, bindStencilResource) == offsetof(DescriptorData, mBindStencilResource));
 	API_CHK(offsetof(TheForge_DescriptorData, pTextures) == offsetof(DescriptorData, ppTextures));
 	API_CHK(offsetof(TheForge_DescriptorData, pSamplers) == offsetof(DescriptorData, ppSamplers));
 	API_CHK(offsetof(TheForge_DescriptorData, pBuffers) == offsetof(DescriptorData, ppBuffers));
-	API_CHK(offsetof(TheForge_DescriptorData, pRootConstant) == offsetof(DescriptorData, pRootConstant));
 	API_CHK(
 			offsetof(TheForge_DescriptorData, pAccelerationStructures) == offsetof(DescriptorData, ppAccelerationStructures));
 	API_CHK(offsetof(TheForge_DescriptorData, count) == offsetof(DescriptorData, mCount));
@@ -1256,24 +1333,27 @@ static void API_CHECK() {
 	API_CHK(sizeof(TheForge_ClearValue) == sizeof(ClearValue));
 
 	API_CHK(sizeof(TheForge_PipelineReflection) == sizeof(PipelineReflection));
-	API_CHK(offsetof(TheForge_PipelineReflection, mShaderStages) == offsetof(PipelineReflection,  mShaderStages));
-	API_CHK(offsetof(TheForge_PipelineReflection, mStageReflections) == offsetof(PipelineReflection,  mStageReflections));
-	API_CHK(offsetof(TheForge_PipelineReflection, mStageReflectionCount) == offsetof(PipelineReflection,  mStageReflectionCount));
-	API_CHK(offsetof(TheForge_PipelineReflection, mVertexStageIndex) == offsetof(PipelineReflection,  mVertexStageIndex));
-	API_CHK(offsetof(TheForge_PipelineReflection, mHullStageIndex) == offsetof(PipelineReflection,  mHullStageIndex));
-	API_CHK(offsetof(TheForge_PipelineReflection, mDomainStageIndex) == offsetof(PipelineReflection,  mDomainStageIndex));
-	API_CHK(offsetof(TheForge_PipelineReflection, mGeometryStageIndex) == offsetof(PipelineReflection,  mGeometryStageIndex));
-	API_CHK(offsetof(TheForge_PipelineReflection, mPixelStageIndex) == offsetof(PipelineReflection,  mPixelStageIndex));
-	API_CHK(offsetof(TheForge_PipelineReflection, pShaderResources) == offsetof(PipelineReflection,  pShaderResources));
-	API_CHK(offsetof(TheForge_PipelineReflection, mShaderResourceCount) == offsetof(PipelineReflection,  mShaderResourceCount));
-	API_CHK(offsetof(TheForge_PipelineReflection, pVariables) == offsetof(PipelineReflection,  pVariables));
-	API_CHK(offsetof(TheForge_PipelineReflection, mVariableCount) == offsetof(PipelineReflection,  mVariableCount));
+	API_CHK(offsetof(TheForge_PipelineReflection, mShaderStages) == offsetof(PipelineReflection, mShaderStages));
+	API_CHK(offsetof(TheForge_PipelineReflection, mStageReflections) == offsetof(PipelineReflection, mStageReflections));
+	API_CHK(offsetof(TheForge_PipelineReflection, mStageReflectionCount)
+							== offsetof(PipelineReflection, mStageReflectionCount));
+	API_CHK(offsetof(TheForge_PipelineReflection, mVertexStageIndex) == offsetof(PipelineReflection, mVertexStageIndex));
+	API_CHK(offsetof(TheForge_PipelineReflection, mHullStageIndex) == offsetof(PipelineReflection, mHullStageIndex));
+	API_CHK(offsetof(TheForge_PipelineReflection, mDomainStageIndex) == offsetof(PipelineReflection, mDomainStageIndex));
+	API_CHK(
+			offsetof(TheForge_PipelineReflection, mGeometryStageIndex) == offsetof(PipelineReflection, mGeometryStageIndex));
+	API_CHK(offsetof(TheForge_PipelineReflection, mPixelStageIndex) == offsetof(PipelineReflection, mPixelStageIndex));
+	API_CHK(offsetof(TheForge_PipelineReflection, pShaderResources) == offsetof(PipelineReflection, pShaderResources));
+	API_CHK(offsetof(TheForge_PipelineReflection, mShaderResourceCount)
+							== offsetof(PipelineReflection, mShaderResourceCount));
+	API_CHK(offsetof(TheForge_PipelineReflection, pVariables) == offsetof(PipelineReflection, pVariables));
+	API_CHK(offsetof(TheForge_PipelineReflection, mVariableCount) == offsetof(PipelineReflection, mVariableCount));
 
 
 	API_CHK(sizeof(TheForge_TextureLoadDesc) == sizeof(TextureLoadDesc));
-	API_CHK(offsetof(TheForge_TextureLoadDesc,pTexture) == offsetof(TextureLoadDesc,ppTexture));
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pTexture) == offsetof(TextureLoadDesc, ppTexture));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pDesc) == offsetof(TextureLoadDesc, pDesc));
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename) );
+	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mRoot) == offsetof(TextureLoadDesc, mRoot));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mNodeIndex) == offsetof(TextureLoadDesc, mNodeIndex));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pRawImageData) == offsetof(TextureLoadDesc, pRawImageData));

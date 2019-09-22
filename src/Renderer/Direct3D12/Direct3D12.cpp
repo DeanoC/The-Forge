@@ -25,7 +25,6 @@
 #ifdef DIRECT3D12
 
 #define RENDERER_IMPLEMENTATION
-#define MAX_FRAMES_IN_FLIGHT 3U
 
 #ifdef _DURANGO
 #include "..\..\..\Xbox\Common_3\Renderer\XBoxPrivateHeaders.h"
@@ -98,8 +97,7 @@ extern void d3d12_destroyTexture(MemoryAllocator* pAllocator, struct Texture* pT
 //stubs for durango because Direct3D12Raytracing.cpp is not used on XBOX
 #if defined(ENABLE_RAYTRACING)
 extern void d3d12_addRaytracingPipeline(const RaytracingPipelineDesc* pDesc, Pipeline** ppPipeline);
-extern void d3d12_fillRaytracingRootDescriptorData(AccelerationStructure* pAccelerationStructure, D3D12_GPU_VIRTUAL_ADDRESS* pAddress);
-extern void d3d12_fillRaytracingDescriptorHandle(AccelerationStructure* pAccelerationStructure, uint64_t* pHandle, uint64_t* pHash);
+extern void d3d12_fillRaytracingDescriptorHandle(AccelerationStructure* pAccelerationStructure, uint64_t* pHandle);
 extern void d3d12_cmdBindRaytracingPipeline(Cmd* pCmd, Pipeline* pPipeline);
 #endif
 
@@ -283,225 +281,166 @@ DescriptorHeapProperties gCpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE
 // Descriptor Heap Structures
 /************************************************************************/
 /// CPU Visible Heap to store all the resources needing CPU read / write operations - Textures/Buffers/RTV
-typedef struct DescriptorStoreHeap
+typedef struct DescriptorHeap
 {
-	uint32_t mNumDescriptors;
-	/// DescriptorInfo Increment Size
-	uint32_t mDescriptorSize;
-	/// Bitset for finding SAFE_FREE descriptor slots
-	uint32_t* pFlags;
-	/// Lock for multi-threaded descriptor allocations
-	Mutex*   pAllocationMutex;
-	uint64_t mUsedDescriptors;
-	/// Type of descriptor heap -> CBV / DSV / ...
-	D3D12_DESCRIPTOR_HEAP_TYPE mType;
+	typedef struct DescriptorHandle
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE mCpu;
+		D3D12_GPU_DESCRIPTOR_HANDLE mGpu;
+	} DescriptorHandle;
+
 	/// DX Heap
-	ID3D12DescriptorHeap* pCurrentHeap;
+	ID3D12DescriptorHeap*           pCurrentHeap;
+	/// Lock for multi-threaded descriptor allocations
+	Mutex*                          pMutex;
+	ID3D12Device*                   pDevice;
+	D3D12_CPU_DESCRIPTOR_HANDLE*    pHandles;
 	/// Start position in the heap
-	D3D12_CPU_DESCRIPTOR_HANDLE mStartCpuHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE mStartGpuHandle;
-} DescriptorStoreHeap;
+	DescriptorHandle                mStartHandle;
+	/// Free List used for CPU only descriptor heaps
+	eastl::vector<DescriptorHandle> mFreeList;
+	/// Description
+	D3D12_DESCRIPTOR_HEAP_DESC      mDesc;
+	/// DescriptorInfo Increment Size
+	uint32_t                        mDescriptorSize;
+	/// Used
+	tfrg_atomic32_t                 mUsedDescriptors;
+} DescriptorHeap;
+
+typedef struct DescriptorSet
+{
+	uint64_t*                   pCbvSrvUavHandles;
+	uint64_t*                   pSamplerHandles;
+	const RootSignature*        pRootSignature;
+	D3D12_GPU_VIRTUAL_ADDRESS** pRootAddresses;
+	uint16_t                    mMaxSets;
+	uint8_t                     mUpdateFrequency;
+	uint8_t                     mNodeIndex;
+	uint8_t                     mRootAddressCount;
+	uint8_t                     mCbvSrvUavRootIndex;
+	uint8_t                     mSamplerRootIndex;
+} DescriptorSet;
 /************************************************************************/
 // Static Descriptor Heap Implementation
 /************************************************************************/
-static void add_descriptor_heap(
-	ID3D12Device* pDevice, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, uint32_t numDescriptors, uint32_t nodeMask,
-	DescriptorStoreHeap** ppDescHeap)
+static void add_descriptor_heap(ID3D12Device* pDevice, const D3D12_DESCRIPTOR_HEAP_DESC* pDesc, DescriptorHeap** ppDescHeap)
 {
+	uint32_t numDescriptors = pDesc->NumDescriptors;
 	if (fnHookAddDescriptorHeap != NULL)
-		numDescriptors = fnHookAddDescriptorHeap(type, numDescriptors);
+		numDescriptors = fnHookAddDescriptorHeap(pDesc->Type, numDescriptors);
 
-	DescriptorStoreHeap* pHeap = (DescriptorStoreHeap*)conf_calloc(1, sizeof(*pHeap));
+	DescriptorHeap* pHeap = (DescriptorHeap*)conf_calloc(1, sizeof(*pHeap));
 
 	// Need new since object allocates memory in constructor
-	pHeap->pAllocationMutex = conf_placement_new<Mutex>(conf_calloc(1, sizeof(Mutex)));
+	pHeap->pMutex = conf_placement_new<Mutex>(conf_calloc(1, sizeof(Mutex)));
+	pHeap->pDevice = pDevice;
 
 	// Keep 32 aligned for easy remove
 	numDescriptors = round_up(numDescriptors, 32);
 
-	D3D12_DESCRIPTOR_HEAP_DESC Desc;
-	Desc.Type = type;
+	D3D12_DESCRIPTOR_HEAP_DESC Desc = *pDesc;
 	Desc.NumDescriptors = numDescriptors;
-	Desc.Flags = flags;
-	Desc.NodeMask = nodeMask;
+
+	pHeap->mDesc = Desc;
 
 	HRESULT hres = pDevice->CreateDescriptorHeap(&Desc, IID_ARGS(&pHeap->pCurrentHeap));
 	ASSERT(SUCCEEDED(hres));
 
-	pHeap->mNumDescriptors = numDescriptors;
-	pHeap->mType = type;
-	pHeap->mStartCpuHandle = pHeap->pCurrentHeap->GetCPUDescriptorHandleForHeapStart();
-	pHeap->mStartGpuHandle = pHeap->pCurrentHeap->GetGPUDescriptorHandleForHeapStart();
-	pHeap->mDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(type);
-
-	pHeap->pFlags = (uint32_t*)conf_calloc(pHeap->mNumDescriptors / 32, sizeof(uint32_t));
+	pHeap->mStartHandle.mCpu = pHeap->pCurrentHeap->GetCPUDescriptorHandleForHeapStart();
+	pHeap->mStartHandle.mGpu = pHeap->pCurrentHeap->GetGPUDescriptorHandleForHeapStart();
+	pHeap->mDescriptorSize = pDevice->GetDescriptorHandleIncrementSize(pHeap->mDesc.Type);
+	if (Desc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+		pHeap->pHandles = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(Desc.NumDescriptors, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
 
 	*ppDescHeap = pHeap;
 }
 
 /// Resets the CPU Handle to start of heap and clears all stored resource ids
-static void reset_descriptor_heap(DescriptorStoreHeap* pHeap)
+static void reset_descriptor_heap(DescriptorHeap* pHeap)
 {
-	pHeap->mStartCpuHandle = pHeap->pCurrentHeap->GetCPUDescriptorHandleForHeapStart();
-	pHeap->mStartGpuHandle = pHeap->pCurrentHeap->GetGPUDescriptorHandleForHeapStart();
-	memset(pHeap->pFlags, 0, pHeap->mNumDescriptors / 32 * sizeof(uint32_t));
+	pHeap->mUsedDescriptors = 0;
+	pHeap->mFreeList.clear();
 }
 
-static void remove_descriptor_heap(DescriptorStoreHeap* pHeap)
+static void remove_descriptor_heap(DescriptorHeap* pHeap)
 {
 	SAFE_RELEASE(pHeap->pCurrentHeap);
-	SAFE_FREE(pHeap->pFlags);
 
 	// Need delete since object frees allocated memory in destructor
-	pHeap->pAllocationMutex->~Mutex();
-	conf_free(pHeap->pAllocationMutex);
+	pHeap->pMutex->~Mutex();
+	conf_free(pHeap->pMutex);
 
+	pHeap->mFreeList.~vector();
+
+	SAFE_FREE(pHeap->pHandles);
 	SAFE_FREE(pHeap);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE
-add_cpu_descriptor_handles(DescriptorStoreHeap* pHeap, uint32_t numDescriptors, uint32_t* pDescriptorIndex = NULL)
+static DescriptorHeap::DescriptorHandle consume_descriptor_handles(DescriptorHeap* pHeap, uint32_t descriptorCount)
 {
-	int       result = -1;
-	MutexLock lockGuard(*pHeap->pAllocationMutex);
-
-	eastl::vector<D3D12_CPU_DESCRIPTOR_HANDLE> handles;
-
-	for (uint32_t i = 0; i < pHeap->mNumDescriptors / 32; ++i)
+	if (pHeap->mUsedDescriptors + descriptorCount > pHeap->mDesc.NumDescriptors)
 	{
-		const uint32_t flag = pHeap->pFlags[i];
-		if (flag == 0xffffffff)
+		MutexLock lock(*pHeap->pMutex);
+
+		if ((pHeap->mDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE))
 		{
-			for (D3D12_CPU_DESCRIPTOR_HANDLE& handle : handles)
-			{
-				uint32_t       id = (uint32_t)((handle.ptr - pHeap->mStartCpuHandle.ptr) / pHeap->mDescriptorSize);
-				const uint32_t x = id / 32;
-				const uint32_t mask = ~(1 << (id % 32));
-				pHeap->pFlags[x] &= mask;
-			}
-			handles.clear();
-			continue;
+			uint32_t currentOffset = pHeap->mUsedDescriptors;
+			D3D12_DESCRIPTOR_HEAP_DESC desc = pHeap->mDesc;
+			while(pHeap->mUsedDescriptors + descriptorCount > desc.NumDescriptors)
+				desc.NumDescriptors <<= 1;
+			ID3D12Device* pDevice = pHeap->pDevice;
+			SAFE_RELEASE(pHeap->pCurrentHeap);
+			pDevice->CreateDescriptorHeap(&desc, IID_ARGS(&pHeap->pCurrentHeap));
+			pHeap->mDesc = desc;
+			pHeap->mStartHandle.mCpu = pHeap->pCurrentHeap->GetCPUDescriptorHandleForHeapStart();
+			pHeap->mStartHandle.mGpu = pHeap->pCurrentHeap->GetGPUDescriptorHandleForHeapStart();
+
+			uint32_t* rangeSizes = (uint32_t*)alloca(pHeap->mUsedDescriptors * sizeof(uint32_t));
+			uint32_t usedDescriptors = tfrg_atomic32_load_relaxed(&pHeap->mUsedDescriptors);
+			for (uint32_t i = 0; i < pHeap->mUsedDescriptors; ++i)
+				rangeSizes[i] = 1;
+			pDevice->CopyDescriptors(1, &pHeap->mStartHandle.mCpu, &usedDescriptors,
+				pHeap->mUsedDescriptors, pHeap->pHandles, rangeSizes,
+				pHeap->mDesc.Type);
+			D3D12_CPU_DESCRIPTOR_HANDLE* pNewHandles = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(pHeap->mDesc.NumDescriptors, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
+			memcpy(pNewHandles, pHeap->pHandles, pHeap->mUsedDescriptors * sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
+			SAFE_FREE(pHeap->pHandles);
+			pHeap->pHandles = pNewHandles;
 		}
-
-		for (int j = 0, mask = 1; j < 32; ++j, mask <<= 1)
+		else if (descriptorCount == 1 && pHeap->mFreeList.size())
 		{
-			if ((flag & mask) == 0)
-			{
-				pHeap->pFlags[i] |= mask;
-				result = i * 32 + j;
-
-				ASSERT(result != -1 && "Out of descriptors");
-
-				handles.push_back({
-					{ pHeap->mStartCpuHandle.ptr + (result * pHeap->mDescriptorSize) },
-				});
-
-				if ((uint32_t)handles.size() == numDescriptors)
-				{
-					if (pDescriptorIndex)
-						*pDescriptorIndex = (uint32_t)((handles.front().ptr - pHeap->mStartCpuHandle.ptr) / pHeap->mDescriptorSize);
-					pHeap->mUsedDescriptors += numDescriptors;
-					return handles.front();
-				}
-			}
+			DescriptorHeap::DescriptorHandle ret = pHeap->mFreeList.back();
+			pHeap->mFreeList.pop_back();
+			return ret;
 		}
 	}
 
-	ASSERT(result != -1 && "Out of descriptors");
-	if (pDescriptorIndex)
-		*pDescriptorIndex = (uint32_t)((handles.front().ptr - pHeap->mStartCpuHandle.ptr) / pHeap->mDescriptorSize);
-	pHeap->mUsedDescriptors += numDescriptors;
-	return handles.front();
-}
-
-void add_gpu_descriptor_handles(
-	DescriptorStoreHeap* pHeap, D3D12_CPU_DESCRIPTOR_HANDLE* pStartCpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* pStartGpuHandle,
-	uint32_t numDescriptors)
-{
-	int       result = -1;
-	MutexLock lockGuard(*pHeap->pAllocationMutex);
-
-	eastl::vector<eastl::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> > handles;
-
-	for (uint32_t i = 0; i < pHeap->mNumDescriptors / 32; ++i)
+	uint32_t usedDescriptors = tfrg_atomic32_add_relaxed(&pHeap->mUsedDescriptors, descriptorCount);
+	DescriptorHeap::DescriptorHandle ret =
 	{
-		const uint32_t flag = pHeap->pFlags[i];
-		if (flag == 0xffffffff)
-		{
-			for (eastl::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>& handle : handles)
-			{
-				uint32_t       id = (uint32_t)((handle.first.ptr - pHeap->mStartCpuHandle.ptr) / pHeap->mDescriptorSize);
-				const uint32_t x = id / 32;
-				const uint32_t mask = ~(1 << (id % 32));
-				pHeap->pFlags[x] &= mask;
-			}
-			handles.clear();
-			continue;
-		}
+		{ pHeap->mStartHandle.mCpu.ptr + usedDescriptors * pHeap->mDescriptorSize },
+		{ pHeap->mStartHandle.mGpu.ptr + usedDescriptors * pHeap->mDescriptorSize },
+	};
 
-		for (int j = 0, mask = 1; j < 32; ++j, mask <<= 1)
-		{
-			if ((flag & mask) == 0)
-			{
-				pHeap->pFlags[i] |= mask;
-				result = i * 32 + j;
 
-				ASSERT(result != -1 && "Out of descriptors");
-
-				handles.push_back({
-					{ pHeap->mStartCpuHandle.ptr + (result * pHeap->mDescriptorSize) },
-					{ pHeap->mStartGpuHandle.ptr + (result * pHeap->mDescriptorSize) },
-				});
-
-				if ((uint32_t)handles.size() == numDescriptors)
-				{
-					*pStartCpuHandle = handles.front().first;
-					*pStartGpuHandle = handles.front().second;
-					pHeap->mUsedDescriptors += numDescriptors;
-					return;
-				}
-			}
-		}
-	}
-
-	ASSERT(result != -1 && "Out of descriptors");
-	*pStartCpuHandle = handles.front().first;
-	*pStartGpuHandle = handles.front().second;
-	pHeap->mUsedDescriptors += numDescriptors;
+	return ret;
 }
 
-void remove_gpu_descriptor_handles(DescriptorStoreHeap* pHeap, D3D12_GPU_DESCRIPTOR_HANDLE* startHandle, uint64_t numDescriptors)
+void return_cpu_descriptor_handle(DescriptorHeap* pHeap, D3D12_CPU_DESCRIPTOR_HANDLE handle)
 {
-	MutexLock lockGuard(*pHeap->pAllocationMutex);
-
-	for (uint32_t idx = 0; idx < numDescriptors; ++idx)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE handle = { startHandle->ptr + idx * pHeap->mDescriptorSize };
-		uint32_t                    id = (uint32_t)((handle.ptr - pHeap->mStartGpuHandle.ptr) / pHeap->mDescriptorSize);
-
-		const uint32_t i = id / 32;
-		const uint32_t mask = ~(1 << (id % 32));
-		pHeap->pFlags[i] &= mask;
-	}
-	pHeap->mUsedDescriptors -= numDescriptors;
+	ASSERT((pHeap->mDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE) == 0);
+	pHeap->mFreeList.push_back({ handle, D3D12_GPU_VIRTUAL_ADDRESS_NULL });
 }
 
-void remove_cpu_descriptor_handles(DescriptorStoreHeap* pHeap, D3D12_CPU_DESCRIPTOR_HANDLE* startHandle, uint64_t numDescriptors)
+static void copy_descriptor_handle(DescriptorHeap* pHeap, D3D12_CPU_DESCRIPTOR_HANDLE& srcHandle, uint64_t& dstHandle, uint32_t index)
 {
-	MutexLock lockGuard(*pHeap->pAllocationMutex);
-
-	for (uint32_t idx = 0; idx < numDescriptors; ++idx)
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = { startHandle->ptr + idx * pHeap->mDescriptorSize };
-		uint32_t                    id = (uint32_t)((handle.ptr - pHeap->mStartCpuHandle.ptr) / pHeap->mDescriptorSize);
-
-		const uint32_t i = id / 32;
-		const uint32_t mask = ~(1 << (id % 32));
-		pHeap->pFlags[i] &= mask;
-	}
-	pHeap->mUsedDescriptors -= numDescriptors;
+	pHeap->pHandles[(dstHandle / pHeap->mDescriptorSize) + index] = srcHandle;
+	pHeap->pDevice->CopyDescriptorsSimple(
+		1,
+		{ pHeap->mStartHandle.mCpu.ptr + dstHandle + (index * pHeap->mDescriptorSize) },
+		srcHandle,
+		pHeap->mDesc.Type);
 }
-
 /************************************************************************/
 // Multi GPU Helper Functions
 /************************************************************************/
@@ -520,69 +459,15 @@ uint32_t util_calculate_node_mask(Renderer* pRenderer, uint32_t i)
 	else
 		return 0;
 }
-
 /************************************************************************/
-// Descriptor Binder Implementation
 /************************************************************************/
-/// Descriptor table structure holding the native descriptor set handle
-typedef struct DescriptorTable
-{
-	/// Handle to the start of the cbv_srv_uav descriptor table in the gpu visible cbv_srv_uav heap
-	D3D12_CPU_DESCRIPTOR_HANDLE mBaseCpuHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE mBaseGpuHandle;
-	uint32_t                    mDescriptorCount;
-	uint32_t                    mNodeIndex;
-} DescriptorTable;
-
-using HashMap = eastl::unordered_map<uint64_t, uint32_t>;
-using ConstHashMapIterator = eastl::unordered_map<uint64_t, uint32_t>::const_iterator;
 using DescriptorNameToIndexMap = eastl::string_hash_map<uint32_t>;
 
-typedef struct DescriptorBinderNode
-{
-	DescriptorTable* pCbvSrvUavTables[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	DescriptorTable* pSamplerTables[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t         mCbvSrvUavUsageCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t         mSamplerUsageCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint64_t         mUpdatedNoneFreqHash[MAX_FRAMES_IN_FLIGHT][2];    // 2 is for CbvSrvUav (0) and Sampler (1)
-	uint64_t         mUpdatedFrameFreqHash[MAX_FRAMES_IN_FLIGHT][2];
-	HashMap          mUpdatedHashes[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT][2];
-	uint32_t         mCbvSrvUavUpdateCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t         mSamplerUpdateCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t         mFrameIdx;
-	uint32_t         mMaxUsagePerSet[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t         numDescriptorsPerSet[DESCRIPTOR_UPDATE_FREQ_COUNT][2];
-
-	/// Array of flags to check whether a descriptor table of the update frequency is already bound to avoid unnecessary rebinding of descriptor tables
-	bool mBoundCbvSrvUavTables[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	bool mBoundSamplerTables[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	/// Array of view descriptor handles per update frequency to be copied into the gpu visible view heap
-	D3D12_CPU_DESCRIPTOR_HANDLE* pViewDescriptorHandles[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	D3D12_CPU_DESCRIPTOR_HANDLE* pNullViewDescriptorHandles[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	/// Array of sampler descriptor handles per update frequency to be copied into the gpu visible sampler heap
-	D3D12_CPU_DESCRIPTOR_HANDLE* pSamplerDescriptorHandles[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	D3D12_CPU_DESCRIPTOR_HANDLE  mNullSamplerDescriptorHandle;
-	/// Triple buffered array of number of descriptor tables allocated per update frequency
-	/// Only used for recording stats
-	uint32_t mDescriptorTableCount[MAX_FRAMES_IN_FLIGHT][DESCRIPTOR_UPDATE_FREQ_COUNT];
-} DescriptorBinderNode;
-
-using DescriptorBinderMap = eastl::hash_map<const RootSignature*, DescriptorBinderNode>;
-
-typedef struct DescriptorBinder
-{
-	DescriptorStoreHeap* pCbvSrvUavHeap[MAX_GPUS];
-	DescriptorStoreHeap* pSamplerHeap[MAX_GPUS];
-	DescriptorBinderMap  mRootSignatureNodes;
-
-} DescriptorBinder;
-
-const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName, uint32_t* pIndex)
+const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName)
 {
 	DescriptorNameToIndexMap::const_iterator it = pRootSignature->pDescriptorNameToIndexMap.find(pResName);
 	if (it != pRootSignature->pDescriptorNameToIndexMap.end())
 	{
-		*pIndex = it->second;
 		return &pRootSignature->pDescriptors[it->second];
 	}
 	else
@@ -592,20 +477,11 @@ const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const 
 	}
 }
 /************************************************************************/
-// Get renderer shader macros
-/************************************************************************/
-#define MAX_TRANSIENT_CBVS_PER_FRAME 256U
-/************************************************************************/
 // Globals
 /************************************************************************/
 static const uint32_t gDescriptorTableDWORDS = 1;
 static const uint32_t gRootDescriptorDWORDS = 2;
-
-static tfrg_atomic64_t gBufferIds = 0;
-static tfrg_atomic64_t gTextureIds = 0;
-static tfrg_atomic64_t gSamplerIds = 0;
-
-static uint32_t gMaxRootConstantsPerRootParam = 4U;
+static const uint32_t gMaxRootConstantsPerRootParam = 4U;
 /************************************************************************/
 // Logging functions
 /************************************************************************/
@@ -625,44 +501,29 @@ static void internal_log(LogType type, const char* msg, const char* component)
 static void add_srv(
 	Renderer* pRenderer, ID3D12Resource* pResource, const D3D12_SHADER_RESOURCE_VIEW_DESC* pSrvDesc, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
-	*pHandle = add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1);
+	*pHandle = consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1).mCpu;
 	pRenderer->pDxDevice->CreateShaderResourceView(pResource, pSrvDesc, *pHandle);
-}
-
-static void remove_srv(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pHandle, 1);
 }
 
 static void add_uav(
 	Renderer* pRenderer, ID3D12Resource* pResource, ID3D12Resource* pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC* pUavDesc,
 	D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
-	*pHandle = add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1);
+	*pHandle = consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1).mCpu;
 	pRenderer->pDxDevice->CreateUnorderedAccessView(pResource, pCounterResource, pUavDesc, *pHandle);
-}
-
-static void remove_uav(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pHandle, 1);
 }
 
 static void add_cbv(Renderer* pRenderer, const D3D12_CONSTANT_BUFFER_VIEW_DESC* pCbvDesc, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
-	*pHandle = add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1);
+	*pHandle = consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], 1).mCpu;
 	pRenderer->pDxDevice->CreateConstantBufferView(pCbvDesc, *pHandle);
-}
-
-static void remove_cbv(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pHandle, 1);
 }
 
 static void add_rtv(
 	Renderer* pRenderer, ID3D12Resource* pResource, DXGI_FORMAT format, uint32_t mipSlice, uint32_t arraySlice,
 	D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
-	*pHandle = add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], 1);
+	*pHandle = consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], 1).mCpu;
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	D3D12_RESOURCE_DESC           desc = pResource->GetDesc();
 	D3D12_RESOURCE_DIMENSION      type = desc.Dimension;
@@ -760,7 +621,7 @@ static void add_dsv(
 	Renderer* pRenderer, ID3D12Resource* pResource, DXGI_FORMAT format, uint32_t mipSlice, uint32_t arraySlice,
 	D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
-	*pHandle = add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], 1);
+	*pHandle = consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], 1).mCpu;
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 	D3D12_RESOURCE_DESC           desc = pResource->GetDesc();
 	D3D12_RESOURCE_DIMENSION      type = desc.Dimension;
@@ -842,26 +703,11 @@ static void add_dsv(
 	pRenderer->pDxDevice->CreateDepthStencilView(pResource, &dsvDesc, *pHandle);
 }
 
-static void remove_rtv(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], pHandle, 1);
-}
-
-static void remove_dsv(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], pHandle, 1);
-}
-
 static void add_sampler(Renderer* pRenderer, const D3D12_SAMPLER_DESC* pSamplerDesc, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
 {
 	*pHandle =
-		add_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER], 1);
+		consume_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER], 1).mCpu;
 	pRenderer->pDxDevice->CreateSampler(pSamplerDesc, *pHandle);
-}
-
-static void remove_sampler(Renderer* pRenderer, D3D12_CPU_DESCRIPTOR_HANDLE* pHandle)
-{
-	remove_cpu_descriptor_handles(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER], pHandle, 1);
 }
 
 static void create_default_resources(Renderer* pRenderer)
@@ -953,7 +799,8 @@ typedef enum GpuVendor
 	GPU_VENDOR_COUNT,
 } GpuVendor;
 
-static uint32_t gRootSignatureDWORDS[GpuVendor::GPU_VENDOR_COUNT] = {
+static uint32_t gRootSignatureDWORDS[GpuVendor::GPU_VENDOR_COUNT] =
+{
 	64U,
 	13U,
 	64U,
@@ -1741,9 +1588,9 @@ static void AddDevice(Renderer* pRenderer)
 	//HRESULT hr = pRenderer->pDxDevice->QueryInterface(IID_ARGS(&pd3dInfoQueue));
 	//if (SUCCEEDED(hr))
 	//{
-	//  pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-	//  pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-	//  pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+	//	pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+	//	pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+	//	pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
 	//}
 #endif
 
@@ -1880,13 +1727,13 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		/************************************************************************/
 		for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 		{
-			add_descriptor_heap(
-				pRenderer->pDxDevice, (D3D12_DESCRIPTOR_HEAP_TYPE)i, gCpuDescriptorHeapProperties[i].mFlags,
-				gCpuDescriptorHeapProperties[i].mMaxDescriptors,
-				0,    // CPU Descriptor Heap - Node mask is irrelevant
-				&pRenderer->pCPUDescriptorHeaps[i]);
+			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+			desc.Flags = gCpuDescriptorHeapProperties[i].mFlags;
+			desc.NodeMask = 0; // CPU Descriptor Heap - Node mask is irrelevant
+			desc.NumDescriptors = gCpuDescriptorHeapProperties[i].mMaxDescriptors;
+			desc.Type = (D3D12_DESCRIPTOR_HEAP_TYPE)i;
+			add_descriptor_heap(pRenderer->pDxDevice, &desc, &pRenderer->pCPUDescriptorHeaps[i]);
 		}
-
 		/************************************************************************/
 		// Multi GPU - SLI Node Count
 		/************************************************************************/
@@ -1900,6 +1747,21 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		info.device = pRenderer->pDxDevice;
 		info.physicalDevice = pRenderer->pDxActiveGPU;
 		createAllocator(&info, &pRenderer->pResourceAllocator);
+	}
+
+	for (uint32_t i = 0; i < pRenderer->mNumOfGPUs; ++i)
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		desc.NodeMask = util_calculate_node_mask(pRenderer, i);
+
+		desc.NumDescriptors = 1 << 16;
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		add_descriptor_heap(pRenderer->pDxDevice, &desc, &pRenderer->pCbvSrvUavHeaps[i]);
+
+		desc.NumDescriptors = 1 << 11;
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+		add_descriptor_heap(pRenderer->pDxDevice, &desc, &pRenderer->pSamplerHeaps[i]);
 	}
 
 	create_default_resources(pRenderer);
@@ -1940,9 +1802,15 @@ void removeRenderer(Renderer* pRenderer)
 	destroy_default_resources(pRenderer);
 
 	// Destroy the Direct3D12 bits
-	for (int i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
+	for (uint32_t i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i)
 	{
 		remove_descriptor_heap(pRenderer->pCPUDescriptorHeaps[i]);
+	}
+
+	for (uint32_t i = 0; i < pRenderer->mNumOfGPUs; ++i)
+	{
+		remove_descriptor_heap(pRenderer->pCbvSrvUavHeaps[i]);
+		remove_descriptor_heap(pRenderer->pSamplerHeaps[i]);
 	}
 
 	destroyAllocator(pRenderer->pResourceAllocator);
@@ -2194,14 +2062,6 @@ void removeCmd(CmdPool* pCmdPool, Cmd* pCmd)
 	//verify that given command and pool are valid
 	ASSERT(pCmdPool);
 	ASSERT(pCmd);
-
-	if (pCmd->mTransientCBVs.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-		remove_cpu_descriptor_handles(
-			pCmd->pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], &pCmd->mTransientCBVs,
-			MAX_TRANSIENT_CBVS_PER_FRAME);
-
-	if (pCmd->pRootConstantRingBuffer)
-		removeGPURingBuffer(pCmd->pRootConstantRingBuffer);
 
 	//remove command from pool
 	SAFE_RELEASE(pCmd->pDxCmdAlloc);
@@ -2634,8 +2494,6 @@ void addBuffer(Renderer* pRenderer, const BufferDesc* pDesc, Buffer** pp_buffer)
 		add_uav(pRenderer, pBuffer->pDxResource, pCounterResource, &uavDesc, &pBuffer->mDxUavHandle);
 	}
 
-	pBuffer->mBufferId = tfrg_atomic32_add_relaxed(&gBufferIds, 1);
-
 	*pp_buffer = pBuffer;
 }
 
@@ -2645,23 +2503,24 @@ void removeBuffer(Renderer* pRenderer, Buffer* pBuffer)
 	ASSERT(pRenderer);
 	ASSERT(pBuffer);
 
-	d3d12_destroyBuffer(pRenderer->pResourceAllocator, pBuffer);
-
 	if ((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_UNIFORM_BUFFER) &&
 		!(pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_NO_DESCRIPTOR_VIEW_CREATION))
 	{
-		remove_cbv(pRenderer, &pBuffer->mDxCbvHandle);
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pBuffer->mDxCbvHandle);
 	}
 	if ((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_BUFFER) &&
 		!(pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_NO_DESCRIPTOR_VIEW_CREATION))
 	{
-		remove_srv(pRenderer, &pBuffer->mDxSrvHandle);
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pBuffer->mDxSrvHandle);
 	}
 	if ((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER) &&
 		!(pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_NO_DESCRIPTOR_VIEW_CREATION))
 	{
-		remove_uav(pRenderer, &pBuffer->mDxUavHandle);
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pBuffer->mDxUavHandle);
 	}
+
+
+	d3d12_destroyBuffer(pRenderer->pResourceAllocator, pBuffer);
 
 	SAFE_FREE(pBuffer);
 }
@@ -2711,7 +2570,6 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 
 	//set texture properties
 	pTexture->mDesc = *pDesc;
-	pTexture->mTextureId = tfrg_atomic32_add_relaxed(&gTextureIds, 1);
 
 	if (pDesc->pNativeHandle)
 	{
@@ -3012,6 +2870,12 @@ void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTextu
 		}
 	}
 
+	if (pDesc->pDebugName)
+	{
+		pTexture->mDesc.pDebugName = (wchar_t*)conf_calloc(wcslen(pDesc->pDebugName) + 1, sizeof(wchar_t));
+		wcscpy((wchar_t*)pTexture->mDesc.pDebugName, pDesc->pDebugName);
+	}
+
 	//save tetxure in given pointer
 	*ppTexture = pTexture;
 
@@ -3032,13 +2896,13 @@ void removeTexture(Renderer* pRenderer, Texture* pTexture)
 
 	//delete texture descriptors
 	if (pTexture->mDxSRVDescriptor.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-		remove_srv(pRenderer, &pTexture->mDxSRVDescriptor);
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pTexture->mDxSRVDescriptor);
 
 	if (pTexture->pDxUAVDescriptors)
 	{
 		for (uint32_t i = 0; i < pTexture->mDesc.mMipLevels; ++i)
 		{
-			remove_uav(pRenderer, &pTexture->pDxUAVDescriptors[i]);
+			return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], pTexture->pDxUAVDescriptors[i]);
 		}
 	}
 
@@ -3047,319 +2911,9 @@ void removeTexture(Renderer* pRenderer, Texture* pTexture)
 		d3d12_destroyTexture(pRenderer->pResourceAllocator, pTexture);
 	}
 
+	SAFE_FREE((wchar_t*)pTexture->mDesc.pDebugName);
 	SAFE_FREE(pTexture->pDxUAVDescriptors);
 	SAFE_FREE(pTexture);
-}
-
-void addDescriptorBinder(
-	Renderer* pRenderer, uint32_t gpuIndex, uint32_t descCount, const DescriptorBinderDesc* pDescs, DescriptorBinder** ppDescriptorBinder)
-{
-	const uint32_t    setCount = DESCRIPTOR_UPDATE_FREQ_COUNT;
-	DescriptorBinder* pDescriptorBinder = (DescriptorBinder*)conf_calloc(1, sizeof(*pDescriptorBinder));
-
-	pDescriptorBinder->mRootSignatureNodes = *conf_placement_new<DescriptorBinderMap>(&pDescriptorBinder->mRootSignatureNodes);
-
-	// Allocate all unique root signatures in the map
-	for (uint32_t i = 0; i < descCount; i++)
-	{
-		const DescriptorBinderDesc* pDesc = pDescs + i;
-		const RootSignature*        rootSignature = pDesc->pRootSignature;
-
-		DescriptorBinderMap::const_iterator it = pDescriptorBinder->mRootSignatureNodes.find(rootSignature);
-		if (it != pDescriptorBinder->mRootSignatureNodes.end())
-			continue;    // we want unique root signatures because we are going to get data indexing the map by root signature
-
-		DescriptorBinderNode descriptorBinderNode = {};
-		descriptorBinderNode.mFrameIdx = (uint32_t)-1;
-
-		// Calculate num descriptors per set per usage
-		for (uint32_t j = 0; j < rootSignature->mDescriptorCount; j++)
-		{
-			DescriptorInfo* descriptorInfo = rootSignature->pDescriptors + j;
-
-			if (descriptorInfo->mDesc.type == DESCRIPTOR_TYPE_SAMPLER)
-			{
-				descriptorBinderNode.numDescriptorsPerSet[descriptorInfo->mUpdateFrquency][D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER] +=
-					descriptorInfo->mDesc.size;
-			}
-			else if (descriptorInfo->mDesc.type != DESCRIPTOR_TYPE_UNDEFINED && descriptorInfo->mDesc.type != DESCRIPTOR_TYPE_ROOT_CONSTANT)
-			{
-				descriptorBinderNode.numDescriptorsPerSet[descriptorInfo->mUpdateFrquency][D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] +=
-					descriptorInfo->mDesc.size;
-			}
-		}
-
-		pDescriptorBinder->mRootSignatureNodes.insert({{ rootSignature, descriptorBinderNode }});
-	}
-
-	// Calculate total required pool data based on root signature and usage data
-	DescriptorHeapProperties gpuDescriptorHeapProperties[2] = {
-		{ 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE },    // CBV SRV UAV
-		{ 0, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE },    // Sampler
-	};
-
-	for (uint32_t i = 0; i < descCount; i++)
-	{
-		const DescriptorBinderDesc* pDesc = pDescs + i;
-		const RootSignature*        pRootSignature = pDesc->pRootSignature;
-		const uint32_t              maxUpdatesPerFrequency[DESCRIPTOR_UPDATE_FREQ_COUNT] = { 1, 1, pDesc->mMaxDynamicUpdatesPerBatch,
-                                                                                pDesc->mMaxDynamicUpdatesPerDraw };
-		DescriptorBinderNode&  descriptorBinderNode = pDescriptorBinder->mRootSignatureNodes[pRootSignature];
-
-		for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; setIndex++)
-		{
-			descriptorBinderNode.mMaxUsagePerSet[setIndex] += maxUpdatesPerFrequency[setIndex];
-		}
-
-		// Calculate total required pool data based on root signature and usage data
-		for (uint32_t j = 0; j < pRootSignature->mDescriptorCount; j++)
-		{
-			DescriptorInfo* descriptorInfo = pRootSignature->pDescriptors + j;
-			uint32_t        arraySize = descriptorInfo->mDesc.size;
-			uint32_t        count = maxUpdatesPerFrequency[descriptorInfo->mUpdateFrquency] * arraySize * MAX_FRAMES_IN_FLIGHT;
-
-			if (descriptorInfo->mDesc.type == DESCRIPTOR_TYPE_SAMPLER)
-			{
-				gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER].mMaxDescriptors += count;
-			}
-			else if (descriptorInfo->mDesc.type != DESCRIPTOR_TYPE_UNDEFINED && descriptorInfo->mDesc.type != DESCRIPTOR_TYPE_ROOT_CONSTANT)
-			{
-				gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].mMaxDescriptors += count;
-			}
-		}
-	}
-
-	// Allocate pool total size for all descriptors
-	const uint32_t maxViews = gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].mMaxDescriptors;
-	const uint32_t maxSamplers = gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER].mMaxDescriptors;
-
-	for (uint32_t i = 0; i < pRenderer->mLinkedNodeCount; ++i)
-	{
-		if (pRenderer->mSettings.mGpuMode == GPU_MODE_SINGLE && i > 0)
-			break;
-
-		uint32_t nodeMask = util_calculate_node_mask(pRenderer, i);
-
-		add_descriptor_heap(
-			pRenderer->pDxDevice, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-			gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].mFlags, maxViews > 0 ? maxViews : 1, nodeMask,
-			&pDescriptorBinder->pCbvSrvUavHeap[i]);
-
-		add_descriptor_heap(
-			pRenderer->pDxDevice, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
-			gpuDescriptorHeapProperties[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER].mFlags, maxSamplers > 0 ? maxSamplers : 1, nodeMask,
-			&pDescriptorBinder->pSamplerHeap[i]);
-	}
-
-	for (DescriptorBinderMap::value_type& it : pDescriptorBinder->mRootSignatureNodes)
-	{
-		const RootSignature*  rootSignature = it.first;
-		DescriptorBinderNode& node = it.second;
-
-		// Consume all necessary descriptor tables from the heaps
-		for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++)
-		{
-			for (uint32_t setIndex = 0; setIndex < setCount; setIndex++)
-			{
-				uint32_t usageCountThisSet = node.mMaxUsagePerSet[setIndex];
-
-				node.pCbvSrvUavTables[frameIdx][setIndex] = (DescriptorTable*)conf_calloc(usageCountThisSet, sizeof(DescriptorTable));
-				node.pSamplerTables[frameIdx][setIndex] = (DescriptorTable*)conf_calloc(usageCountThisSet, sizeof(DescriptorTable));
-				node.mCbvSrvUavUsageCount[frameIdx][setIndex] = usageCountThisSet;
-				node.mSamplerUsageCount[frameIdx][setIndex] = usageCountThisSet;
-
-				for (uint32_t usageIdx = 0; usageIdx < usageCountThisSet; usageIdx++)
-				{
-					const uint32_t viewCount = node.numDescriptorsPerSet[setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
-					const uint32_t samplerCount = node.numDescriptorsPerSet[setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER];
-
-					if (viewCount > 0)
-					{
-						DescriptorTable* descriptorTable = node.pCbvSrvUavTables[frameIdx][setIndex] + usageIdx;
-						add_gpu_descriptor_handles(
-							pDescriptorBinder->pCbvSrvUavHeap[gpuIndex], &descriptorTable->mBaseCpuHandle, &descriptorTable->mBaseGpuHandle,
-							viewCount);
-						descriptorTable->mDescriptorCount = viewCount;
-						descriptorTable->mNodeIndex = gpuIndex;
-					}
-					if (samplerCount > 0)
-					{
-						DescriptorTable* descriptorTable = node.pSamplerTables[frameIdx][setIndex] + usageIdx;
-						add_gpu_descriptor_handles(
-							pDescriptorBinder->pSamplerHeap[gpuIndex], &descriptorTable->mBaseCpuHandle, &descriptorTable->mBaseGpuHandle,
-							samplerCount);
-						descriptorTable->mDescriptorCount = samplerCount;
-						descriptorTable->mNodeIndex = gpuIndex;
-					}
-				}
-			}
-		}
-	}
-
-	// Fill the descriptor handles with null descriptors
-	for (DescriptorBinderMap::value_type& it : pDescriptorBinder->mRootSignatureNodes)
-	{
-		const RootSignature*  pRootSignature = it.first;
-		DescriptorBinderNode& node = it.second;
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			const uint32_t viewCount = pRootSignature->mDxViewDescriptorCounts[setIndex];
-			const uint32_t samplerCount = pRootSignature->mDxSamplerDescriptorCounts[setIndex];
-			const uint32_t descCount = viewCount + samplerCount;
-
-			if (viewCount)
-			{
-				node.pNullViewDescriptorHandles[setIndex] = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(
-					pRootSignature->mDxCumulativeViewDescriptorCounts[setIndex], sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-
-				for (uint32_t i = 0; i < viewCount; ++i)
-				{
-					const DescriptorInfo* pDesc = &pRootSignature->pDescriptors[pRootSignature->pDxViewDescriptorIndices[setIndex][i]];
-					DescriptorType        type = pDesc->mDesc.type;
-					switch (type)
-					{
-						case DESCRIPTOR_TYPE_TEXTURE:
-						{
-							D3D12_CPU_DESCRIPTOR_HANDLE nullSRV = pRenderer->mNullTextureSRV[pDesc->mDesc.dim];
-
-							for (uint32_t j = 0; j < pDesc->mDesc.size; ++j)
-								node.pNullViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = nullSRV;
-
-							break;
-						}
-						case DESCRIPTOR_TYPE_BUFFER:
-						{
-							for (uint32_t j = 0; j < pDesc->mDesc.size; ++j)
-								node.pNullViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pRenderer->mNullBufferSRV;
-							break;
-						}
-						case DESCRIPTOR_TYPE_RW_TEXTURE:
-						{
-							TextureDimension            dim = pDesc->mDesc.dim;
-							D3D12_CPU_DESCRIPTOR_HANDLE nullUAV = pRenderer->mNullTextureUAV[dim];
-
-							switch (dim)
-							{
-								case TEXTURE_DIM_2DMS:
-									LOGF(LogLevel::eERROR, "Texture2DMS not supported for UAV (%s)", pDesc->mDesc.name);
-									break;
-								case TEXTURE_DIM_2DMS_ARRAY:
-									LOGF(LogLevel::eERROR, "Texture2DMSArray not supported for UAV (%s)", pDesc->mDesc.name);
-									break;
-								case TEXTURE_DIM_CUBE:
-									LOGF(LogLevel::eERROR, "TextureCube not supported for UAV (%s)", pDesc->mDesc.name);
-									break;
-								case TEXTURE_DIM_CUBE_ARRAY:
-									LOGF(LogLevel::eERROR, "TextureCubeArray not supported for UAV (%s)", pDesc->mDesc.name);
-									break;
-								default: break;
-							}
-
-							for (uint32_t j = 0; j < pDesc->mDesc.size; ++j)
-								node.pNullViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = nullUAV;
-
-							break;
-						}
-						case DESCRIPTOR_TYPE_RW_BUFFER:
-						{
-							for (uint32_t j = 0; j < pDesc->mDesc.size; ++j)
-								node.pNullViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pRenderer->mNullBufferUAV;
-							break;
-						}
-						case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-						{
-							for (uint32_t j = 0; j < pDesc->mDesc.size; ++j)
-								node.pNullViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pRenderer->mNullBufferCBV;
-							break;
-						}
-						default: break;
-					}
-				}
-
-				node.pViewDescriptorHandles[setIndex] = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(
-					pRootSignature->mDxCumulativeViewDescriptorCounts[setIndex], sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-				memcpy(node.pViewDescriptorHandles[setIndex], node.pNullViewDescriptorHandles[setIndex],
-					pRootSignature->mDxCumulativeViewDescriptorCounts[setIndex] * sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-			}
-
-			if (samplerCount)
-			{
-				node.mNullSamplerDescriptorHandle = pRenderer->mNullSampler;
-				node.pSamplerDescriptorHandles[setIndex] = (D3D12_CPU_DESCRIPTOR_HANDLE*)conf_calloc(
-					pRootSignature->mDxCumulativeSamplerDescriptorCounts[setIndex], sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-				for (uint32_t i = 0; i < samplerCount; ++i)
-				{
-					node.pSamplerDescriptorHandles[setIndex][i] = pRenderer->mNullSampler;
-				}
-			}
-		}
-	}
-	*ppDescriptorBinder = pDescriptorBinder;
-}
-
-void removeDescriptorBinder(Renderer* pRenderer, DescriptorBinder* pDescriptorBinder)
-{
-	const uint32_t setCount = DESCRIPTOR_UPDATE_FREQ_COUNT;
-	const uint32_t frameCount = MAX_FRAMES_IN_FLIGHT;
-
-	for (DescriptorBinderMap::value_type& it : pDescriptorBinder->mRootSignatureNodes)
-	{
-		DescriptorBinderNode& node = it.second;
-
-		// Free staging data tables
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			SAFE_FREE(node.pViewDescriptorHandles[setIndex]);
-			SAFE_FREE(node.pNullViewDescriptorHandles[setIndex]);
-			SAFE_FREE(node.pSamplerDescriptorHandles[setIndex]);
-		}
-
-		for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++)
-		{
-			for (uint32_t setIndex = 0; setIndex < setCount; setIndex++)
-			{
-				for (uint32_t usageIdx = 0; usageIdx < node.mCbvSrvUavUsageCount[frameIdx][setIndex]; usageIdx++)
-				{
-					DescriptorTable* descriptorTable = node.pCbvSrvUavTables[frameIdx][setIndex] + usageIdx;
-					remove_gpu_descriptor_handles(
-						pDescriptorBinder->pCbvSrvUavHeap[descriptorTable->mNodeIndex], &descriptorTable->mBaseGpuHandle,
-						descriptorTable->mDescriptorCount);
-				}
-				for (uint32_t usageIdx = 0; usageIdx < node.mSamplerUsageCount[frameIdx][setIndex]; usageIdx++)
-				{
-					DescriptorTable* descriptorTable = node.pSamplerTables[frameIdx][setIndex] + usageIdx;
-					remove_gpu_descriptor_handles(
-						pDescriptorBinder->pSamplerHeap[descriptorTable->mNodeIndex], &descriptorTable->mBaseGpuHandle,
-						descriptorTable->mDescriptorCount);
-				}
-			}
-		}
-
-		for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++)
-		{
-			for (uint32_t setIndex = 0; setIndex < DESCRIPTOR_UPDATE_FREQ_COUNT; setIndex++)
-			{
-				SAFE_FREE(node.pCbvSrvUavTables[frameIdx][setIndex]);
-				SAFE_FREE(node.pSamplerTables[frameIdx][setIndex]);
-			}
-		}
-	}
-
-	pDescriptorBinder->mRootSignatureNodes.~hash_map();
-
-	uint32_t gpuCount = 1;
-	if (pRenderer->mSettings.mGpuMode == GPU_MODE_LINKED)
-		gpuCount = pRenderer->mLinkedNodeCount;
-
-	for (uint32_t i = 0; i < gpuCount; ++i)
-	{
-		if (pDescriptorBinder->pCbvSrvUavHeap[i] != NULL)
-			remove_descriptor_heap(pDescriptorBinder->pCbvSrvUavHeap[i]);
-		if (pDescriptorBinder->pSamplerHeap[i] != NULL)
-			remove_descriptor_heap(pDescriptorBinder->pSamplerHeap[i]);
-	}
-
-	SAFE_FREE(pDescriptorBinder);
 }
 
 void addRenderTarget(Renderer* pRenderer, const RenderTargetDesc* pDesc, RenderTarget** ppRenderTarget)
@@ -3464,11 +3018,9 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 
 	removeTexture(pRenderer, pRenderTarget->pTexture);
 
-	if(isDepth) {
-		remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[0]);
-	} else  {
-		remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[0]);
-	}
+	!isDepth ?
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], pRenderTarget->pDxDescriptors[0]) :
+		return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], pRenderTarget->pDxDescriptors[0]);
 
 	const uint32_t depthOrArraySize = pRenderTarget->mDesc.mArraySize * pRenderTarget->mDesc.mDepth;
 	if ((pRenderTarget->mDesc.mDescriptors & DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES) ||
@@ -3476,20 +3028,16 @@ void removeRenderTarget(Renderer* pRenderer, RenderTarget* pRenderTarget)
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
 			for (uint32_t j = 0; j < depthOrArraySize; ++j)
-				if(isDepth) {
-					remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
-				} else {
-					remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
-				}
+				!isDepth ?
+				return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]) :
+				return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], pRenderTarget->pDxDescriptors[1 + i * depthOrArraySize + j]);
 	}
 	else
 	{
 		for (uint32_t i = 0; i < pRenderTarget->mDesc.mMipLevels; ++i)
-			if(isDepth) {
-				remove_dsv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i]);
-			} else {
-				remove_rtv(pRenderer, &pRenderTarget->pDxDescriptors[1 + i]);
-			}
+			!isDepth ?
+			return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_RTV], pRenderTarget->pDxDescriptors[1 + i]) :
+			return_cpu_descriptor_handle(pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_DSV], pRenderTarget->pDxDescriptors[1 + i]);
 	}
 
 	SAFE_FREE(pRenderTarget->pDxDescriptors);
@@ -3506,26 +3054,25 @@ void addSampler(Renderer* pRenderer, const SamplerDesc* pDesc, Sampler** ppSampl
 	Sampler* pSampler = (Sampler*)conf_calloc(1, sizeof(*pSampler));
 	ASSERT(pSampler);
 
+	D3D12_SAMPLER_DESC desc = {};
 	//add sampler to gpu
-	pSampler->mDxSamplerDesc.Filter = util_to_dx_filter(
+	desc.Filter = util_to_dx_filter(
 		pDesc->mMinFilter, pDesc->mMagFilter, pDesc->mMipMapMode, pDesc->mMaxAnisotropy > 0.0f,
 		(pDesc->mCompareFunc != CMP_NEVER ? true : false));
-	pSampler->mDxSamplerDesc.AddressU = util_to_dx_texture_address_mode(pDesc->mAddressU);
-	pSampler->mDxSamplerDesc.AddressV = util_to_dx_texture_address_mode(pDesc->mAddressV);
-	pSampler->mDxSamplerDesc.AddressW = util_to_dx_texture_address_mode(pDesc->mAddressW);
-	pSampler->mDxSamplerDesc.MipLODBias = pDesc->mMipLodBias;
-	pSampler->mDxSamplerDesc.MaxAnisotropy = max((UINT)pDesc->mMaxAnisotropy, 1U);
-	pSampler->mDxSamplerDesc.ComparisonFunc = gDx12ComparisonFuncTranslator[pDesc->mCompareFunc];
-	pSampler->mDxSamplerDesc.BorderColor[0] = 0.0f;
-	pSampler->mDxSamplerDesc.BorderColor[1] = 0.0f;
-	pSampler->mDxSamplerDesc.BorderColor[2] = 0.0f;
-	pSampler->mDxSamplerDesc.BorderColor[3] = 0.0f;
-	pSampler->mDxSamplerDesc.MinLOD = 0.0f;
-	pSampler->mDxSamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-
-	add_sampler(pRenderer, &pSampler->mDxSamplerDesc, &pSampler->mDxSamplerHandle);
-
-	pSampler->mSamplerId = tfrg_atomic32_add_relaxed(&gSamplerIds, 1);
+	desc.AddressU = util_to_dx_texture_address_mode(pDesc->mAddressU);
+	desc.AddressV = util_to_dx_texture_address_mode(pDesc->mAddressV);
+	desc.AddressW = util_to_dx_texture_address_mode(pDesc->mAddressW);
+	desc.MipLODBias = pDesc->mMipLodBias;
+	desc.MaxAnisotropy = max((UINT)pDesc->mMaxAnisotropy, 1U);
+	desc.ComparisonFunc = gDx12ComparisonFuncTranslator[pDesc->mCompareFunc];
+	desc.BorderColor[0] = 0.0f;
+	desc.BorderColor[1] = 0.0f;
+	desc.BorderColor[2] = 0.0f;
+	desc.BorderColor[3] = 0.0f;
+	desc.MinLOD = 0.0f;
+	desc.MaxLOD = D3D12_FLOAT32_MAX;
+	pSampler->mDxDesc = desc;
+	add_sampler(pRenderer, &pSampler->mDxDesc, &pSampler->mDxSamplerHandle);
 
 	*ppSampler = pSampler;
 }
@@ -3535,13 +3082,12 @@ void removeSampler(Renderer* pRenderer, Sampler* pSampler)
 	ASSERT(pRenderer);
 	ASSERT(pSampler);
 
-	remove_sampler(pRenderer, &pSampler->mDxSamplerHandle);
+	//remove_sampler(pRenderer, &pSampler->mDxSamplerHandle);
 
 	// Nop op
 
 	SAFE_FREE(pSampler);
 }
-
 /************************************************************************/
 // Shader Functions
 /************************************************************************/
@@ -3828,7 +3374,17 @@ const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer)
 {
 	UNREF_PARAM(pRenderer);
 
-	RendererShaderDefinesDesc defineDesc = { NULL, 0 };
+	// Set shader macro based on runtime information
+	static ShaderMacro rendererShaderDefines[] =
+	{
+		// Descriptor set indices
+		{ "UPDATE_FREQ_NONE",      "space0" },
+		{ "UPDATE_FREQ_PER_FRAME", "space1" },
+		{ "UPDATE_FREQ_PER_BATCH", "space2" },
+		{ "UPDATE_FREQ_PER_DRAW",  "space3" },
+	};
+
+	RendererShaderDefinesDesc defineDesc = { rendererShaderDefines, sizeof(rendererShaderDefines) / sizeof(rendererShaderDefines[0]) };
 	return defineDesc;
 }
 
@@ -3941,10 +3497,13 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	eastl::vector<eastl::pair<DescriptorInfo*, Sampler*> > staticSamplers;
 	ShaderStage                                            shaderStages = SHADER_STAGE_NONE;
 	bool                                                   useInputLayout = false;
+	eastl::string_hash_map<Sampler*>                       staticSamplerMap;
 
-	eastl::string_hash_map<Sampler*> staticSamplerMap;
 	for (uint32_t i = 0; i < pRootSignatureDesc->mStaticSamplerCount; ++i)
+	{
+		ASSERT(pRootSignatureDesc->ppStaticSamplers[i]);
 		staticSamplerMap.insert(pRootSignatureDesc->ppStaticSamplerNames[i], pRootSignatureDesc->ppStaticSamplers[i]);
+	}
 
 	//pRootSignature->pDescriptorNameToIndexMap;
 	conf_placement_new<eastl::unordered_map<uint32_t, uint32_t> >(&pRootSignature->pDescriptorNameToIndexMap);
@@ -4056,7 +3615,7 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 		DescriptorInfo* pDesc = &pRootSignature->pDescriptors[i];
 		ShaderResource* pRes = &shaderResources[i];
 		uint32_t        setIndex = pRes->set;
-		if (pRes->size == 0)
+		if (pRes->size == 0 || setIndex >= DESCRIPTOR_UPDATE_FREQ_COUNT)
 			setIndex = 0;
 
 		DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)setIndex;
@@ -4114,88 +3673,26 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 				pDesc->mDesc.size = constantSizes[i] / sizeof(uint32_t);
 			}
-			else
+			// If a user specified a uniform buffer to be used directly in the root signature change its type to D3D12_ROOT_PARAMETER_TYPE_CBV
+			// Also log a message for debugging purpose
+			else if (name.find("rootcbv", 0) != eastl::string::npos)
 			{
-				// By default DESCRIPTOR_TYPE_UNIFORM_BUFFER maps to D3D12_ROOT_PARAMETER_TYPE_CBV
-				// But since the size of root descriptors is 2 DWORDS, some of these uniform buffers might get placed in descriptor tables
-				// if the size of the root signature goes over the max recommended size on the specific hardware
 				layouts[setIndex].mRootDescriptorParams.emplace_back(pDesc);
 				pDesc->mDxType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+				LOGF(LogLevel::eINFO, "Descriptor (%s) : User specified D3D12_ROOT_PARAMETER_TYPE_CBV", pDesc->mDesc.name);
+			}
+			else
+			{
+				layouts[setIndex].mCbvSrvUavTable.emplace_back(pDesc);
 			}
 		}
-#ifdef ENABLE_RAYTRACING
-		// No support for arrays of srv buffers to be used as root descriptors as this might bloat the root signature size
-		else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RAY_TRACING && pDesc->mDesc.size == 1)
-		{
-			layouts[setIndex].mRootDescriptorParams.emplace_back(pDesc);
-			pDesc->mDxType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-		}
-#endif
 		else
 		{
 			layouts[setIndex].mCbvSrvUavTable.emplace_back(pDesc);
 		}
 
 		layouts[setIndex].mDescriptorIndexMap[pDesc] = i;
-	}
-
-	uint32_t rootSize = calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size());
-
-	// If the root signature size has crossed the recommended hardware limit try to optimize it
-	if (rootSize > pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS)
-	{
-		// Cconvert some of the root constants to root descriptors
-		for (uint32_t i = 0; i < (uint32_t)layouts.size(); ++i)
-		{
-			if (!layouts[i].mRootConstants.size())
-				continue;
-
-			UpdateFrequencyLayoutInfo& layout = layouts[i];
-			DescriptorInfo**           convertIt = layout.mRootConstants.end() - 1;
-			DescriptorInfo**           endIt = layout.mRootConstants.begin();
-			while (layout.mRootConstants.size() &&
-				   pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS <
-					   calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size()) &&
-				   convertIt >= endIt)
-			{
-				layout.mRootDescriptorParams.push_back(*convertIt);
-				layout.mRootConstants.erase(eastl::find(layout.mRootConstants.begin(), layout.mRootConstants.end(), *convertIt));
-				(*convertIt)->mDxType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-
-				LOGF(
-					LogLevel::eWARNING, "Converting root constant (%s) to root cbv to keep root signature size below hardware limit",
-					(*convertIt)->mDesc.name);
-			}
-		}
-
-		// If the root signature size is still above the recommended max, we need to place some of the less updated root descriptors
-		// in descriptor tables of the same update frequency
-		for (uint32_t i = 0; i < (uint32_t)layouts.size(); ++i)
-		{
-			if (!layouts[i].mRootDescriptorParams.size())
-				continue;
-
-			UpdateFrequencyLayoutInfo& layout = layouts[i];
-
-			while (pRenderer->pActiveGpuSettings->mMaxRootSignatureDWORDS <
-				   calculate_root_signature_size(layouts.data(), (uint32_t)layouts.size()))
-			{
-				if (!layout.mRootDescriptorParams.size())
-					break;
-				DescriptorInfo** constantIt = layout.mRootDescriptorParams.end() - 1;
-				DescriptorInfo** endIt = layout.mRootDescriptorParams.begin();
-				if ((constantIt != endIt) || (constantIt == layout.mRootDescriptorParams.begin() && endIt == layout.mRootDescriptorParams.begin()))
-				{
-					layout.mCbvSrvUavTable.push_back(*constantIt);
-					layout.mRootDescriptorParams.erase(eastl::find(layout.mRootDescriptorParams.begin(), layout.mRootDescriptorParams.end(), *constantIt));
-
-					LOGF(
-						LogLevel::eWARNING,
-						"Placing root descriptor (%s) in descriptor table to keep root signature size below hardware limit",
-						(*constantIt)->mDesc.name);
-				}
-			}
-		}
 	}
 
 	// We should never reach inside this if statement. If we do, something got messed up
@@ -4218,15 +3715,16 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	eastl::vector<D3D12_STATIC_SAMPLER_DESC> staticSamplerDescs(staticSamplers.size());
 	for (uint32_t i = 0; i < (uint32_t)staticSamplers.size(); ++i)
 	{
-		staticSamplerDescs[i].Filter = staticSamplers[i].second->mDxSamplerDesc.Filter;
-		staticSamplerDescs[i].AddressU = staticSamplers[i].second->mDxSamplerDesc.AddressU;
-		staticSamplerDescs[i].AddressV = staticSamplers[i].second->mDxSamplerDesc.AddressV;
-		staticSamplerDescs[i].AddressW = staticSamplers[i].second->mDxSamplerDesc.AddressW;
-		staticSamplerDescs[i].MipLODBias = staticSamplers[i].second->mDxSamplerDesc.MipLODBias;
-		staticSamplerDescs[i].MaxAnisotropy = staticSamplers[i].second->mDxSamplerDesc.MaxAnisotropy;
-		staticSamplerDescs[i].ComparisonFunc = staticSamplers[i].second->mDxSamplerDesc.ComparisonFunc;
-		staticSamplerDescs[i].MinLOD = staticSamplers[i].second->mDxSamplerDesc.MinLOD;
-		staticSamplerDescs[i].MaxLOD = staticSamplers[i].second->mDxSamplerDesc.MaxLOD;
+		D3D12_SAMPLER_DESC& desc = staticSamplers[i].second->mDxDesc;
+		staticSamplerDescs[i].Filter = desc.Filter;
+		staticSamplerDescs[i].AddressU = desc.AddressU;
+		staticSamplerDescs[i].AddressV = desc.AddressV;
+		staticSamplerDescs[i].AddressW = desc.AddressW;
+		staticSamplerDescs[i].MipLODBias = desc.MipLODBias;
+		staticSamplerDescs[i].MaxAnisotropy = desc.MaxAnisotropy;
+		staticSamplerDescs[i].ComparisonFunc = desc.ComparisonFunc;
+		staticSamplerDescs[i].MinLOD = desc.MinLOD;
+		staticSamplerDescs[i].MaxLOD = desc.MaxLOD;
 		staticSamplerDescs[i].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 		staticSamplerDescs[i].RegisterSpace = staticSamplers[i].first->mDesc.set;
 		staticSamplerDescs[i].ShaderRegister = staticSamplers[i].first->mDesc.reg;
@@ -4247,19 +3745,19 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 	for (uint32_t i = 0; i < (uint32_t)layouts.size(); ++i)
 	{
 		pRootSignature->mDxRootConstantCount += (uint32_t)layouts[i].mRootConstants.size();
-		pRootSignature->mDxRootDescriptorCount += (uint32_t)layouts[i].mRootDescriptorParams.size();
+		pRootSignature->mDxRootDescriptorCounts[i] += (uint32_t)layouts[i].mRootDescriptorParams.size();
+
+		if (pRootSignature->mDxRootDescriptorCounts[i])
+			pRootSignature->pDxRootDescriptorRootIndices[i] =
+			(uint32_t*)conf_calloc(pRootSignature->mDxRootDescriptorCounts[i], sizeof(*pRootSignature->pDxRootDescriptorRootIndices[i]));
 	}
 	if (pRootSignature->mDxRootConstantCount)
 		pRootSignature->pDxRootConstantRootIndices =
 			(uint32_t*)conf_calloc(pRootSignature->mDxRootConstantCount, sizeof(*pRootSignature->pDxRootConstantRootIndices));
-	if (pRootSignature->mDxRootDescriptorCount)
-		pRootSignature->pDxRootDescriptorRootIndices =
-			(uint32_t*)conf_calloc(pRootSignature->mDxRootDescriptorCount, sizeof(*pRootSignature->pDxRootDescriptorRootIndices));
 
 	// Start collecting root parameters
 	// Start with root descriptors since they will be the most frequently updated descriptors
 	// This also makes sure that if we spill, the root descriptors in the front of the root signature will most likely still remain in the root
-	uint32_t rootDescriptorIndex = 0;
 	// Collect all root descriptors
 	// Put most frequently changed params first
 	for (uint32_t i = (uint32_t)layouts.size(); i-- > 0U;)
@@ -4267,11 +3765,13 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 		UpdateFrequencyLayoutInfo& layout = layouts[i];
 		if (layout.mRootDescriptorParams.size())
 		{
+			uint32_t rootDescriptorIndex = 0;
+
 			for (uint32_t descIndex = 0; descIndex < (uint32_t)layout.mRootDescriptorParams.size(); ++descIndex)
 			{
 				DescriptorInfo* pDesc = layout.mRootDescriptorParams[descIndex];
 				pDesc->mIndexInParent = rootDescriptorIndex;
-				pRootSignature->pDxRootDescriptorRootIndices[pDesc->mIndexInParent] = (uint32_t)rootParams.size();
+				pRootSignature->pDxRootDescriptorRootIndices[i][pDesc->mIndexInParent] = (uint32_t)rootParams.size();
 
 				D3D12_ROOT_PARAMETER1 rootParam;
 				D3D12_ROOT_PARAMETER  rootParam_1_0;
@@ -4504,6 +4004,7 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 	{
 		SAFE_FREE(pRootSignature->pDxViewDescriptorIndices[i]);
 		SAFE_FREE(pRootSignature->pDxSamplerDescriptorIndices[i]);
+		SAFE_FREE(pRootSignature->pDxRootDescriptorRootIndices[i]);
 	}
 
 	for (uint32_t i = 0; i < pRootSignature->mDescriptorCount; ++i)
@@ -4514,13 +4015,438 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 	pRootSignature->pDescriptorNameToIndexMap.~string_hash_map();
 
 	SAFE_FREE(pRootSignature->pDescriptors);
-	SAFE_FREE(pRootSignature->pDxRootDescriptorRootIndices);
 	SAFE_FREE(pRootSignature->pDxRootConstantRootIndices);
 
 	SAFE_RELEASE(pRootSignature->pDxRootSignature);
 	SAFE_RELEASE(pRootSignature->pDxSerializedRootSignatureString);
 
 	SAFE_FREE(pRootSignature);
+}
+/************************************************************************/
+// Descriptor Set Functions
+/************************************************************************/
+void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, DescriptorSet** ppDescriptorSet)
+{
+	ASSERT(pRenderer);
+	ASSERT(pDesc);
+	ASSERT(ppDescriptorSet);
+
+	DescriptorSet* pDescriptorSet = (DescriptorSet*)conf_calloc(1, sizeof(*pDescriptorSet));
+	ASSERT(pDescriptorSet);
+
+	const RootSignature* pRootSignature = pDesc->pRootSignature;
+	const DescriptorUpdateFrequency updateFreq = pDesc->mUpdateFrequency;
+	const uint32_t nodeIndex = pDesc->mNodeIndex;
+	const uint32_t cbvSrvUavDescCount = pRootSignature->mDxCumulativeViewDescriptorCounts[updateFreq];
+	const uint32_t samplerDescCount = pRootSignature->mDxCumulativeSamplerDescriptorCounts[updateFreq];
+
+	pDescriptorSet->pRootSignature = pRootSignature;
+	pDescriptorSet->mUpdateFrequency = updateFreq;
+	pDescriptorSet->mNodeIndex = nodeIndex;
+	pDescriptorSet->mMaxSets = pDesc->mMaxSets;
+	pDescriptorSet->mCbvSrvUavRootIndex = pRootSignature->mDxViewDescriptorTableRootIndices[updateFreq];
+	pDescriptorSet->mSamplerRootIndex = pRootSignature->mDxSamplerDescriptorTableRootIndices[updateFreq];
+	pDescriptorSet->mRootAddressCount = pRootSignature->mDxRootDescriptorCounts[updateFreq];
+
+	if (pDescriptorSet->mRootAddressCount)
+	{
+		pDescriptorSet->pRootAddresses = (D3D12_GPU_VIRTUAL_ADDRESS**)conf_calloc(pDescriptorSet->mMaxSets, sizeof(D3D12_GPU_VIRTUAL_ADDRESS*));
+		for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
+			pDescriptorSet->pRootAddresses[i] = (D3D12_GPU_VIRTUAL_ADDRESS*)conf_calloc(pDescriptorSet->mRootAddressCount, sizeof(D3D12_GPU_VIRTUAL_ADDRESS));
+	}
+
+	if (cbvSrvUavDescCount || samplerDescCount)
+	{
+		if (cbvSrvUavDescCount)
+		{
+			DescriptorHeap* pHeap = pRenderer->pCbvSrvUavHeaps[nodeIndex];
+			pDescriptorSet->pCbvSrvUavHandles = (uint64_t*)conf_calloc(pDesc->mMaxSets, sizeof(uint64_t));
+			DescriptorHeap::DescriptorHandle startHandle = consume_descriptor_handles(pHeap, cbvSrvUavDescCount * pDesc->mMaxSets);
+			for (uint32_t i = 0; i < pDesc->mMaxSets; ++i)
+				pDescriptorSet->pCbvSrvUavHandles[i] =
+				(startHandle.mGpu.ptr + (i * cbvSrvUavDescCount * pHeap->mDescriptorSize)) -
+				pHeap->mStartHandle.mGpu.ptr;
+
+			for (uint32_t i = 0; i < pRootSignature->mDxViewDescriptorCounts[updateFreq]; ++i)
+			{
+				const DescriptorInfo* pDescInfo = &pRootSignature->pDescriptors[pRootSignature->pDxViewDescriptorIndices[updateFreq][i]];
+				DescriptorType        type = pDescInfo->mDesc.type;
+				D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = { D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN };
+				switch (type)
+				{
+				case DESCRIPTOR_TYPE_TEXTURE:        srcHandle = pRenderer->mNullTextureSRV[pDescInfo->mDesc.dim]; break;
+				case DESCRIPTOR_TYPE_BUFFER:         srcHandle = pRenderer->mNullBufferSRV; break;
+				case DESCRIPTOR_TYPE_RW_TEXTURE:     srcHandle = pRenderer->mNullTextureUAV[pDescInfo->mDesc.dim]; break;
+				case DESCRIPTOR_TYPE_RW_BUFFER:      srcHandle = pRenderer->mNullBufferUAV; break;
+				case DESCRIPTOR_TYPE_UNIFORM_BUFFER: srcHandle = pRenderer->mNullBufferCBV; break;
+				default: break;
+				}
+
+#ifdef ENABLE_RAYTRACING
+				if (pDescInfo->mDesc.type != DESCRIPTOR_TYPE_RAY_TRACING)
+#endif
+				{
+					ASSERT(srcHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN);
+
+					for (uint32_t s = 0; s < pDesc->mMaxSets; ++s)
+						for (uint32_t j = 0; j < pDescInfo->mDesc.size; ++j)
+							copy_descriptor_handle(pHeap,
+								srcHandle, pDescriptorSet->pCbvSrvUavHandles[s], pDescInfo->mHandleIndex + j);
+				}
+			}
+		}
+		if (samplerDescCount)
+		{
+			DescriptorHeap* pHeap = pRenderer->pSamplerHeaps[nodeIndex];
+			pDescriptorSet->pSamplerHandles = (uint64_t*)conf_calloc(pDesc->mMaxSets, sizeof(uint64_t));
+			DescriptorHeap::DescriptorHandle startHandle = consume_descriptor_handles(pHeap, samplerDescCount * pDesc->mMaxSets);
+			for (uint32_t i = 0; i < pDesc->mMaxSets; ++i)
+			{
+				pDescriptorSet->pSamplerHandles[i] =
+					(startHandle.mGpu.ptr + (i * samplerDescCount * pHeap->mDescriptorSize)) -
+					pHeap->mStartHandle.mGpu.ptr;
+
+				for (uint32_t j = 0; j < samplerDescCount; ++j)
+					copy_descriptor_handle(pHeap, pRenderer->mNullSampler, pDescriptorSet->pSamplerHandles[i], j);
+			}
+		}
+	}
+
+	*ppDescriptorSet = pDescriptorSet;
+}
+
+void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
+{
+	ASSERT(pRenderer);
+	ASSERT(pDescriptorSet);
+
+	if (pDescriptorSet->mRootAddressCount)
+		for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
+			SAFE_FREE(pDescriptorSet->pRootAddresses[i]);
+
+	SAFE_FREE(pDescriptorSet->pRootAddresses);
+	SAFE_FREE(pDescriptorSet->pCbvSrvUavHandles);
+	SAFE_FREE(pDescriptorSet->pSamplerHandles);
+	SAFE_FREE(pDescriptorSet);
+}
+
+void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDescriptorSet, uint32_t count, const DescriptorData* pParams)
+{
+#ifdef _DEBUG
+#define VALIDATE_DESCRIPTOR(descriptor,...)																\
+	if (!(descriptor))																					\
+	{																									\
+		eastl::string msg = __FUNCTION__ + eastl::string(" : ") + eastl::string().sprintf(__VA_ARGS__);	\
+		LOGF(LogLevel::eERROR, msg.c_str());															\
+		_FailedAssert(__FILE__, __LINE__, msg.c_str());													\
+		continue;																						\
+	}
+#else
+#define VALIDATE_DESCRIPTOR(descriptor,...)
+#endif
+
+	ASSERT(pRenderer);
+	ASSERT(pDescriptorSet);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
+	const DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)pDescriptorSet->mUpdateFrequency;
+	const uint32_t nodeIndex = pDescriptorSet->mNodeIndex;
+	bool update = false;
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		const DescriptorData* pParam = pParams + i;
+		uint32_t paramIndex = pParam->mIndex;
+
+		VALIDATE_DESCRIPTOR(pParam->pName || (paramIndex != -1), "DescriptorData has NULL name and invalid index");
+
+		const DescriptorInfo* pDesc = (paramIndex != -1) ? (pRootSignature->pDescriptors + paramIndex) : get_descriptor(pRootSignature, pParam->pName);
+		if (paramIndex != -1)
+		{
+			VALIDATE_DESCRIPTOR(pDesc, "Invalid descriptor with param index (%u)", paramIndex);
+		}
+		else
+		{
+			VALIDATE_DESCRIPTOR(pDesc, "Invalid descriptor with param name (%s)", pParam->pName);
+		}
+
+		const DescriptorType type = pDesc->mDesc.type;
+		const uint32_t arrayCount = max(1U, pParam->mCount);
+
+		VALIDATE_DESCRIPTOR(pDesc->mUpdateFrquency == updateFreq,
+			"Descriptor (%s) - Mismatching update frequency and register space", pDesc->mDesc.name);
+
+		if (pDesc->mDxType == D3D12_ROOT_PARAMETER_TYPE_CBV)
+		{
+			VALIDATE_DESCRIPTOR(arrayCount == 1, "Descriptor (%s) : D3D12_ROOT_PARAMETER_TYPE_CBV does not support arrays", pDesc->mDesc.name);
+			// We have this validation to stay consistent with Vulkan
+			VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) : Must provide pSizes for D3D12_ROOT_PARAMETER_TYPE_CBV", pDesc->mDesc.name);
+
+			pDescriptorSet->pRootAddresses[index][pDesc->mIndexInParent] = pParam->ppBuffers[0]->mDxGpuAddress +
+				(pParam->pOffsets ? (uint32_t)pParam->pOffsets[0] : 0);
+		}
+		else if (type == DESCRIPTOR_TYPE_SAMPLER)
+		{
+			// Index is invalid when descriptor is a static sampler
+			VALIDATE_DESCRIPTOR(pDesc->mIndexInParent != -1,
+				"Trying to update a static sampler (%s). All static samplers must be set in addRootSignature and cannot be updated later",
+				pDesc->mDesc.name);
+
+			VALIDATE_DESCRIPTOR(pParam->ppSamplers, "NULL Sampler (%s)", pDesc->mDesc.name);
+
+			for (uint32_t arr = 0; arr < arrayCount; ++arr)
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppSamplers[arr], "NULL Sampler (%s [%u] )", pDesc->mDesc.name, arr);
+
+				copy_descriptor_handle(pRenderer->pSamplerHeaps[nodeIndex],
+					pParam->ppSamplers[arr]->mDxSamplerHandle,
+					pDescriptorSet->pSamplerHandles[index], pDesc->mHandleIndex + arr);
+			}
+
+			update = true;
+		}
+		else
+		{
+			switch (type)
+			{
+			case DESCRIPTOR_TYPE_TEXTURE:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL Texture (%s)", pDesc->mDesc.name);
+
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL Texture (%s [%u] )", pDesc->mDesc.name, arr);
+
+					copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+						pParam->ppTextures[arr]->mDxSRVDescriptor,
+						pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+				}
+				break;
+			}
+			case DESCRIPTOR_TYPE_RW_TEXTURE:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppTextures, "NULL RW Texture (%s)", pDesc->mDesc.name);
+
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppTextures[arr], "NULL RW Texture (%s [%u] )", pDesc->mDesc.name, arr);
+
+					copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+						pParam->ppTextures[arr]->pDxUAVDescriptors[pParam->mUAVMipSlice],
+						pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+				}
+				break;
+			}
+			case DESCRIPTOR_TYPE_BUFFER:
+			case DESCRIPTOR_TYPE_BUFFER_RAW:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Buffer (%s)", pDesc->mDesc.name);
+
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+
+					copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+						pParam->ppBuffers[arr]->mDxSrvHandle,
+						pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+				}
+				break;
+			}
+			case DESCRIPTOR_TYPE_RW_BUFFER:
+			case DESCRIPTOR_TYPE_RW_BUFFER_RAW:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL RW Buffer (%s)", pDesc->mDesc.name);
+
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL RW Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+
+					copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+						pParam->ppBuffers[arr]->mDxUavHandle,
+						pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+				}
+				break;
+			}
+			case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppBuffers, "NULL Uniform Buffer (%s)", pDesc->mDesc.name);
+
+				if (pParam->pOffsets)
+				{
+					VALIDATE_DESCRIPTOR(pParam->pSizes, "Descriptor (%s) - pSizes must be provided with pOffsets", pDesc->mDesc.name);
+
+					for (uint32_t arr = 0; arr < arrayCount; ++arr)
+					{
+						VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Uniform Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+						VALIDATE_DESCRIPTOR(pParam->pSizes[arr] > 0, "Descriptor (%s) - pSizes[%u] is zero", pDesc->mDesc.name, arr);
+						VALIDATE_DESCRIPTOR(pParam->pSizes[arr] <= 65536, "Descriptor (%s) - pSizes[%u] is %ull which exceeds max size %u", pDesc->mDesc.name, arr,
+							pParam->pSizes[arr], 65536U);
+
+						D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+						cbvDesc.BufferLocation = pParam->ppBuffers[arr]->mDxGpuAddress + pParam->pOffsets[arr];
+						cbvDesc.SizeInBytes = (UINT)pParam->pSizes[arr];
+						pRenderer->pDxDevice->CreateConstantBufferView(&cbvDesc,
+							{ pRenderer->pCbvSrvUavHeaps[nodeIndex]->mStartHandle.mCpu.ptr + pDescriptorSet->pCbvSrvUavHandles[index] });
+					}
+				}
+				else
+				{
+					for (uint32_t arr = 0; arr < arrayCount; ++arr)
+					{
+						VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr], "NULL Uniform Buffer (%s [%u] )", pDesc->mDesc.name, arr);
+						VALIDATE_DESCRIPTOR(pParam->ppBuffers[arr]->mDesc.mSize <= 65536, "Descriptor (%s) - pSizes[%u] is exceeds max size", pDesc->mDesc.name, arr);
+
+						copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+							pParam->ppBuffers[arr]->mDxCbvHandle,
+							pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+					}
+				}
+				break;
+			}
+#ifdef ENABLE_RAYTRACING
+			case DESCRIPTOR_TYPE_RAY_TRACING:
+			{
+				VALIDATE_DESCRIPTOR(pParam->ppAccelerationStructures, "NULL Acceleration Structure (%s)", pDesc->mDesc.name);
+
+				for (uint32_t arr = 0; arr < arrayCount; ++arr)
+				{
+					VALIDATE_DESCRIPTOR(pParam->ppAccelerationStructures[arr], "Acceleration Structure (%s [%u] )", pDesc->mDesc.name, arr);
+
+					D3D12_CPU_DESCRIPTOR_HANDLE handle = { D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN };
+					d3d12_fillRaytracingDescriptorHandle(pParam->ppAccelerationStructures[arr], &handle.ptr);
+
+					VALIDATE_DESCRIPTOR(handle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN, "Invalid Acceleration Structure (%s [%u] )", pDesc->mDesc.name, arr);
+
+					copy_descriptor_handle(pRenderer->pCbvSrvUavHeaps[nodeIndex],
+						handle,
+						pDescriptorSet->pCbvSrvUavHandles[index], pDesc->mHandleIndex + arr);
+				}
+				break;
+			}
+#endif
+			default:
+				break;
+			}
+
+			update = true;
+		}
+	}
+}
+
+bool reset_root_signature(Cmd* pCmd, const RootSignature* pRootSignature)
+{
+	// Set root signature if the current one differs from pRootSignature
+	if (pCmd->pBoundRootSignature != pRootSignature)
+	{
+		pCmd->pBoundRootSignature = pRootSignature;
+		if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
+			pCmd->pDxCmdList->SetGraphicsRootSignature(pRootSignature->pDxRootSignature);
+		else
+			pCmd->pDxCmdList->SetComputeRootSignature(pRootSignature->pDxRootSignature);
+
+		for (uint32_t i = 0; i < DESCRIPTOR_UPDATE_FREQ_COUNT; ++i)
+		{
+			pCmd->pBoundDescriptorSets[i] = NULL;
+			pCmd->mBoundDescriptorSetIndices[i] = -1;
+		}
+	}
+
+	return false;
+}
+
+void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet)
+{
+	ASSERT(pCmd);
+	ASSERT(pDescriptorSet);
+	ASSERT(index < pDescriptorSet->mMaxSets);
+
+	const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
+	const DescriptorUpdateFrequency updateFreq = (DescriptorUpdateFrequency)pDescriptorSet->mUpdateFrequency;
+
+	// Set root signature if the current one differs from pRootSignature
+	reset_root_signature(pCmd, pRootSignature);
+
+	// Bind all required root descriptors
+	for (uint32_t i = 0; i < pDescriptorSet->mRootAddressCount; ++i)
+	{
+		if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
+			pCmd->pDxCmdList->SetGraphicsRootConstantBufferView(pRootSignature->pDxRootDescriptorRootIndices[updateFreq][i],
+				pDescriptorSet->pRootAddresses[index][i]);
+		else
+			pCmd->pDxCmdList->SetComputeRootConstantBufferView(pRootSignature->pDxRootDescriptorRootIndices[updateFreq][i],
+				pDescriptorSet->pRootAddresses[index][i]);
+	}
+
+	if (pCmd->mBoundDescriptorSetIndices[pDescriptorSet->mUpdateFrequency] != index || pCmd->pBoundDescriptorSets[pDescriptorSet->mUpdateFrequency] != pDescriptorSet)
+	{
+		pCmd->pBoundDescriptorSets[pDescriptorSet->mUpdateFrequency] = pDescriptorSet;
+		pCmd->mBoundDescriptorSetIndices[pDescriptorSet->mUpdateFrequency] = index;
+
+		// Bind the descriptor tables associated with this DescriptorSet
+		if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
+		{
+			if (pDescriptorSet->pCbvSrvUavHandles)
+				pCmd->pDxCmdList->SetGraphicsRootDescriptorTable(pDescriptorSet->mCbvSrvUavRootIndex,
+					{ pCmd->pRenderer->pCbvSrvUavHeaps[pDescriptorSet->mNodeIndex]->mStartHandle.mGpu.ptr +
+					pDescriptorSet->pCbvSrvUavHandles[index] });
+			if (pDescriptorSet->pSamplerHandles)
+				pCmd->pDxCmdList->SetGraphicsRootDescriptorTable(pDescriptorSet->mSamplerRootIndex,
+					{ pCmd->pRenderer->pSamplerHeaps[pDescriptorSet->mNodeIndex]->mStartHandle.mGpu.ptr +
+					pDescriptorSet->pSamplerHandles[index] });
+		}
+		else
+		{
+			if (pDescriptorSet->pCbvSrvUavHandles)
+				pCmd->pDxCmdList->SetComputeRootDescriptorTable(pDescriptorSet->mCbvSrvUavRootIndex,
+					{ pCmd->pRenderer->pCbvSrvUavHeaps[pDescriptorSet->mNodeIndex]->mStartHandle.mGpu.ptr +
+					pDescriptorSet->pCbvSrvUavHandles[index] });
+			if (pDescriptorSet->pSamplerHandles)
+				pCmd->pDxCmdList->SetComputeRootDescriptorTable(pDescriptorSet->mSamplerRootIndex,
+					{ pCmd->pRenderer->pSamplerHeaps[pDescriptorSet->mNodeIndex]->mStartHandle.mGpu.ptr +
+					pDescriptorSet->pSamplerHandles[index] });
+		}
+	}
+}
+
+void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pConstants);
+	ASSERT(pRootSignature);
+	ASSERT(pName);
+	
+	// Set root signature if the current one differs from pRootSignature
+	reset_root_signature(pCmd, pRootSignature);
+
+	const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pName);
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
+	
+	if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
+		pCmd->pDxCmdList->SetGraphicsRoot32BitConstants(pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pConstants, 0);
+	else
+		pCmd->pDxCmdList->SetComputeRoot32BitConstants(pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pConstants, 0);
+}
+
+void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants)
+{
+	ASSERT(pCmd);
+	ASSERT(pConstants);
+	ASSERT(pRootSignature);
+	ASSERT(paramIndex >= 0 && paramIndex < pRootSignature->mDescriptorCount);
+	
+	// Set root signature if the current one differs from pRootSignature
+	reset_root_signature(pCmd, pRootSignature);
+
+	const DescriptorInfo* pDesc = pRootSignature->pDescriptors + paramIndex;
+	ASSERT(pDesc);
+	ASSERT(DESCRIPTOR_TYPE_ROOT_CONSTANT == pDesc->mDesc.type);
+
+	if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
+		pCmd->pDxCmdList->SetGraphicsRoot32BitConstants(pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pConstants, 0);
+	else
+		pCmd->pDxCmdList->SetComputeRoot32BitConstants(pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pConstants, 0);
 }
 /************************************************************************/
 // Pipeline State Functions
@@ -4975,10 +4901,23 @@ void beginCmd(Cmd* pCmd)
 	hres = pCmd->pDxCmdList->Reset(pCmd->pDxCmdAlloc, NULL);
 	ASSERT(SUCCEEDED(hres));
 
+	if (pCmd->pCmdPool->mCmdPoolDesc.mCmdPoolType != CMD_POOL_COPY)
+	{
+		ID3D12DescriptorHeap* pHeaps[] =
+		{
+			pCmd->pRenderer->pCbvSrvUavHeaps[pCmd->mNodeIndex]->pCurrentHeap,
+			pCmd->pRenderer->pSamplerHeaps[pCmd->mNodeIndex]->pCurrentHeap,
+		};
+		pCmd->pDxCmdList->SetDescriptorHeaps(2, pHeaps);
+	}
+
 	// Reset CPU side data
-	pCmd->pBoundDescriptorBinder = NULL;
-	pCmd->pBoundDescriptorBinderNode = NULL;
-	pCmd->mTransientCBVPosition = 0;
+	pCmd->pBoundRootSignature = NULL;
+	for (uint32_t i = 0; i < DESCRIPTOR_UPDATE_FREQ_COUNT; ++i)
+	{
+		pCmd->pBoundDescriptorSets[i] = NULL;
+		pCmd->mBoundDescriptorSetIndices[i] = -1;
+	}
 }
 
 #ifdef _DURANGO
@@ -5142,19 +5081,23 @@ void cmdBindPipeline(Cmd* pCmd, Pipeline* pPipeline)
 	//bind given pipeline
 	ASSERT(pCmd->pDxCmdList);
 
+
 	if (pPipeline->mType == PIPELINE_TYPE_GRAPHICS)
 	{
+		reset_root_signature(pCmd, pPipeline->mGraphics.pRootSignature);
 		pCmd->pDxCmdList->IASetPrimitiveTopology(pPipeline->mDxPrimitiveTopology);
 	}
 #ifdef ENABLE_RAYTRACING
 	if (pPipeline->mType == PIPELINE_TYPE_RAYTRACING)
 	{
+		reset_root_signature(pCmd, pPipeline->mCompute.pRootSignature);
 		d3d12_cmdBindRaytracingPipeline(pCmd, pPipeline);
 	}
 	else
 #endif
 	{
 		ASSERT(pPipeline->pDxPipelineState);
+		reset_root_signature(pCmd, pPipeline->mCompute.pRootSignature);
 		pCmd->pDxCmdList->SetPipelineState(pPipeline->pDxPipelineState);
 	}
 }
@@ -5165,11 +5108,6 @@ void cmdBindIndexBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t offset)
 	ASSERT(pBuffer);
 	ASSERT(pCmd->pDxCmdList);
 	ASSERT(D3D12_GPU_VIRTUAL_ADDRESS_NULL != pBuffer->mDxGpuAddress);
-
-#ifdef _DURANGO
-	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_INDEX_BUFFER } };
-	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
 
 	D3D12_INDEX_BUFFER_VIEW ibView = {};
 	ibView.BufferLocation = pBuffer->mDxGpuAddress + offset;
@@ -5196,10 +5134,6 @@ void cmdBindVertexBuffer(Cmd* pCmd, uint32_t bufferCount, Buffer** ppBuffers, ui
 		views[i].BufferLocation = (ppBuffers[i]->mDxGpuAddress + (pOffsets ? pOffsets[i] : 0));
 		views[i].SizeInBytes = (UINT)(ppBuffers[i]->mDesc.mSize - (pOffsets ? pOffsets[i] : 0));
 		views[i].StrideInBytes = (UINT)ppBuffers[i]->mDesc.mVertexStride;
-#ifdef _DURANGO
-		BufferBarrier bufferBarriers[] = { { ppBuffers[i], RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER } };
-		cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
 	}
 
 	pCmd->pDxCmdList->IASetVertexBuffers(0, bufferCount, views);
@@ -5254,566 +5188,6 @@ void cmdDispatch(Cmd* pCmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t
 	ASSERT(pCmd->pDxCmdList != NULL);
 
 	pCmd->pDxCmdList->Dispatch(groupCountX, groupCountY, groupCountZ);
-}
-
-void cmdBindDescriptors(
-	Cmd* pCmd, DescriptorBinder* pDescriptorBinder, RootSignature* pRootSignature, uint32_t numDescriptors, DescriptorData* pDescParams)
-{
-	Renderer*      pRenderer = pCmd->pRenderer;
-
-	const uint32_t nodeIndex = pCmd->mNodeIndex;
-	const uint32_t setCount = DESCRIPTOR_UPDATE_FREQ_COUNT;
-	const uint32_t frameIdx = pRenderer->mCurrentFrameIdx;
-
-	DescriptorBinderNode* node = &pDescriptorBinder->mRootSignatureNodes.find(pRootSignature)->second;
-
-	DescriptorStoreHeap* pCbvSrvUavHeap = pDescriptorBinder->pCbvSrvUavHeap[nodeIndex];
-	DescriptorStoreHeap* pSamplerHeap = pDescriptorBinder->pSamplerHeap[nodeIndex];
-
-	for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-	{
-		// Reset other data
-		node->mBoundCbvSrvUavTables[setIndex] = true;
-		node->mBoundSamplerTables[setIndex] = true;
-	}
-
-	if (node->mFrameIdx != frameIdx)
-	{
-		// Frame changed: reuse descriptors from the beginning since all allocations are per frame
-		for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-		{
-			node->mCbvSrvUavUpdateCount[frameIdx][setIndex] = 0;
-			node->mSamplerUpdateCount[frameIdx][setIndex] = 0;
-			if (setIndex != DESCRIPTOR_UPDATE_FREQ_NONE)
-			{
-				node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].clear();
-				node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER].clear();
-			}
-		}
-		node->mFrameIdx = frameIdx;
-	}
-
-	// Compare the currently bound descriptor binder with the current descriptor binder
-	// If these values dont match, we must bind the new descriptor binder
-	// If the values match, no op is required
-	if (pCmd->pBoundDescriptorBinder != pDescriptorBinder)
-	{
-		pCmd->pBoundDescriptorBinder = pDescriptorBinder;
-
-		// Bind descriptor binder heaps
-		if (pCmd->pDxCmdList->GetType() != D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_COPY)
-		{
-			ID3D12DescriptorHeap* heaps[2] = { pDescriptorBinder->pCbvSrvUavHeap[pCmd->mNodeIndex]->pCurrentHeap,
-											   pDescriptorBinder->pSamplerHeap[pCmd->mNodeIndex]->pCurrentHeap };
-			pCmd->pDxCmdList->SetDescriptorHeaps(2, heaps);
-		}
-	}
-
-	if (pCmd->pBoundDescriptorBinderNode != node)
-	{
-		// Bind root signature
-		pCmd->pBoundDescriptorBinderNode = node;
-
-		if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
-			pCmd->pDxCmdList->SetGraphicsRootSignature(pRootSignature->pDxRootSignature);
-		else if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
-			pCmd->pDxCmdList->SetComputeRootSignature(pRootSignature->pDxRootSignature);
-	}
-
-	// 64 bit unsigned value for hashing the mTextureId / mBufferId / mSamplerId of the input descriptors
-	// This value will be later used as look up to find if a descriptor table with the given hash already exists
-	// This way we will copy descriptor handles for a particular set of descriptors only once
-	// Then we only need to do a look up into the mDescriptorTableMap with *Hash[setIndex] as the key and retrieve the DescriptorTable* value
-	uint64_t pCbvSrvUavHash[setCount] = { 0 };
-	uint64_t pSamplerHash[setCount] = { 0 };
-
-	// Loop through input params to check for new data
-	for (uint32_t i = 0; i < numDescriptors; ++i)
-	{
-		const DescriptorData* pParam = &pDescParams[i];
-
-		ASSERT(pParam);
-		if (!pParam->pName)
-		{
-			LOGF(LogLevel::eERROR, "Name of Descriptor at index (%u) is NULL", i);
-			return;
-		}
-
-		uint32_t              descIndex = ~0u;
-		const DescriptorInfo* pDesc = get_descriptor(pRootSignature, pParam->pName, &descIndex);
-		if (!pDesc)
-			continue;
-
-		// Find the update frequency of the descriptor
-		const DescriptorUpdateFrequency setIndex = pDesc->mUpdateFrquency;
-
-		// If input param is a root constant or root descriptor no need to do any further checks
-		if (pDesc->mDxType == D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS)
-		{
-			if (!pParam->pRootConstant)
-			{
-				LOGF(LogLevel::eERROR, "Root constant (%s) is NULL", pParam->pName);
-				continue;
-			}
-			if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
-			{
-				pCmd->pDxCmdList->SetComputeRoot32BitConstants(
-					pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pParam->pRootConstant, 0);
-			}
-			else if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
-			{
-				pCmd->pDxCmdList->SetGraphicsRoot32BitConstants(
-					pRootSignature->pDxRootConstantRootIndices[pDesc->mIndexInParent], pDesc->mDesc.size, pParam->pRootConstant, 0);
-			}
-			continue;
-		}
-		else if (pDesc->mDxType == D3D12_ROOT_PARAMETER_TYPE_CBV)
-		{
-			if (!pParam->ppBuffers[0])
-			{
-				LOGF(LogLevel::eERROR, "Root descriptor CBV (%s) is NULL", pParam->pName);
-				continue;
-			}
-			D3D12_GPU_VIRTUAL_ADDRESS cbv = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-
-			if (pDesc->mDesc.type == DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-			{
-				cbv = pParam->ppBuffers[0]->mDxGpuAddress + (pParam->pOffsets ? pParam->pOffsets[0] : 0);
-			}
-			// If this descriptor is a root constant which was converted to a root cbv, use the internal ring buffer
-			else if (pDesc->mDesc.type == DESCRIPTOR_TYPE_ROOT_CONSTANT)
-			{
-				if (!pCmd->pRootConstantRingBuffer)
-				{
-					// 4KB ring buffer should be enough since size of root constant data is usually pretty small (< 32 bytes)
-					addUniformGPURingBuffer(pRenderer, 4000U, &pCmd->pRootConstantRingBuffer, true);
-				}
-				uint32_t            size = pDesc->mDesc.size * sizeof(uint32_t);
-				GPURingBufferOffset offset = getGPURingBufferOffset(pCmd->pRootConstantRingBuffer, size);
-				memcpy((uint8_t*)offset.pBuffer->pCpuMappedAddress + offset.mOffset, pParam->pRootConstant, size);
-				cbv = offset.pBuffer->mDxGpuAddress + offset.mOffset;
-			}
-
-			if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
-			{
-				pCmd->pDxCmdList->SetComputeRootConstantBufferView(
-					pRootSignature->pDxRootDescriptorRootIndices[pDesc->mIndexInParent], cbv);
-			}
-			else if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
-			{
-				pCmd->pDxCmdList->SetGraphicsRootConstantBufferView(
-					pRootSignature->pDxRootDescriptorRootIndices[pDesc->mIndexInParent], cbv);
-			}
-			continue;
-		}
-		else if (pDesc->mDxType == D3D12_ROOT_PARAMETER_TYPE_SRV)
-		{
-#ifdef ENABLE_RAYTRACING
-			ASSERT(pDesc->mDesc.type == DESCRIPTOR_TYPE_RAY_TRACING);
-
-			D3D12_GPU_VIRTUAL_ADDRESS srv = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-			d3d12_fillRaytracingRootDescriptorData(pParam->ppAccelerationStructures[0], &srv);
-			ASSERT(srv != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN);
-
-			pCmd->pDxCmdList->SetComputeRootShaderResourceView(
-				pRootSignature->pDxRootDescriptorRootIndices[pDesc->mIndexInParent], srv);
-#endif
-			continue;
-		}
-
-		node->mBoundSamplerTables[setIndex] = false;
-		node->mBoundCbvSrvUavTables[setIndex] = false;
-
-		DescriptorType type = pDesc->mDesc.type;
-		const uint32_t arrayCount = max(1U, pParam->mCount);
-
-		switch (type)
-		{
-			case DESCRIPTOR_TYPE_SAMPLER:
-			{
-				if (pDesc->mIndexInParent == -1)
-				{
-					LOGF(
-						LogLevel::eERROR,
-						"Trying to bind a static sampler (%s). All static samplers must be bound in addRootSignature through "
-						"RootSignatureDesc::mStaticSamplers",
-						pParam->pName);
-					continue;
-				}
-				if (!pParam->ppSamplers)
-				{
-					LOGF(LogLevel::eERROR, "Sampler descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-					if (!pParam->ppSamplers[j])
-					{
-						LOGF(LogLevel::eERROR, "Sampler descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-					pSamplerHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppSamplers[j]->mSamplerId, 1, pSamplerHash[setIndex]);
-					node->pSamplerDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pParam->ppSamplers[j]->mDxSamplerHandle;
-				}
-
-				break;
-			}
-			case DESCRIPTOR_TYPE_TEXTURE:
-			{
-				if (!pParam->ppTextures)
-				{
-					LOGF(LogLevel::eERROR, "Texture descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
-				Texture* const*              ppTextures = pParam->ppTextures;
-
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-#ifdef _DEBUG
-					if (!pParam->ppTextures[j])
-					{
-						LOGF(LogLevel::eERROR, "Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-#endif
-					//if (j < arrayCount - 1)
-					//  _mm_prefetch((char*)&ppTextures[j]->mTextureId, _MM_HINT_T0);
-					Texture* tex = ppTextures[j];
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&tex->mTextureId, 1, pCbvSrvUavHash[setIndex]);
-					handlePtr[j] = tex->mDxSRVDescriptor;
-					//pDescriptorBinder->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = tex->mDxSrvHandle;
-				}
-
-				break;
-			}
-			case DESCRIPTOR_TYPE_RW_TEXTURE:
-			{
-				if (!pParam->ppTextures)
-				{
-					LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				D3D12_CPU_DESCRIPTOR_HANDLE* handlePtr = &node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex];
-				Texture* const*              ppTextures = pParam->ppTextures;
-				if (pParam->mUAVMipSlice)
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint32_t>()(&pParam->mUAVMipSlice, 1, pCbvSrvUavHash[setIndex]);
-
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-#ifdef _DEBUG
-					if (!pParam->ppTextures[j])
-					{
-						LOGF(LogLevel::eERROR, "RW Texture descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-#endif
-					//if (j < arrayCount - 1)
-					//  _mm_prefetch((char*)&ppTextures[j]->mTextureId, _MM_HINT_T0);
-					Texture* tex = ppTextures[j];
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&tex->mTextureId, 1, pCbvSrvUavHash[setIndex]);
-					handlePtr[j] = tex->pDxUAVDescriptors[pParam->mUAVMipSlice];
-					//pDescriptorBinder->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = tex->mDxSrvHandle;
-				}
-
-				break;
-			}
-			case DESCRIPTOR_TYPE_BUFFER:
-			{
-				if (!pParam->ppBuffers)
-				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-					if (!pParam->ppBuffers[j])
-					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
-					node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pParam->ppBuffers[j]->mDxSrvHandle;
-#ifdef _DURANGO
-					ResourceState state = RESOURCE_STATE_SHADER_RESOURCE;
-
-					if (pCmd->pCmdPool->mCmdPoolDesc.mCmdPoolType != CMD_POOL_DIRECT)
-					{
-						state = RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-					}
-
-					BufferBarrier bufferBarriers[] = { { pParam->ppBuffers[j], state } };
-					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
-				}
-
-				break;
-			}
-			case DESCRIPTOR_TYPE_RW_BUFFER:
-			{
-				if (!pParam->ppBuffers)
-				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-					if (!pParam->ppBuffers[j])
-					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
-					node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pParam->ppBuffers[j]->mDxUavHandle;
-#ifdef _DURANGO
-					BufferBarrier bufferBarriers[] = { { pParam->ppBuffers[j], RESOURCE_STATE_UNORDERED_ACCESS } };
-					cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
-				}
-
-				break;
-			}
-			case DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-			{
-				if (!pParam->ppBuffers)
-				{
-					LOGF(LogLevel::eERROR, "Buffer descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-
-				UINT64 descriptorSize = pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->mDescriptorSize;
-
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-					if (!pParam->ppBuffers[j])
-					{
-						LOGF(LogLevel::eERROR, "Buffer descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-
-					pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->ppBuffers[j]->mBufferId, 1, pCbvSrvUavHash[setIndex]);
-
-					if ((pParam->ppBuffers[j]->mDesc.mFlags & BUFFER_CREATION_FLAG_NO_DESCRIPTOR_VIEW_CREATION) ||
-						(pParam->pOffsets && pParam->pOffsets[j] != 0))
-					{
-						if (pCmd->mTransientCBVs.ptr == D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-						{
-							pCmd->mTransientCBVs = add_cpu_descriptor_handles(
-								pRenderer->pCPUDescriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], MAX_TRANSIENT_CBVS_PER_FRAME);
-						}
-
-						D3D12_CPU_DESCRIPTOR_HANDLE handle = { pCmd->mTransientCBVs.ptr + pCmd->mTransientCBVPosition * descriptorSize };
-						++pCmd->mTransientCBVPosition;
-						D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-						cbvDesc.BufferLocation = pParam->ppBuffers[j]->mDxGpuAddress + pParam->pOffsets[j];
-						cbvDesc.SizeInBytes =
-							(pParam->pSizes ? (UINT)pParam->pSizes[i] : min(65536, (UINT)pParam->ppBuffers[j]->mDesc.mSize));
-						pRenderer->pDxDevice->CreateConstantBufferView(&cbvDesc, handle);
-						node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = handle;
-
-						if (pParam->pOffsets)
-							pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->pOffsets[j], 1, pCbvSrvUavHash[setIndex]);
-						if (pParam->pSizes)
-							pCbvSrvUavHash[setIndex] = eastl::mem_hash<uint64_t>()(&pParam->pSizes[j], 1, pCbvSrvUavHash[setIndex]);
-					}
-					else
-					{
-						node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j] = pParam->ppBuffers[j]->mDxCbvHandle;
-					}
-				}
-
-				break;
-			}
-#ifdef ENABLE_RAYTRACING
-			case DESCRIPTOR_TYPE_RAY_TRACING:
-			{
-				if (!pParam->ppAccelerationStructures)
-				{
-					LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) is NULL", pParam->pName);
-					return;
-				}
-				for (uint32_t j = 0; j < arrayCount; ++j)
-				{
-					if (!pParam->ppAccelerationStructures[j])
-					{
-						LOGF(LogLevel::eERROR, "Acceleration Structure descriptor (%s) at array index (%u) is NULL", pParam->pName, j);
-						return;
-					}
-
-					d3d12_fillRaytracingDescriptorHandle(pParam->ppAccelerationStructures[j],
-						&node->pViewDescriptorHandles[setIndex][pDesc->mHandleIndex + j].ptr, &pCbvSrvUavHash[setIndex]);
-				}
-
-				break;
-			}
-#endif
-			default: break;
-		}
-	}
-
-	for (uint32_t setIndex = 0; setIndex < setCount; ++setIndex)
-	{
-		uint32_t descCount = pRootSignature->mDxViewDescriptorCounts[setIndex] + pRootSignature->mDxSamplerDescriptorCounts[setIndex];
-		uint32_t viewCount = pRootSignature->mDxCumulativeViewDescriptorCounts[setIndex];
-		uint32_t samplerCount = pRootSignature->mDxCumulativeSamplerDescriptorCounts[setIndex];
-
-		if (descCount)
-		{
-			const uint64_t  setCbvSrvUavHash = pCbvSrvUavHash[setIndex];
-			DescriptorTable cbvSrvUavTable = {};
-			uint32_t        descriptorSetSlotToUse = 0;
-
-			// Determine if we have to update the descriptor set depending on the hashed states. Frequencies BATCH and DRAW are considered dynamic (multiple updates per frame).
-			// DRAW and are always updated to a new (pre-allocated) slot every time they are bound. This allows to avoid a dictionary lookup for them.
-			// BATCH use a dictionary lookup to reuse descriptors that are already updated. This avoids updating them every time.
-			// Frequencies NONE and FRAME only allow 1 update per frame by definition. They allow for 1 update per frame each.
-			if (viewCount && !node->mBoundCbvSrvUavTables[setIndex])
-			{
-				bool mustUpdateDescriptorSet = (setIndex == DESCRIPTOR_UPDATE_FREQ_PER_DRAW);
-
-				if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-				{
-					HashMap& hashMap = node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV];
-					ConstHashMapIterator it = hashMap.find(setCbvSrvUavHash);
-					if (it != hashMap.end())
-					{
-						descriptorSetSlotToUse = it->second;
-						mustUpdateDescriptorSet = false;
-					}
-					else
-						mustUpdateDescriptorSet = true;
-				}
-
-				if (mustUpdateDescriptorSet)
-				{
-					descriptorSetSlotToUse = node->mCbvSrvUavUpdateCount[frameIdx][setIndex]++;
-					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
-					{
-						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
-						ASSERT(0);
-						return;
-					}
-
-					cbvSrvUavTable = node->pCbvSrvUavTables[frameIdx][setIndex][descriptorSetSlotToUse];
-
-					// Copy the descriptor handles from the cpu view heap to the gpu view heap
-					// The source handles pDescriptorBinder->pViewDescriptors are collected at the same time when we hashed the descriptors
-					for (uint32_t i = 0; i < viewCount; ++i)
-						pRenderer->pDxDevice->CopyDescriptorsSimple(
-							1, { cbvSrvUavTable.mBaseCpuHandle.ptr + i * pCbvSrvUavHeap->mDescriptorSize },
-							node->pViewDescriptorHandles[setIndex][i], pCbvSrvUavHeap->mType);
-
-					if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-						node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].insert(
-							{{ setCbvSrvUavHash, descriptorSetSlotToUse }});
-
-					// Reset all handles to NULL descriptor handles
-					memcpy(node->pViewDescriptorHandles[setIndex], node->pNullViewDescriptorHandles[setIndex],
-						viewCount * sizeof(D3D12_CPU_DESCRIPTOR_HANDLE));
-				}
-				else
-				{
-					// No need to update descriptors. Just point to a pre-allocated available descriptor set.
-					cbvSrvUavTable = node->pCbvSrvUavTables[frameIdx][setIndex][descriptorSetSlotToUse];
-				}
-			}
-
-			const uint64_t  setSamplerHash = pSamplerHash[setIndex];
-			DescriptorTable samplerTable = {};
-			descriptorSetSlotToUse = 0;
-
-			if (samplerCount && !node->mBoundSamplerTables[setIndex])
-			{
-				bool mustUpdateDescriptorSet = (setIndex == DESCRIPTOR_UPDATE_FREQ_PER_DRAW);
-
-				if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-				{
-					HashMap& hashMap =
-						node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER];
-					ConstHashMapIterator it =
-						hashMap.find(setSamplerHash);
-					if (it != hashMap.end())
-					{
-						descriptorSetSlotToUse = it->second;
-						mustUpdateDescriptorSet = false;
-					}
-					else
-						mustUpdateDescriptorSet = true;
-				}
-
-				if (mustUpdateDescriptorSet)
-				{
-					descriptorSetSlotToUse = node->mSamplerUpdateCount[frameIdx][setIndex]++;
-					if (descriptorSetSlotToUse >= node->mMaxUsagePerSet[setIndex])
-					{
-						LOGF(LogLevel::eERROR, "Trying to update more descriptors than allocated for set (%d)", setIndex);
-						ASSERT(0);
-						return;
-					}
-
-					samplerTable = node->pSamplerTables[frameIdx][setIndex][descriptorSetSlotToUse];
-
-					// Copy the descriptor handles from the cpu sampler heap to the gpu sampler heap
-					// The source handles pDescriptorBinder->pSamplerDescriptors are collected at the same time when we hashed the descriptors
-					for (uint32_t i = 0; i < samplerCount; ++i)
-						pRenderer->pDxDevice->CopyDescriptorsSimple(
-							1, { samplerTable.mBaseCpuHandle.ptr + i * pSamplerHeap->mDescriptorSize },
-							node->pSamplerDescriptorHandles[setIndex][i], pSamplerHeap->mType);
-
-					if (setIndex != DESCRIPTOR_UPDATE_FREQ_PER_DRAW)
-						node->mUpdatedHashes[frameIdx][setIndex][D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER].insert(
-							{{ setSamplerHash, descriptorSetSlotToUse }});
-
-					// Reset all handles to NULL descriptor handles
-					for (uint32_t i = 0; i < samplerCount; ++i)
-						node->pSamplerDescriptorHandles[setIndex][i] = node->mNullSamplerDescriptorHandle;
-				}
-				else
-				{
-					// No need to update descriptors. Just point to a pre-allocated available descriptor set.
-					samplerTable = node->pSamplerTables[frameIdx][setIndex][descriptorSetSlotToUse];
-				}
-			}
-
-			// Bind the view descriptor table if one exists
-			if (cbvSrvUavTable.mBaseGpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-			{
-				if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
-				{
-					pCmd->pDxCmdList->SetComputeRootDescriptorTable(
-						pRootSignature->mDxViewDescriptorTableRootIndices[setIndex], cbvSrvUavTable.mBaseGpuHandle);
-				}
-				else if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
-				{
-					pCmd->pDxCmdList->SetGraphicsRootDescriptorTable(
-						pRootSignature->mDxViewDescriptorTableRootIndices[setIndex], cbvSrvUavTable.mBaseGpuHandle);
-				}
-
-				// Set the bound flag for the descriptor table of this update frequency
-				// This way in the future if user tries to bind the same descriptor table, we can avoid unnecessary rebinds
-				node->mBoundCbvSrvUavTables[setIndex] = true;
-			}
-
-			// Bind the sampler descriptor table if one exists
-			if (samplerTable.mBaseGpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_NULL)
-			{
-				if (pRootSignature->mPipelineType == PIPELINE_TYPE_COMPUTE)
-				{
-					pCmd->pDxCmdList->SetComputeRootDescriptorTable(
-						pRootSignature->mDxSamplerDescriptorTableRootIndices[setIndex], samplerTable.mBaseGpuHandle);
-				}
-				else if (pRootSignature->mPipelineType == PIPELINE_TYPE_GRAPHICS)
-				{
-					pCmd->pDxCmdList->SetGraphicsRootDescriptorTable(
-						pRootSignature->mDxSamplerDescriptorTableRootIndices[setIndex], samplerTable.mBaseGpuHandle);
-				}
-
-				// Set the bound flag for the descriptor table of this update frequency
-				// This way in the future if user tries to bind the same descriptor table, we can avoid unnecessary rebinds
-				node->mBoundSamplerTables[setIndex] = true;
-			}
-		}
-	}
 }
 
 void cmdResourceBarrier(Cmd* pCmd, uint32_t numBufferBarriers, BufferBarrier* pBufferBarriers, uint32_t numTextureBarriers, TextureBarrier* pTextureBarriers)
@@ -6078,22 +5452,8 @@ void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSr
 	ASSERT(pBuffer);
 	ASSERT(pBuffer->pDxResource);
 
-#ifdef _DURANGO
-	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_COPY_DEST } };
-	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
-
 	pCmd->pDxCmdList->CopyBufferRegion(
 		pBuffer->pDxResource, pBuffer->mPositionInHeap + dstOffset, pSrcBuffer->pDxResource, pSrcBuffer->mPositionInHeap + srcOffset, size);
-
-#ifdef _DURANGO
-	{
-		bufferBarriers[0].mNewState =
-			((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_VERTEX_BUFFER) ? RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
-																		   : RESOURCE_STATE_COMMON);
-		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-	}
-#endif
 }
 
 #ifdef _DURANGO
@@ -6105,18 +5465,8 @@ void cmdUpdateBuffer(DmaCmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* 
 	ASSERT(pBuffer);
 	ASSERT(pBuffer->pDxResource);
 
-	BufferBarrier bufferBarriers[] = { { pBuffer, RESOURCE_STATE_COPY_DEST } };
-	::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-
 	pCmd->pDxCmdList->CopyBufferRegion(
 		pBuffer->pDxResource, pBuffer->mPositionInHeap + dstOffset, pSrcBuffer->pDxResource, pSrcBuffer->mPositionInHeap + srcOffset, size);
-
-	{
-		bufferBarriers[0].mNewState =
-			((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_VERTEX_BUFFER) ? RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
-				: RESOURCE_STATE_COMMON);
-		::cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-	}
 }
 #endif
 
@@ -6545,10 +5895,6 @@ void cmdExecuteIndirect(
 	ASSERT(pCommandSignature);
 	ASSERT(pIndirectBuffer);
 
-#ifdef _DURANGO
-	BufferBarrier bufferBarriers[] = { { pIndirectBuffer, RESOURCE_STATE_INDIRECT_ARGUMENT } };
-	cmdResourceBarrier(pCmd, 1, bufferBarriers, 0, NULL);
-#endif
 	if (!pCounterBuffer)
 		pCmd->pDxCmdList->ExecuteIndirect(
 			pCommandSignature->pDxCommandSignautre, maxCommandCount, pIndirectBuffer->pDxResource, bufferOffset, NULL, 0);

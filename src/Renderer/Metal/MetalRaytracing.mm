@@ -915,17 +915,19 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
                   MTLSize threadgroups,
                   MTLSize threadsPerThreadgroup)
     {
-        //pHitGroups[0].pRootSignature
-        [computeEncoder setBuffer:raysBuffer                offset:0              atIndex:0];
-        [computeEncoder setBuffer:globalSettingsBuffer      offset:0              atIndex:1];
-        [computeEncoder setBuffer:intersectionsBuffer       offset:0              atIndex:2];
-        [computeEncoder setBuffer:indexBuffer               offset:0              atIndex:3];
-        [computeEncoder setBuffer:instancesIDsBuffer        offset:0              atIndex:4];
-        [computeEncoder setBuffer:payloadBuffer             offset:0              atIndex:5];
-        [computeEncoder setBuffer:masksBuffer               offset:0              atIndex:6];
-        [computeEncoder setBuffer:hitGroupIndices           offset:0              atIndex:7];
-        [computeEncoder setBuffer:shaderSettingsBuffer      offset:shaderSettingsOffset       atIndex:8];
-        [computeEncoder setComputePipelineState:pipeline];
+			//pHitGroups[0].pRootSignature
+			ASSERT(computeEncoder != nil);
+
+			[computeEncoder setBuffer:raysBuffer offset:0 atIndex:0];
+			[computeEncoder setBuffer:globalSettingsBuffer offset:0 atIndex:1];
+			[computeEncoder setBuffer:intersectionsBuffer offset:0 atIndex:2];
+			[computeEncoder setBuffer:indexBuffer offset:0 atIndex:3];
+			[computeEncoder setBuffer:instancesIDsBuffer offset:0 atIndex:4];
+			[computeEncoder setBuffer:payloadBuffer offset:0 atIndex:5];
+			[computeEncoder setBuffer:masksBuffer offset:0 atIndex:6];
+			[computeEncoder setBuffer:hitGroupIndices offset:0 atIndex:7];
+			[computeEncoder setBuffer:shaderSettingsBuffer offset:shaderSettingsOffset atIndex:8];
+			[computeEncoder setComputePipelineState:pipeline];
         [computeEncoder dispatchThreadgroups:threadgroups threadsPerThreadgroup:threadsPerThreadgroup];
     }
     
@@ -953,30 +955,42 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
             id <MTLBlitCommandEncoder> blitEncoder = [pCmd->mtlCommandBuffer blitCommandEncoder];
             raysBufferLocal = pShadersInfo->mHitGroupsRaysBuffers[shaderId];
             payloadBufferLocal = pShadersInfo->mPayloadBuffer[shaderId];
-            
-            [blitEncoder copyFromBuffer:raysBuffer sourceOffset:0
-                               toBuffer:raysBufferLocal destinationOffset:0
-                                   size:raysBuffer.length];
-            [blitEncoder copyFromBuffer:payloadBuffer sourceOffset:0
-                               toBuffer:payloadBufferLocal destinationOffset:0
-                                   size:payloadBuffer.length];
-            
-            [blitEncoder endEncoding];
-        }
-        
-        //Bind "Global Root Signature" again
-        cmdBindDescriptors(pCmd, pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature, pDesc->mParamCount, pDesc->pParams);
-        id <MTLComputeCommandEncoder> computeEncoder = pCmd->mtlComputeEncoder;
-        dispatch(computeEncoder, raysBufferLocal, globalSettingsBuffer, intersectionsBuffer,
-                 indexBuffer, instancesIDsBuffer, payloadBuffer, masksBuffer, hitGroupIndices,
-                 pShadersInfo->mHitSettings, shaderId * sizeof(HitShaderSettings),
-                 pShadersInfo->mHitPipelines[shaderId], threadgroups, threadsPerThreadgroup);
-        
-        if (pShadersInfo->pHitReferences[shaderId].active)
-        {
-            util_end_current_encoders(pCmd);
-            uint32_t hitRef = pShadersInfo->pHitReferences[shaderId].hitShader;
-            uint32_t missRef = pShadersInfo->pHitReferences[shaderId].missShader;
+
+					[blitEncoder copyFromBuffer:raysBuffer sourceOffset:0
+														 toBuffer:raysBufferLocal destinationOffset:0
+																 size:raysBuffer.length];
+					[blitEncoder copyFromBuffer:payloadBuffer sourceOffset:0
+														 toBuffer:payloadBufferLocal destinationOffset:0
+																 size:payloadBuffer.length];
+
+					[blitEncoder endEncoding];
+				}
+
+			//Bind "Global Root Signature" again
+			//ASSERT(0); // todo
+			//cmdBindDescriptors(pCmd, pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature, pDesc->mParamCount, pDesc->pParams);
+
+			if (pCmd->mtlComputeEncoder == nil) {
+				pCmd->mtlComputeEncoder = [pCmd->mtlCommandBuffer computeCommandEncoder];
+
+				// restore
+				for (uint32_t i = 0; i < DESCRIPTOR_UPDATE_FREQ_COUNT; ++i) {
+					if (pDesc->pSets[i]) {
+						cmdBindDescriptorSet(pCmd, pDesc->pIndexes[i], pDesc->pSets[i]);
+					}
+				}
+			}
+
+			id <MTLComputeCommandEncoder> computeEncoder = pCmd->mtlComputeEncoder;
+			dispatch(computeEncoder, raysBufferLocal, globalSettingsBuffer, intersectionsBuffer,
+							 indexBuffer, instancesIDsBuffer, payloadBuffer, masksBuffer, hitGroupIndices,
+							 pShadersInfo->mHitSettings, shaderId * sizeof(HitShaderSettings),
+							 pShadersInfo->mHitPipelines[shaderId], threadgroups, threadsPerThreadgroup);
+
+			if (pShadersInfo->pHitReferences[shaderId].active) {
+				util_end_current_encoders(pCmd);
+				uint32_t hitRef = pShadersInfo->pHitReferences[shaderId].hitShader;
+				uint32_t missRef = pShadersInfo->pHitReferences[shaderId].missShader;
             NSUInteger width = (NSUInteger)pDesc->mWidth;
             NSUInteger height = (NSUInteger)pDesc->mHeight;
             
@@ -1028,54 +1042,64 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
         // groups called "threadgroups". We need to align the number of threads to be a multiple of the threadgroup
         // size. We indicated when compiling the pipeline that the threadgroup size would be a multiple of the thread
         // execution width (SIMD group size) which is typically 32 or 64 so 8x8 is a safe threadgroup size which
-        // should be small to be supported on most devices. A more advanced application would choose the threadgroup
-        // size dynamically.
-        MTLSize threadsPerThreadgroup = MTLSizeMake(8, 8, 1);
-        MTLSize threadgroups = MTLSizeMake((width  + threadsPerThreadgroup.width  - 1) / threadsPerThreadgroup.width,
-                                           (height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
-                                           1);
-        
-        // First, we will generate rays on the GPU. We create a compute command encoder which will be used to add
-        // commands to the command buffer.
-        id <MTLComputeCommandEncoder> computeEncoder = pCmd->mtlComputeEncoder;
-        /*********************************************************************************/
-        //Now we work with initial RayGen shader
-        /*********************************************************************************/
-        // Bind buffers needed by the compute pipeline
-        [computeEncoder setBuffer:pRaytracingPipeline->mRayGenRaysBuffer       offset:0                    atIndex:0];
-        [computeEncoder setBuffer:pRaytracingPipeline->mSettingsBuffer         offset:0                    atIndex:1];
-        // Bind the ray generation compute pipeline
-        [computeEncoder setComputePipelineState:pRaytracingPipeline->mRayPipeline];
-        // Launch threads
-        [computeEncoder dispatchThreadgroups:threadgroups threadsPerThreadgroup:threadsPerThreadgroup];
-        
-        // End the encoder
-        util_end_current_encoders(pCmd);
-        
-        if (!pDesc->pShaderTable->mInvokeShaders) return;
-        
-        // We can then pass the rays to the MPSRayIntersector to compute the intersections with our acceleration structure
-        //_intersector.rayMaskOptions = //Rustam: get this from RayMask from shader
-        [pRaytracingPipeline->mIntersector encodeIntersectionToCommandBuffer:pCmd->mtlCommandBuffer      // Command buffer to encode into
-                                       intersectionType:MPSIntersectionTypeNearest  // Intersection test type //Rustam: Get this from RayFlags from shader
-                                              rayBuffer:pRaytracingPipeline->mRayGenRaysBuffer   // Ray buffer
-                                        rayBufferOffset:0                           // Offset into ray buffer
-                                     intersectionBuffer:pRaytracingPipeline->mIntersectionBuffer // Intersection buffer (destination)
-                               intersectionBufferOffset:0                           // Offset into intersection buffer
-                                               rayCount:width * height              // Number of rays
-                                  accelerationStructure:pDesc->pTopLevelAccelerationStructure->pInstanceAccel];    // Acceleration structure
-        
-        /*********************************************************************************/
-        //Now we can execute Hit/Miss shader
-        /*********************************************************************************/
-        //Execute initial hit shaders which process rays from  raygen shader
-        for (unsigned int i = 0; i < pDesc->pTopLevelAccelerationStructure->mActiveHitGroups.size(); ++i)
-        {
-            uint32_t hitId = pDesc->pTopLevelAccelerationStructure->mActiveHitGroups[i];
-            /*If this hit shader emits secondary rays*/
-            invokeShader(pCmd, pRaytracing, pDesc,
-                         &pDesc->pShaderTable->mHitShadersInfo, hitId,
-                         pRaytracingPipeline->mRayGenRaysBuffer,
+			// should be small to be supported on most devices. A more advanced application would choose the threadgroup
+			// size dynamically.
+			MTLSize threadsPerThreadgroup = MTLSizeMake(8, 8, 1);
+			MTLSize threadgroups = MTLSizeMake((width + threadsPerThreadgroup.width - 1) / threadsPerThreadgroup.width,
+																				 (height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
+																				 1);
+
+			// First, we will generate rays on the GPU. We create a compute command encoder which will be used to add
+			// commands to the command buffer.
+			id <MTLComputeCommandEncoder> computeEncoder = pCmd->mtlComputeEncoder;
+
+			ASSERT(computeEncoder != nil);
+
+			/*********************************************************************************/
+			//Now we work with initial RayGen shader
+			/*********************************************************************************/
+			[computeEncoder pushDebugGroup:@"Ray Pipeline"];
+
+			// Bind buffers needed by the compute pipeline
+			[computeEncoder setBuffer:pRaytracingPipeline->mRayGenRaysBuffer offset:0 atIndex:0];
+			[computeEncoder setBuffer:pRaytracingPipeline->mSettingsBuffer offset:0 atIndex:1];
+			// Bind the ray generation compute pipeline
+			[computeEncoder setComputePipelineState:pRaytracingPipeline->mRayPipeline];
+			// Launch threads
+			[computeEncoder dispatchThreadgroups:threadgroups threadsPerThreadgroup:threadsPerThreadgroup];
+
+			[computeEncoder popDebugGroup];
+
+			// End the encoder
+			util_end_current_encoders(pCmd);
+
+			if (!pDesc->pShaderTable->mInvokeShaders) {
+				return;
+			}
+
+			// We can then pass the rays to the MPSRayIntersector to compute the intersections with our acceleration structure
+			//_intersector.rayMaskOptions = //Rustam: get this from RayMask from shader
+			[pRaytracingPipeline->mIntersector encodeIntersectionToCommandBuffer:pCmd->mtlCommandBuffer      // Command buffer to encode into
+																													intersectionType:MPSIntersectionTypeNearest  // Intersection test type //Rustam: Get this from RayFlags from shader
+																																 rayBuffer:pRaytracingPipeline->mRayGenRaysBuffer   // Ray buffer
+																													 rayBufferOffset:0                           // Offset into ray buffer
+																												intersectionBuffer:pRaytracingPipeline->mIntersectionBuffer // Intersection buffer (destination)
+																									intersectionBufferOffset:0                           // Offset into intersection buffer
+																																	rayCount:width * height              // Number of rays
+																										 accelerationStructure:pDesc->pTopLevelAccelerationStructure->pInstanceAccel];    // Acceleration structure
+
+			//        pCmd->mtlComputeEncoder = [pCmd->mtlCommandBuffer computeCommandEncoder];
+
+			/*********************************************************************************/
+			//Now we can execute Hit/Miss shader
+			/*********************************************************************************/
+			//Execute initial hit shaders which process rays from  raygen shader
+			for (unsigned int i = 0; i < pDesc->pTopLevelAccelerationStructure->mActiveHitGroups.size(); ++i) {
+				uint32_t hitId = pDesc->pTopLevelAccelerationStructure->mActiveHitGroups[i];
+				/*If this hit shader emits secondary rays*/
+				invokeShader(pCmd, pRaytracing, pDesc,
+										 &pDesc->pShaderTable->mHitShadersInfo, hitId,
+										 pRaytracingPipeline->mRayGenRaysBuffer,
                          pRaytracingPipeline->mSettingsBuffer,
                          pRaytracingPipeline->mIntersectionBuffer,
                          pDesc->pTopLevelAccelerationStructure->mIndexBuffer,

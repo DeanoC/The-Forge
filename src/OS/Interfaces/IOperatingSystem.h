@@ -147,17 +147,17 @@ typedef struct MonitorDesc
 	WCHAR publicAdapterName[64];
 	WCHAR publicDisplayName[64];
 #else
-	char                     adapterName[32];
-	char                     displayName[32];
-	char                     publicAdapterName[64];
-	char                     publicDisplayName[64];
+	char adapterName[32];
+	char displayName[32];
+	char publicAdapterName[64];
+	char publicDisplayName[64];
 #endif
 	bool modesPruned;
 	bool modeChanged;
 
-	Resolution  defaultResolution;
-	Resolution* resolutions;
-	uint32_t    resolutionCount;
+	Resolution defaultResolution;
+	Resolution *resolutions;
+	uint32_t resolutionCount;
 } MonitorDesc;
 
 // Define some sized types
