@@ -303,6 +303,7 @@ typedef struct TheForge_DescriptorData {
 		TheForge_AcclerationStructureHandle const *pAccelerationStructures;
 	};
 	uint32_t count;
+	uint32_t index;
 } TheForge_DescriptorData;
 
 typedef struct TheForge_BufferBarrier {

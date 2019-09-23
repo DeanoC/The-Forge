@@ -18,3 +18,5 @@ case LogLevel::eINFO: AL2O3_InfoMsg(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS_
 case LogLevel::eWARNING: AL2O3_WarningMsg(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__); break; \
 case LogLevel::eERROR: AL2O3_ErrorMsg(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__); break; \
 } } while(false)
+
+#define _FailedAssert(file, line, msg) AL2O3_FailedAssert(file, line, __FUNCTION__, msg)
