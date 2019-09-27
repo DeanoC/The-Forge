@@ -2,7 +2,7 @@
 
 This is a derivative of ConfettiFX The Forge, this version has a pure C interface and just the renderer portion and uses CMake and my own al2o3 framework for some parts (TODO reduce dependency).
 
-## This version is currently based on upstream Forge Release 1.4
+## This version is currently based on upstream Forge Release 1.44
 
 The Forge is a cross-platform rendering framework supporting
 - PC 
