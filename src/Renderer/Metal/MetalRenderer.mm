@@ -607,7 +607,7 @@ void util_set_resources_graphics(Cmd *pCmd, DescriptorSet::DescriptorResources *
 
 		switch (i) {
 			case RESOURCE_TYPE_RESOURCE_RW:
-				if (@available(iOS 13.0, macOs 15.0, *)) {
+				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead | MTLResourceUsageWrite
@@ -619,7 +619,7 @@ void util_set_resources_graphics(Cmd *pCmd, DescriptorSet::DescriptorResources *
 				}
 				break;
 			case RESOURCE_TYPE_RESOURCE_READ_ONLY:
-				if (@available(iOS 13.0, macOs 15.0, *)) {
+				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead
@@ -631,7 +631,7 @@ void util_set_resources_graphics(Cmd *pCmd, DescriptorSet::DescriptorResources *
 				}
 				break;
 			case RESOURCE_TYPE_HEAP:
-				if (@available(iOS 13.0, macOs 15.0, *)) {
+				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useHeaps:(__unsafe_unretained id <MTLHeap> *) (void *) resources->mResources[i]
 																		 count:resourceCount
 																		stages:stages];
