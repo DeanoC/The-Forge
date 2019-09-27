@@ -607,35 +607,35 @@ void util_set_resources_graphics(Cmd *pCmd, DescriptorSet::DescriptorResources *
 
 		switch (i) {
 			case RESOURCE_TYPE_RESOURCE_RW:
-				if (@available(iOS 13.0, macOS 10.15, *)) {
+/*				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead | MTLResourceUsageWrite
 																				stages:stages];
-				} else {
+				} else */{
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead | MTLResourceUsageWrite];
 				}
 				break;
 			case RESOURCE_TYPE_RESOURCE_READ_ONLY:
-				if (@available(iOS 13.0, macOS 10.15, *)) {
+/*				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead
 																				stages:stages];
-				} else {
+				} else */{
 					[pCmd->mtlRenderEncoder useResources:(__unsafe_unretained id <MTLResource> *) (void *) resources->mResources[i]
 																				 count:resourceCount
 																				 usage:MTLResourceUsageRead];
 				}
 				break;
 			case RESOURCE_TYPE_HEAP:
-				if (@available(iOS 13.0, macOS 10.15, *)) {
+/*				if (@available(iOS 13.0, macOS 10.15, *)) {
 					[pCmd->mtlRenderEncoder useHeaps:(__unsafe_unretained id <MTLHeap> *) (void *) resources->mResources[i]
 																		 count:resourceCount
 																		stages:stages];
-				} else {
+				} else */{
 					[pCmd->mtlRenderEncoder useHeaps:(__unsafe_unretained id <MTLHeap> *) (void *) resources->mResources[i]
 																		 count:resourceCount];
 				}
