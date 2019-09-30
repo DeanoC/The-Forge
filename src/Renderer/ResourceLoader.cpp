@@ -1213,14 +1213,10 @@ void updateResource(TextureUpdateDesc* pTextureUpdate, SyncToken* token)
 	desc.pTexture = pTextureUpdate->pTexture;
 	if (pTextureUpdate->pRawImageData)
 	{
-		Image *pImage = ResourceLoader::CreateImage(pTextureUpdate->pRawImageData->mFormat,
-																								pTextureUpdate->pRawImageData->mWidth,
-																								pTextureUpdate->pRawImageData->mHeight,
-																								pTextureUpdate->pRawImageData->mDepth,
-																								pTextureUpdate->pRawImageData->mMipLevels,
-																								pTextureUpdate->pRawImageData->mArraySize,
-																								pTextureUpdate->pRawImageData->pRawData);
-		pImage->SetMipsAfterSlices(pTextureUpdate->pRawImageData->mMipsAfterSlices);
+		Image* pImage = ResourceLoader::CreateImage(pTextureUpdate->pRawImageData->mFormat, pTextureUpdate->pRawImageData->mWidth, pTextureUpdate->pRawImageData->mHeight,
+			pTextureUpdate->pRawImageData->mDepth, pTextureUpdate->pRawImageData->mMipLevels, pTextureUpdate->pRawImageData->mArraySize,
+			pTextureUpdate->pRawImageData->pRawData);
+		pImage->SetMipsAfterSlices(pTextureUpdate->pRawImageData->mMipsAfterSlices);			
 		desc.mFreeImage = true;
 		desc.pImage = pImage;
 	}
@@ -1466,7 +1462,7 @@ void mtl_compileShader(
 	//args.push_back("-gline-tables-only");
 	args.push_back("-D");
 	args.push_back("MTL_SHADER=1");    // Add MTL_SHADER macro to differentiate structs in headers shared by app/shader code.
-
+    
 	// Add user defined macros to the command line
 	for (uint32_t i = 0; i < macroCount; ++i)
 	{
@@ -1503,11 +1499,15 @@ void mtl_compileShader(
 			pByteCode->resize(file.GetSize());
 			memcpy(pByteCode->data(), file.ReadText().c_str(), pByteCode->size());
 			file.Close();
-		} else {
-			LOGF(LogLevel::eERROR, "Failed to assemble shader's %s .metallib file", fileName.c_str());
 		}
-	} else {
-		LOGF(LogLevel::eERROR, "Failed to compile shader %s", fileName.c_str());
+		else
+		{
+			LOGF( LogLevel::eERROR, "Failed to assemble shader's %s .metallib file", fileName.c_str());
+		}
+	}
+	else
+	{
+		LOGF( LogLevel::eERROR,"Failed to compile shader %s", fileName.c_str());
 	}
 }
 #endif

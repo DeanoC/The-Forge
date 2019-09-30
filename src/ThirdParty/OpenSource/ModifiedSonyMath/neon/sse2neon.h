@@ -1261,6 +1261,11 @@ FORCE_INLINE __m128 _mm_cmpgt_ps(__m128 a, __m128 b)
 	return vreinterpretq_m128_u32(vcgtq_f32(vreinterpretq_f32_m128(a), vreinterpretq_f32_m128(b)));
 }
 
+FORCE_INLINE __m128 _mm_cmpgt_ss(__m128 a, __m128 b)
+{
+	return vsetq_lane_f32((_mm_cmpgt_ps(a, b), 0), vreinterpretq_f32_m128(a), 0);
+}
+
 // Compares for greater than or equal. https://msdn.microsoft.com/en-us/library/vstudio/fs813y2t(v=vs.100).aspx
 FORCE_INLINE __m128 _mm_cmpge_ps(__m128 a, __m128 b)
 {

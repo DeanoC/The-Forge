@@ -21,11 +21,12 @@ struct SwapChain;
 struct RenderTarget;
 class UIApp;
 
+
 // Must be called before adding any GpuProfiler
 void initProfiler();
 
 // Call on application load to generate the resources needed for UI drawing
-void loadProfiler(UIApp *uiApp, int32_t width, int32_t height);
+void loadProfiler(UIApp* uiApp, int32_t width, int32_t height);
 
 // Call on application load
 void unloadProfiler();

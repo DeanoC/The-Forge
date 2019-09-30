@@ -174,14 +174,15 @@ typedef struct RaytracingShaderTableDesc
 	unsigned							mHitGroupCount;
 } RaytracingShaderTableDesc;
 
-typedef struct RaytracingDispatchDesc {
-	uint32_t mWidth;
-	uint32_t mHeight;
-	RaytracingShaderTable *pShaderTable;
+typedef struct RaytracingDispatchDesc
+{
+	uint32_t				mWidth;
+	uint32_t				mHeight;
+	RaytracingShaderTable*  pShaderTable;
 #if defined(METAL)
-	AccelerationStructure *pTopLevelAccelerationStructure;
-	DescriptorSet *pSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
-	uint32_t pIndexes[DESCRIPTOR_UPDATE_FREQ_COUNT];
+	AccelerationStructure*  pTopLevelAccelerationStructure;
+    DescriptorSet*          pSets[DESCRIPTOR_UPDATE_FREQ_COUNT];
+    uint32_t                pIndexes[DESCRIPTOR_UPDATE_FREQ_COUNT];
 #endif
 } RaytracingDispatchDesc;
 

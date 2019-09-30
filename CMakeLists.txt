@@ -61,7 +61,6 @@ set(Src
 		OS/Image/Image.cpp
 		OS/Image/Image.h
 		OS/Interfaces/IApp.h
-		OS/Interfaces/ICameraController.h
 		OS/Interfaces/IFileSystem.h
 		OS/Interfaces/ILog.h
 		OS/Interfaces/IMemory.h
