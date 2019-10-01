@@ -14,9 +14,11 @@
 
 		void* allocator_forge::allocate(size_t n, size_t alignment, size_t alignmentOffset, int /*flags*/)
 		{
-		    if ((alignmentOffset % alignment) == 0) // We check for (offset % alignmnent == 0) instead of (offset == 0) because any block which is
-													// aligned on e.g. 64 also is aligned at an offset of 64 by definition.
-			    return conf_memalign(alignment, n);
+		    if ((alignmentOffset % alignment) == 0) {
+					// We check for (offset % alignmnent == 0) instead of (offset == 0) because any block which is
+					// aligned on e.g. 64 also is aligned at an offset of 64 by definition.
+					return conf_memalign(alignment, n);
+				}
 
 		    return NULL;
 		}
