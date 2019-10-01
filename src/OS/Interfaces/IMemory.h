@@ -39,6 +39,12 @@ static T* conf_placement_new(void* ptr, Args... args)
 	return new (ptr) T(args...);
 }
 
+static void* conf_malloc_internal(size_t size, const char *f, int l, const char *sf)
+{
+	return MEMORY_MALLOC(size); // TODO tracking info
+}
+
+
 template <typename T, typename... Args>
 static T* conf_new_internal(const char *f, int l, const char *sf, Args... args)
 {
