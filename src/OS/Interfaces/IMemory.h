@@ -73,30 +73,6 @@ static void conf_delete_internal(T* ptr, const char *f, int l, const char *sf)
 
 #endif 
 
-#ifndef IMEMORY_FROM_HEADER
-#ifndef malloc
-#define malloc(size) static_assert(false, "Please use conf_malloc");
-#endif
-#ifndef calloc
-#define calloc(count, size) static_assert(false, "Please use conf_calloc");
-#endif
-#ifndef memalign
-#define memalign(align, size) static_assert(false, "Please use conf_memalign");
-#endif
-#ifndef realloc
-#define realloc(ptr, size) static_assert(false, "Please use conf_realloc");
-#endif
-#ifndef free
-#define free(ptr) static_assert(false, "Please use conf_free");
-#endif
-#ifndef new
-#define new static_assert(false, "Please use conf_placement_new");
-#endif
-#ifndef delete
-#define delete static_assert(false, "Please use conf_free with explicit destructor call");
-#endif
-#endif
-
 #ifdef IMEMORY_FROM_HEADER
 #undef IMEMORY_FROM_HEADER
 #endif
