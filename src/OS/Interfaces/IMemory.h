@@ -48,17 +48,18 @@ static void* conf_malloc_internal(size_t size, const char *f, int l, const char 
 template <typename T, typename... Args>
 static T* conf_new_internal(const char *f, int l, const char *sf, Args... args)
 {
-	T* ptr = (T*)MEMORY_MALLOC(sizeof(T));
+	Memory_TrackerPushNextSrcLoc(f, l, sf);
+	T* ptr = (T*)Memory_GlobalAllocator.malloc(sizeof(T));
 	return new (ptr) T(args...);
 }
 
 template <typename T>
-static void conf_delete_internal(T* ptr, const char *f, int l, const char *sf)
+static void conf_delete_internal(T* ptr)
 {
 	if (ptr)
 	{
 		ptr->~T();
-		MEMORY_FREE(ptr); // TODO tracking info
+		MEMORY_FREE(ptr);
 	}
 }
 
@@ -69,7 +70,7 @@ static void conf_delete_internal(T* ptr, const char *f, int l, const char *sf)
 #define conf_realloc(ptr,size) MEMORY_REALLOC(ptr, size)
 #define conf_free(ptr) MEMORY_FREE(ptr)
 #define conf_new(ObjectType, ...) conf_new_internal<ObjectType>(__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define conf_delete(ptr) conf_delete_internal(ptr,  __FILE__, __LINE__, __FUNCTION__)
+#define conf_delete(ptr) conf_delete_internal(ptr)
 
 #endif 
 
