@@ -1313,38 +1313,41 @@ bool iLoadBASISFromMemory(Image* pImage, const char* memory, uint32_t memSize, m
 // struct of table for file format to loading function
 struct ImageLoaderDefinition
 {
-	eastl::string              mExtension;
+	char const* mExtension;
 	Image::ImageLoaderFunction pLoader;
 };
 
-static eastl::vector<ImageLoaderDefinition> gImageLoaders;
+#define MAX_IMAGE_LOADERS 10
+static ImageLoaderDefinition gImageLoaders[MAX_IMAGE_LOADERS];
+uint32_t gImageLoaderCount = 0;
 
 struct StaticImageLoader
 {
-	StaticImageLoader()
-	{
-		gImageLoaders.push_back({ ".dds", iLoadDDSFromMemory });
-		gImageLoaders.push_back({ ".pvr", iLoadPVRFromMemory });
-		gImageLoaders.push_back({ ".ktx", iLoadKTXFromMemory });
-#if defined(ORBIS)
-		gImageLoaders.push_back({ ".gnf", iLoadGNFFromMemory });
-#endif
-		gImageLoaders.push_back({ ".basis", iLoadBASISFromMemory });
+	StaticImageLoader() {
+		gImageLoaders[gImageLoaderCount++] = {".dds", iLoadDDSFromMemory};
+		gImageLoaders[gImageLoaderCount++] = {".pvr", iLoadPVRFromMemory};
+		gImageLoaders[gImageLoaderCount++] = {".ktx", iLoadKTXFromMemory};
 
+#if defined(ORBIS)
+		gImageLoaders[gImageLoaderCount++] = { ".gnf", iLoadGNFFromMemory };
+#endif
+		gImageLoaders[gImageLoaderCount++] = {".basis", iLoadBASISFromMemory};
 	}
 } gImageLoaderInst;
 
-void Image::AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc) { gImageLoaders.push_back({ pExtension, pFunc }); }
+void Image::AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc) {
+	gImageLoaders[gImageLoaderCount++] = { pExtension, pFunc };
+}
 
 bool Image::LoadFromMemory(
 	void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData)
 {
 	// try loading the format
 	bool loaded = false;
-	for (uint32_t i = 0; i < (uint32_t)gImageLoaders.size(); ++i)
+	for (uint32_t i = 0; i < gImageLoaderCount; ++i)
 	{
 		ImageLoaderDefinition const& def = gImageLoaders[i];
-		if (stricmp(extension, def.mExtension.c_str()) == 0)
+		if (stricmp(extension, def.mExtension) == 0)
 		{
 			loaded = def.pLoader(this, (char const*)mem, size, pAllocator, pUserData);
 			break;
@@ -1363,9 +1366,9 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 
 	if (extension.size())
 	{
-		for (int i = 0; i < (int)gImageLoaders.size(); i++)
+		for (int i = 0; i < (int)gImageLoaderCount; i++)
 		{
-			if (stricmp(extension.c_str(), gImageLoaders[i].mExtension.c_str()) == 0)
+			if (stricmp(extension.c_str(), gImageLoaders[i].mExtension) == 0)
 			{
 				loaderIndex = i;
 				break;
@@ -1424,9 +1427,9 @@ bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocat
 	// try loading the format
 	bool loaded = false;
 	bool support = false;
-	for (int i = 0; i < (int)gImageLoaders.size(); i++)
+	for (int i = 0; i < (int)gImageLoaderCount; i++)
 	{
-		if (stricmp(extension.c_str(), gImageLoaders[i].mExtension.c_str()) == 0)
+		if (stricmp(extension.c_str(), gImageLoaders[i].mExtension) == 0)
 		{
 			support = true;
 			loaded = gImageLoaders[i].pLoader(this, data, length, pAllocator, pUserData);
