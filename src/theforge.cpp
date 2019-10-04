@@ -1101,7 +1101,7 @@ AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, Ti
 	if (!renderer) {
 		return false;
 	}
-	return renderer->capBits.canColorWriteTo[format];
+	return renderer->capBits.canRenderTargetWriteTo[format];
 }
 
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS

@@ -1761,7 +1761,7 @@ typedef struct GPUVendorPreset
 typedef struct GPUCapBits {
 	bool canShaderReadFrom[TinyImageFormat_Count];
 	bool canShaderWriteTo[TinyImageFormat_Count];
-	bool canColorWriteTo[TinyImageFormat_Count];
+	bool canRenderTargetWriteTo[TinyImageFormat_Count];
 } GPUCapBits;
 
 typedef enum DefaultResourceAlignment

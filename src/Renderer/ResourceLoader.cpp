@@ -822,7 +822,8 @@ static void streamerThreadFunc(void* pThreadData)
 		while (pLoader->mRun && (completionMask == allUploadsCompleted) && allQueuesEmpty(pLoader) && getSystemTime() < nextTimeslot)
 		{
 			unsigned time = getSystemTime();
-			pLoader->mQueueCond.Wait(pLoader->mQueueMutex, nextTimeslot - time);
+			unsigned nextSlot = min(nextTimeslot - time, pLoader->mDesc.mTimesliceMs);
+			pLoader->mQueueCond.Wait(pLoader->mQueueMutex, nextSlot);
 		}
 		pLoader->mQueueMutex.Release();
 

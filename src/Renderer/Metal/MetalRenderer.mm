@@ -256,12 +256,12 @@ inline void MurmurHash3_x86_32(const void * key, int len, uint32_t seed, void * 
 // Internal utility functions (may become external one day)
 uint64_t util_pthread_to_uint64(const pthread_t& value);
 
-bool util_is_compatible_texture_view(const MTLTextureType& textureType, const MTLTextureType& subviewTye);
+bool util_is_compatible_texture_view(const MTLTextureType textureType, const MTLTextureType subviewTye);
 
-bool            util_is_mtl_depth_pixel_format(const MTLPixelFormat& format);
-bool            util_is_mtl_compressed_pixel_format(const MTLPixelFormat& format);
-MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format);
-MTLLoadAction   util_to_mtl_load_action(const LoadActionType& loadActionType);
+bool            util_is_mtl_depth_pixel_format(const MTLPixelFormat format);
+bool            util_is_mtl_compressed_pixel_format(const MTLPixelFormat format);
+MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat format);
+MTLLoadAction   util_to_mtl_load_action(const LoadActionType loadActionType);
 
 void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppTexture, const bool isRT = false, const bool forceNonPrivate = false);
 
@@ -692,10 +692,10 @@ void util_set_resources_compute(Cmd* pCmd, DescriptorSet::DescriptorResources* r
     for (uint32_t i = 0; i < RESOURCE_TYPE_COUNT; ++i)
     {
         const uint32_t resourceCount(resources->mResourcesCount[i]);
-
+        
         if (!resourceCount)
             continue;
-
+        
         switch (i)
         {
             case RESOURCE_TYPE_RESOURCE_RW:
@@ -727,28 +727,28 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
 
     //const size_t offset(pDescriptorSet->mArgumentBuffer->mPositionInHeap + (pDescriptorSet->mChunkSize * index));
     const size_t offset(0);
-
+        
     // rootcbv
     if (pDescriptorSet->mRootBuffers.size())
     {
         for (uint32_t i = 0; i < pDescriptorSet->mRootBuffers.size(); ++i)
         {
             const DescriptorSet::RootBuffer& buffer(pDescriptorSet->mRootBuffers[i]);
-
+            
             //if (pDescriptorSet->mStages & SHADER_STAGE_VERT) // todo
             {
                 [pCmd->mtlRenderEncoder setVertexBuffer: buffer.mBuffer->mtlBuffer
                                                  offset: buffer.mOffset
                                                 atIndex: buffer.mBufferIndex];
             }
-
+            
             //if (pDescriptorSet->mStages & SHADER_STAGE_FRAG) // todo
             {
                 [pCmd->mtlRenderEncoder setFragmentBuffer: buffer.mBuffer->mtlBuffer
                                                    offset: buffer.mOffset
                                                   atIndex: buffer.mBufferIndex];
             }
-
+            
             //if (pDescriptorSet->mStages & SHADER_STAGE_COMP) // todo
             {
                 [pCmd->mtlComputeEncoder setBuffer: buffer.mBuffer->mtlBuffer
@@ -757,13 +757,13 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
             }
         }
     }
-
+	
 	// #NOTE: Support for RW textures on iOS until they are supported through argument buffers
 #ifdef TARGET_IOS
 	for (uint32_t i = 0; i < pDescriptorSet->mRWTextureCount; ++i)
 	{
 		const DescriptorInfo* pDesc = pDescriptorSet->ppRWTextureDescriptors[index][i];
-
+		
 		if(pDesc)
 		{
 			//utils_bind_push_constant(pCmd, pDesc, pConstants);
@@ -772,7 +772,7 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
 				[pCmd->mtlRenderEncoder setVertexTexture: pDescriptorSet->ppRWTextures[index][i]
 											   atIndex: pDesc->mDesc.reg];
 			}
-
+			
 			if (pDesc->mDesc.used_stages & SHADER_STAGE_FRAG)
 			{
 				[pCmd->mtlRenderEncoder setFragmentTexture: pDescriptorSet->ppRWTextures[index][i]
@@ -787,17 +787,17 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
 		}
 	}
 #endif
-
+    
     const uint32_t argBuffersCount((uint32_t)pDescriptorSet->mArgumentBufferDescriptors.size());
-
+    
     if (argBuffersCount > 1)
     {
         ASSERT(pCmd->pShader); // shader required. need to set pipline object first
-
+        
         for (uint32_t sh = 0; sh < pDescriptorSet->pRootSignature->mShaderDescriptorsCount; ++sh)
         {
             RootSignature::ShaderDescriptors& shaderDescriptors(pDescriptorSet->pRootSignature->pShaderDescriptors[sh]);
-
+                        
             if (shaderDescriptors.pShader == pCmd->pShader)
             {
                 const DescriptorSet::ShaderData& shaderData = pDescriptorSet->mShadersData[(void*)&shaderDescriptors];
@@ -805,7 +805,7 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
                 for (uint32_t slot = 0; slot < ARGUMENT_BUFFER_SLOT_COUNT; ++slot)
                 {
                     const DescriptorSet::ArgumentBufferDescriptor* argumentBufferDescriptor((DescriptorSet::ArgumentBufferDescriptor*)shaderData.pArgumentBufferDescriptor[pDescriptorSet->mUpdateFrequency - DESCRIPTOR_UPDATE_FREQ_PADDING][slot]);
-
+                    
                     if (argumentBufferDescriptor)
                     {
                         // argument buffers
@@ -814,7 +814,7 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
                             [pCmd->mtlRenderEncoder setVertexBuffer: argumentBufferDescriptor->mArgumentBuffers[index]->mtlBuffer
                                                              offset: offset
                                                             atIndex: pDescriptorSet->mUpdateFrequency];
-
+                            
                             util_set_resources_graphics(pCmd, &pDescriptorSet->pSetResources[index], MTLRenderStageVertex);
                         }
 
@@ -823,21 +823,21 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
                             [pCmd->mtlRenderEncoder setFragmentBuffer: argumentBufferDescriptor->mArgumentBuffers[index]->mtlBuffer
                                                                offset: offset
                                                               atIndex: pDescriptorSet->mUpdateFrequency];
-
+                            
                             util_set_resources_graphics(pCmd, &pDescriptorSet->pSetResources[index], MTLRenderStageFragment);
                         }
-
+                            
                         if (argumentBufferDescriptor->mShaderStage & SHADER_STAGE_COMP)
                         {
                             [pCmd->mtlComputeEncoder setBuffer: argumentBufferDescriptor->mArgumentBuffers[index]->mtlBuffer
                                                         offset: offset
                                                        atIndex: pDescriptorSet->mUpdateFrequency];
-
+                            
                             util_set_resources_compute(pCmd, &pDescriptorSet->pSetResources[index]);
                         }
                     }
                 }
-
+                
                 break;
             }
         }
@@ -848,14 +848,14 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
         {
             const DescriptorSet::ArgumentBufferDescriptor* argumentBufferDescriptor(it->second);
             const Buffer* buffer(argumentBufferDescriptor->mArgumentBuffers[index]);
-
+            
             // argument buffers
             if (pDescriptorSet->mStages & SHADER_STAGE_VERT)
             {
                 [pCmd->mtlRenderEncoder setVertexBuffer: buffer->mtlBuffer
                                                  offset: offset
                                                 atIndex: pDescriptorSet->mUpdateFrequency];
-
+                
                 util_set_resources_graphics(pCmd, &pDescriptorSet->pSetResources[index], MTLRenderStageVertex);
             }
 
@@ -864,16 +864,16 @@ void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorS
                 [pCmd->mtlRenderEncoder setFragmentBuffer: buffer->mtlBuffer
                                                    offset: offset
                                                   atIndex: pDescriptorSet->mUpdateFrequency];
-
+                
                 util_set_resources_graphics(pCmd, &pDescriptorSet->pSetResources[index], MTLRenderStageFragment);
             }
-
+                
             if (pDescriptorSet->mStages & SHADER_STAGE_COMP)
             {
                 [pCmd->mtlComputeEncoder setBuffer: buffer->mtlBuffer
                                             offset: offset
                                            atIndex: pDescriptorSet->mUpdateFrequency];
-
+                
                 util_set_resources_compute(pCmd, &pDescriptorSet->pSetResources[index]);
             }
         }
@@ -891,7 +891,7 @@ void utils_bind_push_constant(Cmd* pCmd, const DescriptorInfo* pDesc, const void
                                         length: pDesc->mDesc.size
                                        atIndex: pDesc->mDesc.reg];
     }
-
+    
     if (pDesc->mDesc.used_stages & SHADER_STAGE_FRAG)
     {
         [pCmd->mtlRenderEncoder setFragmentBytes: pConstants
@@ -912,15 +912,15 @@ void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* 
     ASSERT(pCmd);
     ASSERT(pRootSignature);
     ASSERT(pName);
-
+    
     uint32_t descIndex = -1;
-
+    
     for (uint32_t i = 0; i < pRootSignature->mShaderDescriptorsCount; ++i)
     {
         const RootSignature::ShaderDescriptors& shaderPair(pRootSignature->pShaderDescriptors[i]);
-
+        
         const DescriptorInfo* pDesc = get_descriptor_for_shader(&shaderPair, pName, &descIndex);
-
+        
         if(pDesc)
         {
             utils_bind_push_constant(pCmd, pDesc, pConstants);
@@ -933,9 +933,9 @@ void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint3
     ASSERT(pCmd);
     ASSERT(pRootSignature);
     ASSERT(paramIndex != (uint32_t)-1);
-
+    
     const RootSignature::IndexedDescriptor& indexedDescriptor(pRootSignature->mIndexedDescriptorInfo[paramIndex]);
-
+    
     for (uint32_t i = 0; i < indexedDescriptor.mDescriptorCount; ++i)
     {
         const DescriptorInfo* pDesc = indexedDescriptor.pDescriptors[i];
@@ -953,14 +953,14 @@ void cmdBindPushConstantsByIndex(Cmd* pCmd, RootSignature* pRootSignature, uint3
 uint32_t hash_descriptor(const ArgumentDescriptor& descriptor)
 {
     uint32 result = 0;
-
+    
     result = (uint32_t)descriptor.mDataType;
     result |= descriptor.mBufferIndex << 4;
     result |= descriptor.mArgumentIndex << 8;
     result |= descriptor.mAccessType << 12;
     result |= descriptor.mTextureType << 16;
     result |= descriptor.mArrayLength << 20;
-
+    
     return result;
 }
 
@@ -973,13 +973,13 @@ DescriptorSet::ArgumentBufferDescriptor* util_add_shader_descriptor(Renderer* pR
 {
     ASSERT(hash);
     ASSERT(descriptors.count);
-
+    
     auto it = pDescriptorSet->mArgumentBufferDescriptors.find(hash);
-
+    
     if (it != pDescriptorSet->mArgumentBufferDescriptors.end())
     {
         it->second->mShaderStage |= shaderStage;
-
+        
         return it->second;
     }
     else
@@ -991,32 +991,32 @@ DescriptorSet::ArgumentBufferDescriptor* util_add_shader_descriptor(Renderer* pR
             return (NSComparisonResult)(first.index > second.index);
         }];
         ASSERT(sortedArray.count);
-
+        
         DescriptorSet::ArgumentBufferDescriptor* newBufferDescriptor = (DescriptorSet::ArgumentBufferDescriptor*)conf_calloc(1, sizeof(DescriptorSet::ArgumentBufferDescriptor));
-
+        
         newBufferDescriptor->mShaderStage = shaderStage;
-
+        
         // create encoder
         newBufferDescriptor->mArgumentEncoder = [pRenderer->pDevice newArgumentEncoderWithArguments: sortedArray];
         ASSERT(newBufferDescriptor->mArgumentEncoder);
-
+        
         // create buffers
         for (uint32_t i = 0; i < pDesc->mMaxSets; ++i)
         {
             Buffer* newBuffer;
-
+                    
             BufferDesc bufferDesc = {};
             bufferDesc.pDebugName = (const wchar_t*)[[NSString stringWithFormat:@"Argument encoder #%d", i] cStringUsingEncoding:NSUTF32LittleEndianStringEncoding]; // todo
             bufferDesc.mSize = newBufferDescriptor->mArgumentEncoder.encodedLength;
             bufferDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
             bufferDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
             addBuffer(pRenderer, &bufferDesc, &newBuffer);
-
+            
             newBufferDescriptor->mArgumentBuffers.push_back(newBuffer);
         }
-
+        
         pDescriptorSet->mArgumentBufferDescriptors[hash] = newBufferDescriptor;
-
+        
         return newBufferDescriptor;
     }
 }
@@ -1026,50 +1026,50 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
     ASSERT(pRenderer);
     ASSERT(pDesc);
     ASSERT(ppDescriptorSet);
-
+    
     DescriptorSet* pDescriptorSet = (DescriptorSet*)conf_calloc(1, sizeof(*pDescriptorSet));
     ASSERT(pDescriptorSet);
-
+    
     conf_placement_new<DescriptorSet>(pDescriptorSet); // need it to initialize hash map
-
+    
     const RootSignature* pRootSignature(pDesc->pRootSignature);
     const uint32_t updateFreq(pDesc->mUpdateFrequency + DESCRIPTOR_UPDATE_FREQ_PADDING);
     const uint32_t nodeIndex = pDesc->mNodeIndex;
-
+    
     pDescriptorSet->pRootSignature = pRootSignature;
     pDescriptorSet->mUpdateFrequency = updateFreq;
     pDescriptorSet->mNodeIndex = nodeIndex;
     pDescriptorSet->mMaxSets = pDesc->mMaxSets;
 
     pDescriptorSet->pSetResources = (DescriptorSet::DescriptorResources*)conf_calloc(pDescriptorSet->mMaxSets, sizeof(DescriptorSet::DescriptorResources));
-
+    
     // combine argument encoder
     //todo: dscriptors by shaders
     NSMutableArray<MTLArgumentDescriptor*>* descriptorsVs = [[NSMutableArray alloc] initWithCapacity:10];
     NSMutableArray<MTLArgumentDescriptor*>* descriptorsFs = [[NSMutableArray alloc] initWithCapacity:10];
     NSMutableArray<MTLArgumentDescriptor*>* descriptorsCs = [[NSMutableArray alloc] initWithCapacity:10];
-
+    
     uint32_t hashVs = 0;
     uint32_t hashFs = 0;
     uint32_t hashCs = 0;
-
+    
 //    Shader* shaderVs = NULL;
 //    Shader* shaderFs = NULL;
 //    Shader* shaderCs = NULL;
-
+    
     for (uint32_t sh = 0; sh < pRootSignature->mShaderDescriptorsCount; ++sh)
     {
         //LOGF(LogLevel::eINFO, "> NEW ARGUMENT BUFFER");
-
+        
         const RootSignature::ShaderDescriptors& shaderPair(pRootSignature->pShaderDescriptors[sh]);
-
+        
 //        shaderVs = pRootSignature->pShaderDescriptors[sh].pShader;
-
+        
         for (uint32_t i = 0; i < shaderPair.mDescriptorCount; ++i)
         {
             const DescriptorInfo& descriptorInfo(shaderPair.pDescriptors[i]);
             const ShaderResource& shaderResourceDesc(descriptorInfo.mDesc);
-
+            
 			// #NOTE: Support for RW textures on iOS until they are supported through argument buffers
 #ifdef TARGET_IOS
 			if (shaderResourceDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
@@ -1081,11 +1081,11 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
             if (shaderResourceDesc.type != DESCRIPTOR_TYPE_ARGUMENT_BUFFER)
             {
                 const ArgumentDescriptor& memberDescriptor(shaderResourceDesc.mtlArgumentDescriptors);
-
+                
                 if (memberDescriptor.mBufferIndex == updateFreq)
                 {
                     uint32_t hash = hash_descriptor(memberDescriptor);
-
+                    
                     MTLArgumentDescriptor* metalDescriptor = [MTLArgumentDescriptor argumentDescriptor];
                     metalDescriptor.access = memberDescriptor.mAccessType;
                     metalDescriptor.arrayLength = memberDescriptor.mArrayLength;
@@ -1093,102 +1093,102 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
                     metalDescriptor.dataType = memberDescriptor.mDataType;
                     metalDescriptor.index = memberDescriptor.mArgumentIndex;
                     metalDescriptor.textureType = memberDescriptor.mTextureType;
-
+                    
                     uint32_t nameHash = 0;
                     MurmurHash3_x86_32(shaderResourceDesc.name, shaderResourceDesc.name_size, 0, &nameHash);
-
+                    
                     if (shaderResourceDesc.used_stages & SHADER_STAGE_VERT)
                     {
                         [descriptorsVs addObject:metalDescriptor];
                         hash_combine(&hashVs, hash);
                         hash_combine(&hashVs, nameHash);
-
+                        
                         //LOGF(LogLevel::eINFO, "    %s -> VS (%d)", shaderResourceDesc.name, hashVs);
                     }
-
+                    
                     if (shaderResourceDesc.used_stages & SHADER_STAGE_FRAG)
                     {
                         [descriptorsFs addObject:metalDescriptor];
                         hash_combine(&hashFs, hash);
                         hash_combine(&hashFs, nameHash);
-
+                        
                         //LOGF(LogLevel::eINFO, "    %s -> FS (%d)", shaderResourceDesc.name, hashFs);
                     }
-
+                    
                     if (shaderResourceDesc.used_stages & SHADER_STAGE_COMP)
                     {
                         [descriptorsCs addObject:metalDescriptor];
                         hash_combine(&hashCs, hash);
                         hash_combine(&hashCs, nameHash);
-
+                        
                         //LOGF(LogLevel::eINFO, "    %s -> CS (%d)", shaderResourceDesc.name, hashCs);
                     }
                 }
             }
         }
-
+        
         DescriptorSet::ShaderData shaderData = { 0 };
         if (descriptorsVs.count)
         {
             ASSERT(descriptorsCs.count == 0);
-
+            
             ASSERT(shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_VERTEX] == NULL);
-
+            
             shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_VERTEX] = util_add_shader_descriptor(pRenderer, pDescriptorSet, pDesc, hashVs, descriptorsVs, SHADER_STAGE_VERT);
             descriptorsVs = [[NSMutableArray alloc] initWithCapacity:10];
             hashVs = 0;
-
+            
             //LOGF(LogLevel::eINFO, "> VS BufferDesc (%d): %p", pDesc->mUpdateFrequency, shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_VERTEX]);
-
+            
             pDescriptorSet->mStages |= SHADER_STAGE_VERT;
         }
         else if (descriptorsCs.count)
         {
             ASSERT(shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_COMPUTE] == NULL);
-
+            
             shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_COMPUTE] = util_add_shader_descriptor(pRenderer, pDescriptorSet, pDesc, hashCs, descriptorsCs, SHADER_STAGE_COMP);
             descriptorsCs = [[NSMutableArray alloc] initWithCapacity:10];
             hashCs = 0;
-
+            
             //LOGF(LogLevel::eINFO, "> CS BufferDesc (%d): %p", pDesc->mUpdateFrequency, shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_COMPUTE]);
-
+            
             pDescriptorSet->mStages |= SHADER_STAGE_COMP;
         }
         else
         {
             shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_VERTEX] = NULL;
         }
-
+        
         if (descriptorsFs.count)
         {
             ASSERT(descriptorsCs.count == 0);
-
+            
             ASSERT(shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_FRAGMENT] == NULL);
-
+            
             shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_FRAGMENT] = util_add_shader_descriptor(pRenderer, pDescriptorSet, pDesc, hashFs, descriptorsFs, SHADER_STAGE_FRAG);
             descriptorsFs = [[NSMutableArray alloc] initWithCapacity:10];
             hashFs = 0;
-
+            
             //LOGF(LogLevel::eINFO, "> FS BufferDesc (%d): %p", pDesc->mUpdateFrequency, shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_FRAGMENT]);
-
+            
             pDescriptorSet->mStages |= SHADER_STAGE_FRAG;
         }
         else
         {
             shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_FRAGMENT] = NULL;
         }
-
+        
         if (pDescriptorSet->mStages != SHADER_STAGE_NONE)
         {
             pDescriptorSet->mShadersData[(void*)&shaderPair] = shaderData;
-
+            
             // bind static samplers
             // todo: only if new buffer
             for (uint32_t i = 0; i < shaderPair.mDescriptorCount; ++i)
             {
                 const DescriptorInfo& descriptorInfo(shaderPair.pDescriptors[i]);
                 const ShaderResource& shaderResourceDesc(descriptorInfo.mDesc);
-
+                
                 if (shaderResourceDesc.reg == updateFreq &&
                     shaderResourceDesc.type == DESCRIPTOR_TYPE_SAMPLER &&
                     descriptorInfo.mStaticSampler)
@@ -1196,7 +1196,7 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
                     //for (uint32_t k = 0; k < 2; ++k)
                     {
                         DescriptorSet::ArgumentBufferDescriptor* argumentBufferDescriptor((DescriptorSet::ArgumentBufferDescriptor*)shaderData.pArgumentBufferDescriptor[pDesc->mUpdateFrequency][ARGUMENT_BUFFER_SLOT_FRAGMENT]);
-
+                        
                         if (argumentBufferDescriptor)
                         {
                             for (uint32_t j = 0; j < pDescriptorSet->mMaxSets; ++j)
@@ -1212,7 +1212,7 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
             }
         }
     }
-
+	
 	// #NOTE: Support for RW textures on iOS until they are supported through argument buffers
 #ifdef TARGET_IOS
 	pDescriptorSet->ppRWTextures = (id<MTLTexture> __weak**)conf_calloc(pDescriptorSet->mMaxSets, sizeof(id<MTLTexture>*));
@@ -1227,27 +1227,27 @@ void addDescriptorSet(Renderer* pRenderer, const DescriptorSetDesc* pDesc, Descr
 		ASSERT(pDescriptorSet->ppRWTextureDescriptors[i]);
 	}
 #endif
-
+    
     *ppDescriptorSet = pDescriptorSet;
 }
 
 void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
-{
+{    
     for (eastl::unordered_map<uint32_t, DescriptorSet::ArgumentBufferDescriptor*>::const_iterator it = pDescriptorSet->mArgumentBufferDescriptors.begin();
 		 it != pDescriptorSet->mArgumentBufferDescriptors.end(); ++it)
     {
 		for (Buffer* pBuffer : it->second->mArgumentBuffers)
 			removeBuffer(pRenderer, pBuffer);
-
+		
         it->second->mArgumentEncoder = nil;
         it->second->mArgumentBuffers.clear();
-
+        
 		it->second->~ArgumentBufferDescriptor();
         conf_free(it->second);
     }
-
+    
     pDescriptorSet->mArgumentBufferDescriptors.clear();
-
+    
     pDescriptorSet->mRootBuffers.clear();
 
     for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
@@ -1258,9 +1258,9 @@ void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
             conf_free(pDescriptorSet->pSetResources[i].mResources[j]);
         }
     }
-
+    
     SAFE_FREE(pDescriptorSet->pSetResources);
-
+    
 	// #NOTE: Support for RW textures on iOS until they are supported through argument buffers
 #ifdef TARGET_IOS
 	for (uint32_t i = 0; i < pDescriptorSet->mMaxSets; ++i)
@@ -1271,7 +1271,7 @@ void removeDescriptorSet(Renderer* pRenderer, DescriptorSet* pDescriptorSet)
 	SAFE_FREE(pDescriptorSet->ppRWTextures);
 	SAFE_FREE(pDescriptorSet->ppRWTextureDescriptors);
 #endif
-
+	
 	pDescriptorSet->~DescriptorSet();
     SAFE_FREE(pDescriptorSet);
 }
@@ -1281,38 +1281,38 @@ void getDescriptorIndex(RootSignature* pRootSignature, const char* pName, uint32
     ASSERT(pRootSignature);
     ASSERT(pName);
     ASSERT(pOutIndex);
-
+    
     const DescriptorInfo* pDesc = NULL;
     uint32_t paramIndex;
-
+    
     eastl::vector<const DescriptorInfo*> descriptors;
-
+    
     // collect all
     for (uint32_t sh = 0; sh < pRootSignature->mShaderDescriptorsCount; ++sh)
     {
         RootSignature::ShaderDescriptors& shaderPair(pRootSignature->pShaderDescriptors[sh]);
-
+        
         pDesc = get_descriptor_for_shader(&shaderPair, pName, &paramIndex);
         if (pDesc)
         {
             descriptors.push_back(pDesc);
         }
     }
-
+    
     if (descriptors.size())
     {
         RootSignature::IndexedDescriptor info;
-
+        
         info.mDescriptorCount = (uint32_t)descriptors.size();
         info.pDescriptors = (const DescriptorInfo**)conf_calloc(info.mDescriptorCount, sizeof(DescriptorInfo));
-
+        
         for (uint32_t i = 0; i < info.mDescriptorCount; ++i)
         {
             info.pDescriptors[i] = descriptors[i];
         }
-
+        
         pRootSignature->mIndexedDescriptorInfo.push_back(info);
-
+        
         *pOutIndex = (uint32_t)(pRootSignature->mIndexedDescriptorInfo.size()) - 1;
     }
     else
@@ -1328,9 +1328,9 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
     // set argument buffer to update
     [argumentBufferDescriptor->mArgumentEncoder setArgumentBuffer: argumentBufferDescriptor->mArgumentBuffers[index]->mtlBuffer
                                                            offset: 0];
-
+    
     const DescriptorType type(pDesc->mDesc.type);
-
+    
     const uint32_t arrayCount(max(1U, pParam->mCount));
     for (uint32_t j = 0; j < arrayCount; ++j)
     {
@@ -1339,7 +1339,7 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
             case DESCRIPTOR_TYPE_SAMPLER:
                 {
                     ASSERT(pDesc->mDesc.mIsArgumentBufferField);
-
+                    
                     [argumentBufferDescriptor->mArgumentEncoder setSamplerState: pParam->ppSamplers[j]->mtlSamplerState
                                                                        atIndex: pDesc->mHandleIndex + j];
                 }
@@ -1348,7 +1348,7 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
             case DESCRIPTOR_TYPE_RW_TEXTURE:
                 {
                     ASSERT(pDesc->mDesc.mIsArgumentBufferField);
-
+                    
                     if (type == DESCRIPTOR_TYPE_RW_TEXTURE && pParam->ppTextures[j]->pMtlUAVDescriptors)
                     {
                         [argumentBufferDescriptor->mArgumentEncoder setTexture: pParam->ppTextures[j]->pMtlUAVDescriptors[pParam->mUAVMipSlice]
@@ -1359,20 +1359,20 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
                         [argumentBufferDescriptor->mArgumentEncoder setTexture: pParam->ppTextures[j]->mtlTexture
                                                                        atIndex: pDesc->mHandleIndex + j];
                     }
-
+                    
                     // resources
                     if (j == 0)
                     {
                         eastl::unordered_set<void*>* resourceStorage = &resources[RESOURCE_TYPE_HEAP];
                         void* resource = (__bridge void*)pParam->ppTextures[j]->pMtlAllocation->GetMemory();
-
+                        
                         if (resource == NULL)
                         {
                             resourceStorage = (type == DESCRIPTOR_TYPE_RW_TEXTURE) ? &resources[RESOURCE_TYPE_RESOURCE_RW] : &resources[RESOURCE_TYPE_RESOURCE_READ_ONLY];
                             resource = (__bridge void*)pParam->ppTextures[j]->mtlTexture;
                         }
                         ASSERT(resource);
-
+                        
                         eastl::unordered_set<void*>::const_iterator it = resourceStorage->find(resource);
                         if (it == resourceStorage->end())
                             resourceStorage->insert(resource);
@@ -1388,24 +1388,24 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
                     if (pDesc->mDesc.mIsArgumentBufferField)
                     {
 //                                LOGF(LogLevel::eWARNING, "Updated buffer '%s'[%d] (index %d) at buffer %d (%p) for descriptor %p", pDesc->mDesc.name, j, (pDesc->mHandleIndex + j), index, pParam->ppBuffers[j]->mtlBuffer, argumentBufferDescriptor);
-
+                        
                         [argumentBufferDescriptor->mArgumentEncoder setBuffer: pParam->ppBuffers[j]->mtlBuffer
                                                                       offset: (pParam->ppBuffers[j]->mPositionInHeap + (pParam->pOffsets ? pParam->pOffsets[j] : 0))
                                                                      atIndex: pDesc->mHandleIndex + j];
-
+                        
                         // resources
                         if (j == 0)
                         {
                             eastl::unordered_set<void*>* resourceStorage = &resources[RESOURCE_TYPE_HEAP];
                             void* resource = (__bridge void*)pParam->ppBuffers[j]->pMtlAllocation->GetMemory();
-
+                            
                             if (resource == NULL)
                             {
                                 resourceStorage = (type == DESCRIPTOR_TYPE_RW_BUFFER || type == DESCRIPTOR_TYPE_RW_BUFFER_RAW) ?  &resources[RESOURCE_TYPE_RESOURCE_RW] : &resources[RESOURCE_TYPE_RESOURCE_READ_ONLY];
                                 resource = (__bridge void*)pParam->ppBuffers[j]->mtlBuffer;
                             }
                             ASSERT(resource);
-
+                            
                             eastl::unordered_set<void*>::const_iterator it = resourceStorage->find(resource);
                             if (it == resourceStorage->end())
                                 resourceStorage->insert(resource);
@@ -1414,11 +1414,11 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
                     else
                     {
                         ASSERT(j == 0 && "Array not supported");
-
+                        
                         DescriptorSet::RootBuffer rootBuffer;
                         rootBuffer.mBuffer = pParam->ppBuffers[j];
                         rootBuffer.mBufferIndex = pDesc->mHandleIndex;
-
+                        
                         bool found = false;
                         for (uint32_t k = 0; k < pDescriptorSet->mRootBuffers.size(); ++k)
                         {
@@ -1426,12 +1426,12 @@ void utils_set_argument(DescriptorSet* pDescriptorSet, const DescriptorInfo* pDe
                             {
                                 pDescriptorSet->mRootBuffers[k] = rootBuffer;
                                 pDescriptorSet->mRootBuffers[k].mOffset = pParam->pOffsets ? pParam->pOffsets[j] : 0;
-
+                                
                                 found = true;
                                 break;
                             }
                         }
-
+                        
                         if (!found)
                         {
                             pDescriptorSet->mRootBuffers.push_back(rootBuffer);
@@ -1457,37 +1457,37 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
     ASSERT(pRenderer);
     ASSERT(pDescriptorSet);
     ASSERT(index < pDescriptorSet->mMaxSets);
-
+    
     // resources
     ResourcesList resources;
     //eastl::unordered_set<void*> resources[RESOURCE_TYPE_COUNT];
-
+    
     const RootSignature* pRootSignature = pDescriptorSet->pRootSignature;
-
+    
     //const size_t offset(pDescriptorSet->mArgumentBuffer->mPositionInHeap + (pDescriptorSet->mChunkSize * index));
     //const size_t offset(0);
 
 //    ASSERT(pDescriptorSet->mArgumentBufferDescriptors.size()); // no argument buffers
-
+    
     for (auto it = pDescriptorSet->mArgumentBufferDescriptors.begin(); it != pDescriptorSet->mArgumentBufferDescriptors.end(); ++it)
     {
         const DescriptorSet::ArgumentBufferDescriptor* argumentBufferDescriptor(it->second);
-
+        
         for (uint32_t i = 0; i < count; ++i)
         {
             uint32_t paramIndex = pParams->mIndex;
-
+            
             const DescriptorData* pParam(pParams + i);
             const DescriptorInfo* pDesc = NULL;
-
+            
             if (paramIndex != (uint32_t)-1)
             {
                 const RootSignature::IndexedDescriptor& info(pRootSignature->mIndexedDescriptorInfo[paramIndex]);
-
+                
                 for (uint32_t i = 0; i < info.mDescriptorCount; ++i)
                 {
                     pDesc = info.pDescriptors[i];
-
+                    
                     utils_set_argument(pDescriptorSet, pDesc, argumentBufferDescriptor, index, pParam, resources);
                 }
             }
@@ -1498,21 +1498,21 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
                 for (uint32_t sh = 0; sh < pRootSignature->mShaderDescriptorsCount; ++sh)
                 {
                     const RootSignature::ShaderDescriptors& shaderPair(pRootSignature->pShaderDescriptors[sh]);
-
+                    
                     pDesc = get_descriptor_for_shader(&shaderPair, pParam->pName, &paramIndex);
-
+                    
                     if (pDesc)
                     {
                         // check desc aviability
                         if (pDesc->mDesc.mIsArgumentBufferField)
                         {
                             DescriptorSet::ShaderData& shaderData(pDescriptorSet->mShadersData[(void*)&shaderPair]);
-
+                            
                             if (pDesc->mDesc.used_stages & SHADER_STAGE_VERT || pDesc->mDesc.used_stages & SHADER_STAGE_COMP)
                             {
                                 found = (shaderData.pArgumentBufferDescriptor[pDescriptorSet->mUpdateFrequency - DESCRIPTOR_UPDATE_FREQ_PADDING][ARGUMENT_BUFFER_SLOT_VERTEX] == argumentBufferDescriptor);
                             }
-
+                            
                             if (!found && pDesc->mDesc.used_stages & SHADER_STAGE_FRAG)
                             {
                                 found = (shaderData.pArgumentBufferDescriptor[pDescriptorSet->mUpdateFrequency - DESCRIPTOR_UPDATE_FREQ_PADDING][ARGUMENT_BUFFER_SLOT_FRAGMENT] == argumentBufferDescriptor);
@@ -1521,18 +1521,18 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
                             // not ant argument buffer parameter (3d font hacks)
                             found = true;
                         }
-
+                        
                         if (found)
                             break;
                         else
                             pDesc = NULL;
                     }
                 }
-
+                
                 // param not in buffer
                 if (!pDesc)
                     continue;
-
+                
 				// #NOTE: Spport for RW textures on iOS until they are supported through argument buffers
 #ifdef TARGET_IOS
 				if (pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
@@ -1542,10 +1542,10 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
             }
         }
     }
-
+        
     // prepare resources
     uint32_t n = 0;
-
+    
     for (uint32_t i = 0; i < RESOURCE_TYPE_COUNT; ++i)
     {
         if (pDescriptorSet->pSetResources[index].mResourcesCount[i])
@@ -1554,7 +1554,7 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
             conf_free(pDescriptorSet->pSetResources[index].mResources[i]);
             pDescriptorSet->pSetResources[index].mResources[i] = NULL;
         }
-
+        
         pDescriptorSet->pSetResources[index].mResourcesCount[i] = static_cast<uint32_t>(resources[i].size());
         if (pDescriptorSet->pSetResources[index].mResourcesCount[i])
         {
@@ -1585,7 +1585,7 @@ void updateDescriptorSet(Renderer* pRenderer, uint32_t index, DescriptorSet* pDe
 			{
 				pDesc = get_descriptor_for_shader(&pDescriptorSet->pRootSignature->pShaderDescriptors[0], pParams[i].pName, &descIndex);
 			}
-
+			
 			if(pDesc && pDesc->mDesc.type == DESCRIPTOR_TYPE_RW_TEXTURE)
 			{
 				pDescriptorSet->ppRWTextures[index][rwCount] = pParams[i].ppTextures[0]->pMtlUAVDescriptors[pParams[i].mUAVMipSlice];
@@ -4168,16 +4168,26 @@ uint64_t util_pthread_to_uint64(const pthread_t& value)
 }
 
 
-bool util_is_mtl_depth_pixel_format(const MTLPixelFormat& format)
+bool util_is_mtl_depth_pixel_format(const MTLPixelFormat format)
 {
-	return format == MTLPixelFormatDepth32Float || format == MTLPixelFormatDepth32Float_Stencil8
-#ifndef TARGET_IOS
-		   || format == MTLPixelFormatDepth16Unorm || format == MTLPixelFormatDepth24Unorm_Stencil8
+	if (format == MTLPixelFormatDepth32Float || format == MTLPixelFormatDepth32Float_Stencil8)
+		return true;
+	
+#ifdef TARGET_IOS
+	if (@available(iOS 13, *))
+	{
+		if (format == MTLPixelFormatDepth16Unorm)
+			return true;
+	}
+#else
+	if (format == MTLPixelFormatDepth16Unorm || format == MTLPixelFormatDepth24Unorm_Stencil8)
+		return true;
 #endif
-		;
+		
+	return false;
 }
 
-bool util_is_mtl_compressed_pixel_format(const MTLPixelFormat& format)
+bool util_is_mtl_compressed_pixel_format(const MTLPixelFormat format)
 {
 #ifndef TARGET_IOS
 	return format >= MTLPixelFormatBC1_RGBA;
@@ -4186,7 +4196,7 @@ bool util_is_mtl_compressed_pixel_format(const MTLPixelFormat& format)
 #endif
 }
 
-MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format)
+MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat format)
 {
 	switch (format)
 	{
@@ -4241,7 +4251,7 @@ MTLVertexFormat util_to_mtl_vertex_format(const TinyImageFormat& format)
 	return MTLVertexFormatInvalid;
 }
 
-MTLLoadAction util_to_mtl_load_action(const LoadActionType& loadActionType)
+MTLLoadAction util_to_mtl_load_action(const LoadActionType loadActionType)
 {
 	if (loadActionType == LOAD_ACTION_DONTCARE)
 		return MTLLoadActionDontCare;
@@ -4551,13 +4561,9 @@ void add_texture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** ppText
 	pTexture->mDesc = *pDesc;
 
 	pTexture->mtlPixelFormat = (MTLPixelFormat) TinyImageFormat_ToMTLPixelFormat(pTexture->mDesc.mFormat);
-#ifndef TARGET_IOS
-	if (pTexture->mtlPixelFormat == MTLPixelFormatDepth24Unorm_Stencil8 && ![pRenderer->pDevice isDepth24Stencil8PixelFormatSupported])
-	{
-#else
-    if (pTexture->mDesc.mFormat == TinyImageFormat_D24_UNORM_S8_UINT)
+
+    if (pTexture->mDesc.mFormat == TinyImageFormat_D24_UNORM_S8_UINT && !pRenderer->capBits.canRenderTargetWriteTo[pTexture->mDesc.mFormat])
     {
-#endif
 		internal_log(LOG_TYPE_WARN, "Format D24S8 is not supported on this device. Using D32S8 instead", "addTexture");
 		pTexture->mtlPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 		pTexture->mDesc.mFormat = TinyImageFormat_D32_SFLOAT_S8_UINT;

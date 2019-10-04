@@ -206,33 +206,36 @@ void set_current_dir(const char* path)
 
 void get_files_with_extension(const char* dir, const char* ext, eastl::vector<eastl::string>& filesIn)
 {
-	if (!dir || strlen(dir) == 0) {
+	if (!dir || strlen(dir) == 0)
+	{
 		LOGF(LogLevel::eWARNING, "%s directory passed as argument!", (!dir ? "NULL" : "Empty"));
 		return;
 	}
 
 	// Use Paths instead of URLs
-	NSFileManager *fileMan = [NSFileManager defaultManager];
-	NSString *pStrDir = [NSString stringWithUTF8String:dir];
-	NSArray *pathFragments = [NSArray arrayWithObjects:[[NSBundle mainBundle] bundlePath], pStrDir, nil];
-	NSString *pStrSearchDir = [NSString pathWithComponents:pathFragments];
-	NSError *pError = nil;
+	NSFileManager* fileMan = [NSFileManager defaultManager];
+	NSString*      pStrDir = [NSString stringWithUTF8String:dir];
+	NSArray*       pathFragments = [NSArray arrayWithObjects:[[NSBundle mainBundle] bundlePath], pStrDir, nil];
+	NSString*      pStrSearchDir = [NSString pathWithComponents:pathFragments];
+    NSError *      pError = nil;
 	BOOL isDir = NO;
 	//if (![fileMan fileExistsAtPath:pStrSearchDir isDirectory:&isDir])
-	if (![fileMan fileExistsAtPath:pStrDir isDirectory:&isDir] && !isDir) {
+    if (![fileMan fileExistsAtPath:pStrDir isDirectory:&isDir] && !isDir)
+	{
 		LOGF(LogLevel::eERROR, "Directory '%s' doesn't exist.", dir);
 		return;
 	}
 	//NSArray* pContents = [fileMan subpathsAtPath:pStrSearchDir];
-	NSArray *pContents = [fileMan subpathsOfDirectoryAtPath:pStrDir error:&pError];
+    NSArray* pContents = [fileMan subpathsOfDirectoryAtPath:pStrDir error:&pError];
 
-	const char *extension = ext;
-	if (ext[0] == '.') {
+	const char* extension = ext;
+	if (ext[0] == '.')
+	{
 		extension = ext + 1;    // get the next address after '.'
 	}
 
 	// predicate for querying files with extension 'ext'
-	NSString *formattedPredicate = @"pathExtension == '";
+	NSString* formattedPredicate = @"pathExtension == '";
 	formattedPredicate = [formattedPredicate stringByAppendingString:[NSString stringWithUTF8String:extension]];
 	formattedPredicate = [formattedPredicate stringByAppendingString:@"'"];
 	NSPredicate* filePredicate = [NSPredicate predicateWithFormat:formattedPredicate];
@@ -457,12 +460,11 @@ static UIBarButtonItem*                      gDoneBtnItem;
 @end
 
 @implementation DocumentBrowserCancelDelegate
-- (void)cancelTapped:(UIButton*)sender {
-	UINavigationController *nc = (UINavigationController * )
-	[UIApplication.sharedApplication.keyWindow.rootViewController presentedViewController];
-	if (nc) {
+- (void)cancelTapped:(UIButton*)sender
+{
+	UINavigationController* nc = (UINavigationController*)[UIApplication.sharedApplication.keyWindow.rootViewController presentedViewController];
+	if (nc)
 		[nc dismissViewControllerAnimated:YES completion:nil];
-	}
 }
 @end
 
@@ -514,12 +516,12 @@ static void create_document_browser(
 	dbvc.title = [NSString stringWithCString:title encoding:[NSString defaultCStringEncoding]];
 	dbvc.defaultSaveFileExt = defaultExt;
 	dbvc.actionDocumentPicked = on_document_picked;
-	dbvc.callback = (void *) callback;
-	dbvc.userData = (void *) userData;
+	dbvc.callback = (void*)callback;
+	dbvc.userData = (void*)userData;
 	dbvc.navigationItem.leftBarButtonItem = gDoneBtnItem;
 
-	UIViewController *dummyVC = [UIViewController alloc];
-	id nc = [[UINavigationController alloc] initWithRootViewController:dummyVC];
+	UIViewController* dummyVC = [UIViewController alloc];
+	id                nc = [[UINavigationController alloc] initWithRootViewController:dummyVC];
 	// Hide main view
 	[UIApplication.sharedApplication.keyWindow.rootViewController presentViewController:nc animated:NO completion:nil];
 	// Push child view
