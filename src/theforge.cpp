@@ -1104,6 +1104,16 @@ AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, Ti
 	return renderer->capBits.canRenderTargetWriteTo[format];
 }
 
+AL2O3_EXTERN_C void TheForge_CaptureTraceStart(TheForge_RendererHandle handle, const char* fileName) {
+	auto renderer = (Renderer *) handle;
+	captureTraceStart(renderer, fileName);
+}
+
+AL2O3_EXTERN_C void TheForge_CaptureTraceEnd(TheForge_RendererHandle handle) {
+	auto renderer = (Renderer *) handle;
+	captureTraceEnd(renderer);
+}
+
 #if AL2O3_PLATFORM == AL2O3_PLATFORM_WINDOWS
 #define API_CHK(x) ASSERT(x)
 #else

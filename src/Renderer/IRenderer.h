@@ -1158,7 +1158,6 @@ typedef struct Cmd
 #endif
 #if defined(METAL)
 	id<MTLCommandBuffer>         mtlCommandBuffer;
-	id<MTLFence>                 mtlEncoderFence;    // Used to sync different types of encoders recording in the same Cmd.
 	id<MTLRenderCommandEncoder>  mtlRenderEncoder;
 	id<MTLComputeCommandEncoder> mtlComputeEncoder;
 	id<MTLBlitCommandEncoder>    mtlBlitEncoder;
@@ -1168,7 +1167,6 @@ typedef struct Cmd
 	uint64_t                     mSelectedIndexBufferOffset;
 	QueryPool*                   pLastFrameQuery;
 	MTLPrimitiveType             selectedPrimitiveType;
-	bool                         mRenderPassActive;
 #endif
 #if defined(DIRECT3D11)
 	uint8_t* pDescriptorCache;
@@ -1253,8 +1251,9 @@ typedef struct Queue
 	uint32_t mVkQueueIndex;
 #endif
 #if defined(METAL)
-	id<MTLCommandQueue>  mtlCommandQueue;
-	uint32_t             mBarrierFlags;
+	id<MTLCommandQueue>     mtlCommandQueue;
+	uint32_t                mBarrierFlags;
+	id<MTLFence>            mtlQueueFence;
 #endif
 	QueueDesc mQueueDesc;
 	Extent3D  mUploadGranularity;
@@ -1876,6 +1875,7 @@ typedef struct Renderer
 #if defined(METAL)
 	id<MTLDevice>               pDevice;
 	struct ResourceAllocator*   pResourceAllocator;
+	MTLCaptureDescriptor*				pCapture API_AVAILABLE(macos(10.15));
 #endif
 	uint32_t         mCurrentFrameIdx;
 	// Default states used if user does not specify them in pipeline creation
@@ -2062,6 +2062,10 @@ API_INTERFACE void FORGE_CALLCONV freeMemoryStats(Renderer* pRenderer, char* sta
 API_INTERFACE void FORGE_CALLCONV cmdBeginDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName);
 API_INTERFACE void FORGE_CALLCONV cmdEndDebugMarker(Cmd* pCmd);
 API_INTERFACE void FORGE_CALLCONV cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName);
+
+API_INTERFACE void FORGE_CALLCONV captureTraceStart(Renderer* pRenderer, const char* pFileName);
+API_INTERFACE void FORGE_CALLCONV captureTraceEnd(Renderer* pRenderer);
+
 /************************************************************************/
 // Resource Debug Naming Interface
 /************************************************************************/

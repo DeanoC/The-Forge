@@ -4188,6 +4188,12 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 	cachedCmdsIter->second.push_back(cmd);
 }
 
+void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
+}
+
+void captureTraceEnd(Renderer* pRenderer) {
+}
+
 /************************************************************************/
 // Resource Debug Naming Interface
 /************************************************************************/

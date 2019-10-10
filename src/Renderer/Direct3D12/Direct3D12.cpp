@@ -6022,6 +6022,13 @@ void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName)
 	PIXSetMarker(pCmd->pDxCmdList, color, pName);
 #endif
 }
+
+void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
+}
+
+void captureTraceEnd(Renderer* pRenderer) {
+}
+
 /************************************************************************/
 // Resource Debug Naming Interface
 /************************************************************************/

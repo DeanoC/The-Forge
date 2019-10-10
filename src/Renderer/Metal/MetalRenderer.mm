@@ -634,8 +634,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
         switch (i)
         {
             case RESOURCE_TYPE_RESOURCE_RW:
-/* TODO CI doesn't seem to work with #available need to add a define to skip...
-  							if(@available(iOS 13.0, macOS 15.0, *))
+  							if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
                                                    count: resourceCount
@@ -643,7 +642,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                                                   stages: stages];
                         
                 }
-                else */
+                else
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
                                                    count: resourceCount
@@ -651,15 +650,14 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_RESOURCE_READ_ONLY:
-							/* TODO CI doesn't seem to work with #available need to add a define to skip...
-								if(@available(iOS 13.0, macOS 15.0, *))
+								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
                                                    count: resourceCount
                                                    usage: MTLResourceUsageRead | MTLResourceUsageSample
                                                   stages: stages];
                 }
-                else */
+                else
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
                                                    count: resourceCount
@@ -667,14 +665,13 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_HEAP:
-							/* TODO CI doesn't seem to work with #available need to add a define to skip...
-								if(@available(iOS 13.0, macOS 15.0, *))
+								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useHeaps: (__unsafe_unretained id<MTLHeap>*)(void*)resources->mResources[i]
                                                count: resourceCount
                                               stages: stages];
                 }
-                else */
+                else
                 {
                     [pCmd->mtlRenderEncoder useHeaps: (__unsafe_unretained id<MTLHeap>*)(void*)resources->mResources[i]
                                                count: resourceCount];
@@ -2092,6 +2089,7 @@ void addQueue(Renderer* pRenderer, QueueDesc* pQDesc, Queue** ppQueue)
 	pQueue->mtlCommandQueue = [pRenderer->pDevice newCommandQueueWithMaxCommandBufferCount:512];
 	pQueue->mUploadGranularity = {1, 1, 1};
 	pQueue->mBarrierFlags = 0;
+	pQueue->mtlQueueFence = [pRenderer->pDevice newFence];
 	
 	ASSERT(pQueue->mtlCommandQueue != nil);
 
@@ -2101,6 +2099,7 @@ void removeQueue(Queue* pQueue)
 {
 	ASSERT(pQueue);
 	pQueue->mtlCommandQueue = nil;
+	pQueue->mtlQueueFence = nil;
 	SAFE_FREE(pQueue);
 }
 
@@ -2133,14 +2132,12 @@ void addCmd(CmdPool* pCmdPool, bool secondary, Cmd** ppCmd)
 
 	pCmd->pRenderer = pCmdPool->pQueue->pRenderer;
 	pCmd->pCmdPool = pCmdPool;
-	pCmd->mtlEncoderFence = [pCmd->pRenderer->pDevice newFence];
 
 	*ppCmd = pCmd;
 }
 void removeCmd(CmdPool* pCmdPool, Cmd* pCmd)
 {
 	ASSERT(pCmd);
-	pCmd->mtlEncoderFence = nil;
 	pCmd->mtlCommandBuffer = nil;
 	pCmd->pRenderPassDesc = nil;
 	
@@ -3181,23 +3178,18 @@ void beginCmd(Cmd* pCmd)
 
 void endCmd(Cmd* pCmd)
 {
-	if (pCmd->mRenderPassActive)
-	{
-        /*
-		// Reset the bound resources flags for the current root signature's descriptor binder.
-		if (pCmd->pBoundDescriptorBinder && pCmd->pBoundRootSignature)
-			reset_bound_resources(pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature);
-        */
-         
-		@autoreleasepool
-		{
-			util_end_current_encoders(pCmd, true);
-		}
-	}
+    /*
+    // Reset the bound resources flags for the current root signature's descriptor binder.
+    if (pCmd->pBoundDescriptorBinder && pCmd->pBoundRootSignature)
+        reset_bound_resources(pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature);
+    */
+     
+    @autoreleasepool
+    {
+        util_end_current_encoders(pCmd, true);
+    }
 
 //	[pCmd->mtlCommandBuffer waitUntilCompleted];
-	
-	pCmd->mRenderPassActive = false;
 
 	// Reset the bound resources flags for the current root signature's descriptor binder.
 /*
@@ -3214,26 +3206,21 @@ void cmdBindRenderTargets(
 {
 	ASSERT(pCmd);
 
-	if (pCmd->mRenderPassActive)
-	{
 /*
-		if (pCmd->pBoundDescriptorBinder && pCmd->pBoundRootSignature)
-		{
-			// Reset the bound resources flags for the current root signature's descriptor binder.
-			reset_bound_resources(pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature);
-		}
-		else
-		{
-			LOGF(LogLevel::eWARNING, "Render pass is active but no root signature is bound!");
-		}
+    if (pCmd->pBoundDescriptorBinder && pCmd->pBoundRootSignature)
+    {
+        // Reset the bound resources flags for the current root signature's descriptor binder.
+        reset_bound_resources(pCmd->pBoundDescriptorBinder, pCmd->pBoundRootSignature);
+    }
+    else
+    {
+        LOGF(LogLevel::eWARNING, "Render pass is active but no root signature is bound!");
+    }
 */
-		@autoreleasepool
-		{
-			util_end_current_encoders(pCmd, true);
-		}
-
-		pCmd->mRenderPassActive = false;
-	}
+    @autoreleasepool
+    {
+        util_end_current_encoders(pCmd, true);
+    }
 
 	if (!renderTargetCount && !pDepthStencil)
 		return;
@@ -3338,8 +3325,6 @@ void cmdBindRenderTargets(
 
 		util_end_current_encoders(pCmd, false);
 		pCmd->mtlRenderEncoder = [pCmd->mtlCommandBuffer renderCommandEncoderWithDescriptor:pCmd->pRenderPassDesc];
-
-		pCmd->mRenderPassActive = true;
 	}
 }
 
@@ -3970,6 +3955,7 @@ void queueSubmit(
 
 		// Commit any uncommited encoder. This is necessary before committing the command buffer
 		util_end_current_encoders(ppCmds[i], false);
+
 		[ppCmds[i]->mtlCommandBuffer commit];
 	}
 }
@@ -3994,7 +3980,7 @@ void queuePresent(
 		[pSwapChain->presentCommandBuffer presentDrawable:pSwapChain->mMTKDrawable];
 #endif
 	}
-
+	
 	[pSwapChain->presentCommandBuffer commit];
 
 	// after committing a command buffer no more commands can be encoded on it: create a new command buffer for future commands
@@ -4151,7 +4137,30 @@ void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, 
     memcpy(&data[0], &pQueryPool->mGpuTimestampStart, sizeof(uint64_t));
     memcpy(&data[1], &pQueryPool->mGpuTimestampEnd, sizeof(uint64_t));
 }
-    
+
+void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
+	if(@available(iOS 13.0, macOS 10.15, *)) {
+		pRenderer->pCapture = [[MTLCaptureDescriptor alloc] init];
+		pRenderer->pCapture.destination = MTLCaptureDestinationGPUTraceDocument;
+		pRenderer->pCapture.outputURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:pFileName]];
+		pRenderer->pCapture.captureObject = pRenderer->pDevice;
+
+		NSError *error = nil;
+		BOOL success = [MTLCaptureManager.sharedCaptureManager startCaptureWithDescriptor:pRenderer->pCapture
+																																								error:&error];
+
+		if (!success) {
+			pRenderer->pCapture = nil;
+		}
+	}
+}
+
+void captureTraceEnd(Renderer* pRenderer) {
+	if(@available(iOS 13.0, macOS 10.15, *)) {
+		[MTLCaptureManager.sharedCaptureManager stopCapture];
+	}
+}
+
 // -------------------------------------------------------------------------------------------------
 // Utility functions
 // -------------------------------------------------------------------------------------------------
@@ -4407,7 +4416,7 @@ void util_end_current_encoders(Cmd* pCmd, bool forceBarrier)
 		
 		if (barrierRequired || forceBarrier)
 		{
-			[pCmd->mtlRenderEncoder updateFence:pCmd->mtlEncoderFence afterStages:MTLRenderStageFragment];
+			[pCmd->mtlRenderEncoder updateFence:pCmd->pCmdPool->pQueue->mtlQueueFence afterStages:MTLRenderStageFragment];
 			pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_FENCE;
 		}
 		
@@ -4419,9 +4428,9 @@ void util_end_current_encoders(Cmd* pCmd, bool forceBarrier)
 	{
 		ASSERT(pCmd->mtlRenderEncoder == nil && pCmd->mtlBlitEncoder == nil);
 		
-		if (barrierRequired)
+		if (barrierRequired || forceBarrier)
 		{
-			[pCmd->mtlComputeEncoder updateFence:pCmd->mtlEncoderFence];
+			[pCmd->mtlComputeEncoder updateFence:pCmd->pCmdPool->pQueue->mtlQueueFence];
 			pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_FENCE;
 		}
 		
@@ -4433,9 +4442,9 @@ void util_end_current_encoders(Cmd* pCmd, bool forceBarrier)
 	{
 		ASSERT(pCmd->mtlRenderEncoder == nil && pCmd->mtlComputeEncoder == nil);
 		
-		if (barrierRequired)
+		if (barrierRequired || forceBarrier)
 		{
-			[pCmd->mtlBlitEncoder updateFence:pCmd->mtlEncoderFence];
+			[pCmd->mtlBlitEncoder updateFence:pCmd->pCmdPool->pQueue->mtlQueueFence];
 			pCmd->pCmdPool->pQueue->mBarrierFlags |= BARRIER_FLAG_FENCE;
 		}
 		
@@ -4453,13 +4462,13 @@ void util_barrier_required(Cmd* pCmd, const CmdPoolType& encoderType)
 			switch (encoderType)
 			{
 				case CMD_POOL_DIRECT:
-					[pCmd->mtlRenderEncoder waitForFence:pCmd->mtlEncoderFence beforeStages:MTLRenderStageVertex];
+					[pCmd->mtlRenderEncoder waitForFence:pCmd->pCmdPool->pQueue->mtlQueueFence beforeStages:MTLRenderStageVertex];
 					break;
 				case CMD_POOL_COMPUTE:
-					[pCmd->mtlComputeEncoder waitForFence:pCmd->mtlEncoderFence];
+					[pCmd->mtlComputeEncoder waitForFence:pCmd->pCmdPool->pQueue->mtlQueueFence];
 					break;
 				case CMD_POOL_COPY:
-					[pCmd->mtlBlitEncoder waitForFence:pCmd->mtlEncoderFence];
+					[pCmd->mtlBlitEncoder waitForFence:pCmd->pCmdPool->pQueue->mtlQueueFence];
 					break;
 				default:
 					ASSERT(false);
@@ -4473,7 +4482,7 @@ void util_barrier_required(Cmd* pCmd, const CmdPoolType& encoderType)
 #ifdef TARGET_IOS
 					// memoryBarrierWithScope for render encoder is unavailable for iOS
 					// fallback to fence
-					[pCmd->mtlRenderEncoder waitForFence:pCmd->mtlEncoderFence beforeStages:MTLRenderStageVertex];
+					[pCmd->mtlRenderEncoder waitForFence:pCmd->pCmdPool->pQueue->mtlQueueFence beforeStages:MTLRenderStageVertex];
 #else
 					if (pCmd->pCmdPool->pQueue->mBarrierFlags & BARRIER_FLAG_BUFFERS)
 					{
@@ -4508,7 +4517,7 @@ void util_barrier_required(Cmd* pCmd, const CmdPoolType& encoderType)
 					// we cant use barriers with blit encoder, only fence if available
 					if (pCmd->pCmdPool->pQueue->mBarrierFlags & BARRIER_FLAG_FENCE)
 					{
-						[pCmd->mtlBlitEncoder waitForFence:pCmd->mtlEncoderFence];
+						[pCmd->mtlBlitEncoder waitForFence:pCmd->pCmdPool->pQueue->mtlQueueFence];
 					}
 					break;
 					

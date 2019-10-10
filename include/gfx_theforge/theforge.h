@@ -253,4 +253,9 @@ AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, Ti
 // do not free return owned by the shader!
 AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader);
 
+AL2O3_EXTERN_C void TheForge_CaptureTraceStart(TheForge_RendererHandle handle, const char* fileName);
+
+AL2O3_EXTERN_C void TheForge_CaptureTraceEnd(TheForge_RendererHandle handle);
+
+
 #endif // end
