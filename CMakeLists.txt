@@ -38,6 +38,12 @@ SET_MIN_VERSIONS()
 set(LibName gfx_theforge)
 project(${LibName})
 
+set(Deps
+		al2o3_platform
+		al2o3_memory
+		tiny_imageformat
+		)
+
 set(Interface
 		enums.h
 		resourceloader.h
@@ -147,11 +153,6 @@ if (APPLE)
 	list(APPEND Src OS/macOs/macOSTime.cpp)
 endif ()
 
-set(Deps
-		al2o3_platform
-		al2o3_memory
-		tiny_imageformat
-		)
 
 ADD_LIB(${LibName} "${Interface}" "${Src}" "${Deps}")
 

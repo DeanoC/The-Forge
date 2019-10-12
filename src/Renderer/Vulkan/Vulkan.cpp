@@ -6330,7 +6330,7 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 	}
 }
 #endif
-#include "../../../Common_3/ThirdParty/OpenSource/volk/volk.c"
+#include "../../ThirdParty/OpenSource/volk/volk.c"
 #if defined(VK_USE_DISPATCH_TABLES)
 #include "../../../Common_3/ThirdParty/OpenSource/volk/volkForgeExt.c"
 #endif
