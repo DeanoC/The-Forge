@@ -635,7 +635,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
         switch (i)
         {
             case RESOURCE_TYPE_RESOURCE_RW:
-#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 || __IPHONE_OS_VERSION_MIN_REQUIRED >= 130000
   							if(@available(iOS 13.0, macOS 10.15, *))
                 {
 
@@ -654,7 +654,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_RESOURCE_READ_ONLY:
-#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 || __IPHONE_OS_VERSION_MIN_REQUIRED >= 130000
 								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
@@ -671,7 +671,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_HEAP:
-#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 || __IPHONE_OS_VERSION_MIN_REQUIRED >= 130000
 								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useHeaps: (__unsafe_unretained id<MTLHeap>*)(void*)resources->mResources[i]
@@ -4148,7 +4148,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, 
 
 void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
 	if(@available(iOS 13.0, macOS 10.15, *)) {
-#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 || __IPHONE_OS_VERSION_MIN_REQUIRED >= 130000
 		pRenderer->pCapture = [[MTLCaptureDescriptor alloc] init];
 		pRenderer->pCapture.destination = MTLCaptureDestinationGPUTraceDocument;
 		pRenderer->pCapture.outputURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:pFileName]];

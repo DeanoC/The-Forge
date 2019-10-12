@@ -1875,7 +1875,7 @@ typedef struct Renderer
 #if defined(METAL)
 	id<MTLDevice>               pDevice;
 	struct ResourceAllocator*   pResourceAllocator;
-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500
+#if  __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 || __IPHONE_OS_VERSION_MIN_REQUIRED >= 130000
 	MTLCaptureDescriptor*				pCapture;
 #endif
 #endif
