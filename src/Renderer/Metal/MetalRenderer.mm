@@ -39,7 +39,7 @@
 #endif
 #import <simd/simd.h>
 #import <MetalKit/MetalKit.h>
-#import <Availability.h>
+#import <AvailabilityMacros.h>
 
 #include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
 #include "../../ThirdParty/OpenSource/EASTL/unordered_set.h"
@@ -635,7 +635,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
         switch (i)
         {
             case RESOURCE_TYPE_RESOURCE_RW:
-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
   							if(@available(iOS 13.0, macOS 10.15, *))
                 {
 
@@ -654,7 +654,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_RESOURCE_READ_ONLY:
-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
 								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useResources: (__unsafe_unretained id<MTLResource>*)(void*)resources->mResources[i]
@@ -671,7 +671,7 @@ void util_set_resources_graphics(Cmd* pCmd, DescriptorSet::DescriptorResources* 
                 }
                 break;
             case RESOURCE_TYPE_HEAP:
-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
 								if(@available(iOS 13.0, macOS 10.15, *))
                 {
                     [pCmd->mtlRenderEncoder useHeaps: (__unsafe_unretained id<MTLHeap>*)(void*)resources->mResources[i]
@@ -4148,7 +4148,7 @@ void cmdResolveQuery(Cmd* pCmd, QueryPool* pQueryPool, Buffer* pReadbackBuffer, 
 
 void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
 	if(@available(iOS 13.0, macOS 10.15, *)) {
-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
+#if  MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15 || __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_13_0
 		pRenderer->pCapture = [[MTLCaptureDescriptor alloc] init];
 		pRenderer->pCapture.destination = MTLCaptureDestinationGPUTraceDocument;
 		pRenderer->pCapture.outputURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:pFileName]];
