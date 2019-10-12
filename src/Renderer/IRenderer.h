@@ -1875,7 +1875,7 @@ typedef struct Renderer
 #if defined(METAL)
 	id<MTLDevice>               pDevice;
 	struct ResourceAllocator*   pResourceAllocator;
-	MTLCaptureDescriptor*				pCapture API_AVAILABLE(macos(10.15));
+	API_AVAILABLE(macos(10.15)) MTLCaptureDescriptor*				pCapture;
 #endif
 	uint32_t         mCurrentFrameIdx;
 	// Default states used if user does not specify them in pipeline creation
