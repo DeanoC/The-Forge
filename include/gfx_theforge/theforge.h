@@ -128,17 +128,17 @@ AL2O3_EXTERN_C void TheForge_CmdSetScissor(TheForge_CmdHandle cmd,
 																					 uint32_t width,
 																					 uint32_t height);
 AL2O3_EXTERN_C void TheForge_CmdBindPipeline(TheForge_CmdHandle cmd, TheForge_PipelineHandle pipeline);
-AL2O3_EXTERN_C void TheForge_CmdBindDescriptorSet(TheForge_CmdHandle pCmd,
+AL2O3_EXTERN_C void TheForge_CmdBindDescriptorSet(TheForge_CmdHandle cmd,
 																									uint32_t index,
-																									TheForge_DescriptorSetHandle pDescriptorSet);
-AL2O3_EXTERN_C void TheForge_CmdBindPushConstants(TheForge_CmdHandle pCmd,
-																									TheForge_RootSignatureHandle pRootSignature,
-																									const char *pName,
-																									const void *pConstants);
-AL2O3_EXTERN_C void TheForge_CmdBindPushConstantsByIndex(TheForge_CmdHandle pCmd,
-																												 TheForge_RootSignatureHandle pRootSignature,
+																									TheForge_DescriptorSetHandle descriptorSet);
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstants(TheForge_CmdHandle cmd,
+																									TheForge_RootSignatureHandle rootSignature,
+																									const char *name,
+																									const void *constants);
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstantsByIndex(TheForge_CmdHandle cmd,
+																												 TheForge_RootSignatureHandle rootSignature,
 																												 uint32_t paramIndex,
-																												 const void *pConstants);
+																												 const void *constants);
 
 AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge_BufferHandle buffer, uint64_t offset);
 AL2O3_EXTERN_C void TheForge_CmdBindVertexBuffer(TheForge_CmdHandle cmd,

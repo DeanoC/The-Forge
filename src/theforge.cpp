@@ -630,6 +630,19 @@ AL2O3_EXTERN_C void TheForge_CmdBindDescriptorSet(TheForge_CmdHandle cmd,
 																									TheForge_DescriptorSetHandle descriptorSet) {
 	cmdBindDescriptorSet((Cmd *) cmd, index, (DescriptorSet *) descriptorSet);
 }
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstants(TheForge_CmdHandle cmd,
+																									TheForge_RootSignatureHandle rootSignature,
+																									const char *name,
+																									const void *constants) {
+	cmdBindPushConstants((Cmd *)cmd, (RootSignature*)rootSignature, name, constants);
+}
+AL2O3_EXTERN_C void TheForge_CmdBindPushConstantsByIndex(TheForge_CmdHandle cmd,
+																												 TheForge_RootSignatureHandle rootSignature,
+																												 uint32_t paramIndex,
+																												 const void *constants) {
+	cmdBindPushConstantsByIndex((Cmd *)cmd, (RootSignature*)rootSignature, paramIndex, constants);
+
+}
 
 AL2O3_EXTERN_C void TheForge_CmdBindIndexBuffer(TheForge_CmdHandle cmd, TheForge_BufferHandle buffer, uint64_t offset) {
 
