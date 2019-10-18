@@ -133,7 +133,11 @@ extern void mtl_createShaderReflection(Renderer* pRenderer, Shader* shader, cons
 
     bool isRaytracingSupported(Renderer* pRenderer)
     {
+#if defined(ENABLE_RAYTRACING)
         return true;
+#else
+        return false;
+#endif
     }
 
     bool initRaytracing(Renderer* pRenderer, Raytracing** ppRaytracing)

@@ -164,6 +164,7 @@ static bool checkForActiveGPU(eastl::string line, GPUVendorPreset& pActiveGpu)
 //Reads the gpu config and sets the preset level of all available gpu's
 static void setGPUPresetLevel(Renderer* pRenderer)
 {
+	return;
 	File gpuCfgFile = {};
 	gpuCfgFile.Open("gpu.cfg", FM_ReadBinary, FSR_GpuConfig);
 	if (!gpuCfgFile.IsOpen())

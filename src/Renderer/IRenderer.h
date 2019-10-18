@@ -62,18 +62,25 @@
 
 // Raytracing
 #ifdef VK_NV_RAY_TRACING_SPEC_VERSION
+#if !defined(ENABLE_RAYTRACING)
 #define ENABLE_RAYTRACING
+#endif
 #endif
 #elif defined(DIRECT3D12)
 //#define USE_PIX
 
 // Raytracing
 #ifdef D3D12_RAYTRACING_AABB_BYTE_ALIGNMENT
+#if !defined(ENABLE_RAYTRACING)
 #define ENABLE_RAYTRACING
+#endif
 #endif
 #elif defined(METAL)
+#if !defined(ENABLE_RAYTRACING)
 #define ENABLE_RAYTRACING
 #endif
+#endif
+
 #include "al2o3_platform/platform.h"
 #include "../ThirdParty/OpenSource/EASTL/string.h"
 #include "../ThirdParty/OpenSource/EASTL/vector.h"
