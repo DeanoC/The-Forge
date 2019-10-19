@@ -342,7 +342,7 @@ typedef enum TheForge_ResourceState
 	TheForge_RS_GENERIC_READ = (((((0x1 | 0x2) | 0x40) | 0x80) | 0x200) | 0x800),
 	TheForge_RS_PRESENT = 0x4000,
 	TheForge_RS_COMMON = 0x8000,
-} TheForge_TheForge_ResourceState;
+} TheForge_ResourceState;
 
 typedef enum TheForge_ResourceMemoryUsage
 {

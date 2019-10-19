@@ -451,7 +451,7 @@ typedef struct TheForge_WindowsDesc {
 	xcb_window_t             xcb_window;
 	xcb_intern_atom_reply_t* atom_wm_delete_window;
 #else
-	TheForge_WindowHandle handle = NULL;    //hWnd
+	TheForge_WindowHandle handle;    //hWnd
 #endif
 } TheForge_WindowsDesc;
 
