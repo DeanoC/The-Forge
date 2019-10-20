@@ -242,8 +242,16 @@ AL2O3_EXTERN_C void TheForge_QueuePresent(TheForge_QueueHandle queue, TheForge_S
 // however a few things do need passing back (mostly for rendertarget and swapchain)
 // these calls implment the required accessors.
 AL2O3_EXTERN_C TheForge_RenderTargetHandle TheForge_SwapChainGetRenderTarget(TheForge_SwapChainHandle swapChain, int index);
+
 AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_RenderTargetHandle renderTarget);
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const* TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget);
+
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetWidth(TheForge_TextureHandle handle);
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetHeight(TheForge_TextureHandle handle);
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetDepth(TheForge_TextureHandle handle);
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetArraySize(TheForge_TextureHandle handle);
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetMipLevels(TheForge_TextureHandle handle);
+AL2O3_EXTERN_C TinyImageFormat TheForge_TextureGetFormat(TheForge_TextureHandle handle);
 
 AL2O3_EXTERN_C TheForge_RendererApi TheForge_GetRendererApi(TheForge_RendererHandle handle);
 AL2O3_EXTERN_C bool TheForge_CanShaderReadFrom(TheForge_RendererHandle handle, TinyImageFormat format);
@@ -254,7 +262,6 @@ AL2O3_EXTERN_C bool TheForge_CanShaderWriteTo(TheForge_RendererHandle handle, Ti
 AL2O3_EXTERN_C TheForge_PipelineReflection const* TheForge_ShaderGetPipelineReflection(TheForge_ShaderHandle shader);
 
 AL2O3_EXTERN_C void TheForge_CaptureTraceStart(TheForge_RendererHandle handle, const char* fileName);
-
 AL2O3_EXTERN_C void TheForge_CaptureTraceEnd(TheForge_RendererHandle handle);
 
 

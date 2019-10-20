@@ -939,6 +939,25 @@ AL2O3_EXTERN_C TheForge_TextureHandle TheForge_RenderTargetGetTexture(TheForge_R
 	return (TheForge_TextureHandle) ((RenderTarget *) renderTarget)->pTexture;
 }
 
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetWidth(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mWidth;
+}
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetHeight(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mHeight;
+}
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetDepth(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mDepth;
+}
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetArraySize(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mArraySize;
+}
+AL2O3_EXTERN_C uint32_t TheForge_TextureGetMipLevels(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mMipLevels;
+}
+AL2O3_EXTERN_C TinyImageFormat TheForge_TextureGetFormat(TheForge_TextureHandle handle) {
+	return ((Texture*)handle)->mDesc.mFormat;
+}
+
 AL2O3_EXTERN_C TheForge_RenderTargetDesc const *TheForge_RenderTargetGetDesc(TheForge_RenderTargetHandle renderTarget) {
 	return (TheForge_RenderTargetDesc const *) &((RenderTarget *) renderTarget)->mDesc;
 }
