@@ -32,6 +32,7 @@ endif()
 # TODO vulkan on metal support
 if( APPLE)
 	set(USE_METAL TRUE)
+	set(USE_VULKAN FALSE)
 endif()
 
 SET_MIN_VERSIONS()
