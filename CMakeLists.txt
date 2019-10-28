@@ -15,7 +15,7 @@ if(NOT hasParent)
 endif ()
 
 #set(USE_D3D12 TRUE)
-set(USE_VULKAN TRUE)
+#set(USE_VULKAN TRUE)
 #set(USE_D3D11 TRUE)
 
 # windows supports USE_VULKAN, USE_D3D11 and USE_D3D12
