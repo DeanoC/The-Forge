@@ -47,7 +47,6 @@
 #import "../IRenderer.h"
 #include "MetalMemoryAllocator.h"
 #include "../../OS/Interfaces/ILog.h"
-#include "../../OS/Core/GPUConfig.h"
 #include "../../OS/Interfaces/IMemory.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_apis.h"
@@ -1901,7 +1900,6 @@ void displayGraphicsInfo(uint64_t regId, eastl::string inModel, GPUVendorPreset&
 
 					strncpy(vendorVecOut.mModelId, modelIdString.c_str(), MAX_GPU_VENDOR_STRING_LENGTH);
 					strncpy(vendorVecOut.mVendorId, vendorIdString.c_str(), MAX_GPU_VENDOR_STRING_LENGTH);
-					vendorVecOut.mPresetLevel = GPUPresetLevel::GPU_PRESET_LOW;
 					break;
 				}
 			}
@@ -1972,7 +1970,6 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 
 		//get gpu vendor and model id.
 		GPUVendorPreset gpuVendor;
-		gpuVendor.mPresetLevel = GPUPresetLevel::GPU_PRESET_LOW;
 #ifndef TARGET_IOS
 		eastl::string outModelId;
 		retrieveSystemProfilerInformation(outModelId);
@@ -1999,31 +1996,7 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		pRenderer->pActiveGpuSettings = &pRenderer->mGpuSettings[0];
 		pRenderer->mGpuSettings[0].mROVsSupported = [pRenderer->pDevice areRasterOrderGroupsSupported];
 		pRenderer->mGpuSettings[0].mWaveLaneCount = queryThreadExecutionWidth(pRenderer);
-#ifndef TARGET_IOS
-		setGPUPresetLevel(pRenderer);
-		//exit app if gpu being used has an office preset.
-		if (pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel < GPU_PRESET_LOW)
-		{
-			ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
 
-			//remove allocated name
-			SAFE_FREE(pRenderer->pName);
-			//set device to null
-			pRenderer->pDevice = nil;
-			//remove allocated renderer
-			SAFE_FREE(pRenderer);
-
-			LOGF(LogLevel::eERROR, "Selected GPU has an office Preset in gpu.cfg");
-			LOGF(LogLevel::eERROR, "Office Preset is not supported by the Forge");
-
-			ppRenderer = NULL;
-#ifdef AUTOMATED_TESTING
-			//exit with success return code not to show failure on Jenkins
-			exit(0);
-#endif
-			return;
-		}
-#endif
 		// Create a resource allocator.
 		AllocatorCreateInfo info = { 0 };
 		info.device = pRenderer->pDevice;

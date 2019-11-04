@@ -26,39 +26,6 @@ extern void cmdUpdateSubresource(Cmd *pCmd,
 																 SubresourceDataDesc *pSubresourceDesc);
 extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer *pRenderer);
 
-#ifdef METAL
-// account for app directory
-// I don't like this at all but for now just grin an bare it!
-const char *pszBases[FSR_Count] = {
-		"../binshaders/",                                // FSR_BinShaders
-		"../srcshaders/",                                // FSR_SrcShaders
-		"../textures/",                                  // FSR_Textures
-		"../meshes/",                                    // FSR_Meshes
-		"../fonts/",                                      // FSR_Builtin_Fonts
-		"../gpuconfigs/",                                // FSR_GpuConfig
-		"../anims/",                                     // FSR_Animation
-		"../audio",                                      // FSR_Audio
-		"../misc/",                                      // FSR_OtherFiles
-		"",          // FSR_MIDDLEWARE_TEXT
-		"",          // FSR_MIDDLEWARE_UI
-};
-#else
-// I don't like this at all but for now just grin an bare it!
-const char *pszBases[FSR_Count] = {
-		"binshaders/",                                // FSR_BinShaders
-		"srcshaders/",                                // FSR_SrcShaders
-		"textures/",                                  // FSR_Textures
-		"meshes/",                                    // FSR_Meshes
-		"fonts/",                                      // FSR_Builtin_Fonts
-		"gpuconfigs/",                                // FSR_GpuConfig
-		"anims/",                                     // FSR_Animation
-		"audio",                                      // FSR_Audio
-		"misc/",                                      // FSR_OtherFiles
-		"",          // FSR_MIDDLEWARE_TEXT
-		"",          // FSR_MIDDLEWARE_UI
-};
-
-#endif
 static void LogFunc(LogType type, const char *m0, const char *m1) {
 	switch (type) {
 		case LogType::LOG_TYPE_INFO: LOGINFO("%s %s", m0, m1);
@@ -140,38 +107,6 @@ static void TheForge_BinaryShaderStageToBinaryShaderStage(TheForge_BinaryShaderS
 #ifdef METAL
 	dst->mSource = src->source;
 #endif
-}
-
-static void TheForge_ShaderLoadStageToShaderLoadStage(TheForge_ShaderLoadDesc const *src, ShaderLoadDesc *dst) {
-
-	dst->mTarget = (ShaderTarget) src->target;
-	for (int i = 0; i < SHADER_STAGE_COUNT; ++i) {
-		TheForge_ShaderStageLoadDesc const *srcStage;
-		ShaderStageLoadDesc *dstStage = &dst->mStages[i];
-
-#ifdef METAL
-		switch (i) {
-			case 0: srcStage = &src->stages[0];
-				break;
-			case 1: srcStage = &src->stages[1];
-				break;
-			case 2: srcStage = &src->stages[5];
-				break;
-			default: LOGERROR("Shader stage is not supported on Metal backend");
-				return;
-		}
-#else
-		srcStage = &src->stages[i];
-#endif
-		dstStage->mFileName = srcStage->fileName;
-		dstStage->mEntryPointName = srcStage->entryPointName;
-		dstStage->mMacroCount = srcStage->macroCount;
-		dstStage->mRoot = (FSRoot) srcStage->root;
-		for (uint32_t i = 0u; i < srcStage->macroCount; ++i) {
-			dstStage->pMacros[i].definition = srcStage->pMacros[i].definition;
-			dstStage->pMacros[i].value = srcStage->pMacros[i].value;
-		}
-	}
 }
 
 AL2O3_EXTERN_C TheForge_RendererHandle TheForge_RendererCreate(
@@ -1037,17 +972,6 @@ AL2O3_EXTERN_C void TheForge_RemoveResourceLoaderInterface(TheForge_RendererHand
 	}
 	removeResourceLoaderInterface(renderer);
 }
-AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle,
-																				const TheForge_ShaderLoadDesc *pDesc,
-																				TheForge_ShaderHandle *pShader) {
-	auto renderer = (Renderer *) handle;
-	if (!renderer) {
-		return;
-	}
-	ShaderLoadDesc desc;
-	TheForge_ShaderLoadStageToShaderLoadStage(pDesc, &desc);
-	addShader(renderer, &desc, (Shader **) pShader);
-}
 
 AL2O3_EXTERN_C void TheForge_LoadBuffer(TheForge_BufferLoadDesc const *pBufferLoadDesc, bool batch) {
 	addResource((BufferLoadDesc *) pBufferLoadDesc, batch);
@@ -1395,8 +1319,6 @@ static void API_CHECK() {
 	API_CHK(sizeof(TheForge_TextureLoadDesc) == sizeof(TextureLoadDesc));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pTexture) == offsetof(TextureLoadDesc, ppTexture));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pDesc) == offsetof(TextureLoadDesc, pDesc));
-	API_CHK(offsetof(TheForge_TextureLoadDesc, pFilename) == offsetof(TextureLoadDesc, pFilename));
-	API_CHK(offsetof(TheForge_TextureLoadDesc, mRoot) == offsetof(TextureLoadDesc, mRoot));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, mNodeIndex) == offsetof(TextureLoadDesc, mNodeIndex));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pRawImageData) == offsetof(TextureLoadDesc, pRawImageData));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pBinaryImageData) == offsetof(TextureLoadDesc, pBinaryImageData));

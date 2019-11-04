@@ -4,7 +4,6 @@
 #if PROFILE_ENABLED
 
 #include "../../../Renderer/GpuProfiler.h"
-#include "../../../OS/Interfaces/IFileSystem.h"
 #include <algorithm>
 
 #ifdef _WIN32

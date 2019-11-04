@@ -570,17 +570,6 @@ typedef enum TextureCreationFlags
 } TextureCreationFlags;
 MAKE_ENUM_FLAG(uint32_t, TextureCreationFlags)
 
-typedef enum GPUPresetLevel
-{
-	GPU_PRESET_NONE = 0,
-	GPU_PRESET_OFFICE,    //This means unsupported
-	GPU_PRESET_LOW,
-	GPU_PRESET_MEDIUM,
-	GPU_PRESET_HIGH,
-	GPU_PRESET_ULTRA,
-	GPU_PRESET_COUNT
-} GPUPresetLevel;
-
 typedef struct BufferBarrier
 {
 	Buffer*        pBuffer;
@@ -1760,7 +1749,6 @@ typedef struct GPUVendorPreset
 	char           mVendorId[MAX_GPU_VENDOR_STRING_LENGTH];
 	char           mModelId[MAX_GPU_VENDOR_STRING_LENGTH];
 	char           mRevisionId[MAX_GPU_VENDOR_STRING_LENGTH];    // OPtional as not all gpu's have that. Default is : 0x00
-	GPUPresetLevel mPresetLevel;
 	char           mGpuName[MAX_GPU_VENDOR_STRING_LENGTH];    //If GPU Name is missing then value will be empty string
 } GPUVendorPreset;
 

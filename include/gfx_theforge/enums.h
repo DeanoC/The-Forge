@@ -383,19 +383,6 @@ typedef enum TheForge_QueryType
 	TheForge_QT_COUNT,
 } TheForge_QueryType;
 
-typedef enum TheForge_ResourceFolders
-{
-	TheForge_FSR_BinShaders = 0,
-	TheForge_FSR_SrcShaders,
-	TheForge_FSR_Textures,
-	TheForge_FSR_Meshes,
-	TheForge_FSR_Builtin_Fonts,
-	TheForge_FSR_GpuConfig,
-	TheForge_FSR_Animation,    // NOT USED
-	TheForge_FSR_Audio,        // NOT USED
-	TheForge_FSR_OtherFiles,
-} TheForge_ResourceFolders;
-
 typedef enum TheForge_ResourceType {
 	TheForge_RESOURCE_TYPE_BUFFER = 0,
 	TheForge_RESOURCE_TYPE_TEXTURE,

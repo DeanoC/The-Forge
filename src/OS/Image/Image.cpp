@@ -21,72 +21,24 @@
  * specific language governing permissions and limitations
  * under the License.
 */
-//this is needed for unix as PATH_MAX is defined instead of MAX_PATH
-#ifndef _WIN32
-#include <limits.h>
-#define MAX_PATH PATH_MAX
-#endif
 
-#include "../../ThirdParty/OpenSource/EASTL/functional.h"
-#include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
 
 #define IMAGE_CLASS_ALLOWED
+#include <cstdint>
 #include "Image.h"
 #include "../Interfaces/ILog.h"
-#include "../../ThirdParty/OpenSource/TinyEXR/tinyexr.h"
-//stb_image
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_MALLOC conf_malloc
-#define STBI_REALLOC conf_realloc
-#define STBI_FREE conf_free
-#define STBI_ASSERT ASSERT
-#if defined(__ANDROID__)
-#define STBI_NO_SIMD
-#endif
-#include "../../ThirdParty/OpenSource/Nothings/stb_image.h"
-//stb_image_write
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STBIW_MALLOC conf_malloc
-#define STBIW_REALLOC conf_realloc
-#define STBIW_FREE conf_free
-#define STBIW_ASSERT ASSERT
-#include "../../ThirdParty/OpenSource/Nothings/stb_image_write.h"
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "../../ThirdParty/OpenSource/Nothings/stb_image_resize.h"
+#include "../../ThirdParty/OpenSource/EASTL/algorithm.h"
+#include "../../ThirdParty/OpenSource/ModifiedSonyMath/vectormath.hpp"
 
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_bits.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_decode.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_encode.h"
-#define TINYDDS_IMPLEMENTATION
-#include "../../ThirdParty/OpenSource/tinydds/tinydds.h"
-#define TINYKTX_IMPLEMENTATION
-#include "../../ThirdParty/OpenSource/tinyktx/tinyktx.h"
 #include "ImageHelper.h"
 
 #include "../Interfaces/IMemory.h"
 
-// Describes the header of a PVR header-texture
-typedef struct PVR_Header_Texture_TAG
-{
-	uint32_t 	mVersion;
-	uint32_t 	mFlags; //!< Various format flags.
-	uint64_t 	mPixelFormat; //!< The pixel format, 8cc value storing the 4 channel identifiers and their respective sizes.
-	uint32_t 	mColorSpace; //!< The Color Space of the texture, currently either linear RGB or sRGB.
-	uint32_t 	mChannelType; //!< Variable type that the channel is stored in. Supports signed/uint32_t/short/char/float.
-	uint32_t 	mHeight; //!< Height of the texture.
-	uint32_t	mWidth; //!< Width of the texture.
-	uint32_t 	mDepth; //!< Depth of the texture. (Z-slices)
-	uint32_t 	mNumSurfaces; //!< Number of members in a Texture Array.
-	uint32_t 	mNumFaces; //!< Number of faces in a Cube Map. Maybe be a value other than 6.
-	uint32_t 	mNumMipMaps; //!< Number of MIP Maps in the texture - NB: Includes top level.
-	uint32_t 	mMetaDataSize; //!< Size of the accompanying meta data.
-} PVR_Texture_Header;
-
-#ifdef TARGET_IOS
-const uint32_t gPvrtexV3HeaderVersion = 0x03525650;
-#endif
 
 // --- BLOCK DECODING ---
 
@@ -96,8 +48,8 @@ void iDecodeColorBlock(
 {
 	unsigned char colors[4][3];
 
-	uint16 c0 = *(uint16*)src;
-	uint16 c1 = *(uint16*)(src + 2);
+	uint16_t c0 = *(uint16_t*)src;
+	uint16_t c1 = *(uint16_t*)(src + 2);
 
 	colors[0][0] = ((c0 >> 11) & 0x1F) << 3;
 	colors[0][1] = ((c0 >> 5) & 0x3F) << 2;
@@ -246,7 +198,6 @@ void iDecodeCompressedImage(unsigned char* dest, unsigned char* src, const int w
 Image::Image()
 {
 	pData = NULL;
-	mLoadFileName = "";
 	mWidth = 0;
 	mHeight = 0;
 	mDepth = 0;
@@ -257,9 +208,6 @@ Image::Image()
 	pAdditionalData = NULL;
 	mOwnsMemory = true;
 	mLinearLayout = true;
-
-	// Init basisu
-	basist::basisu_transcoder_init();
 }
 
 Image::Image(const Image& img)
@@ -275,7 +223,6 @@ Image::Image(const Image& img)
 	int size = GetMipMappedSize(0, mMipMapCount) * mArrayCount;
 	pData = (unsigned char*)conf_malloc(sizeof(unsigned char) * size);
 	memcpy(pData, img.pData, size);
-	mLoadFileName = img.mLoadFileName;
 
 	mAdditionalDataSize = img.mAdditionalDataSize;
 	pAdditionalData = (unsigned char*)conf_malloc(sizeof(unsigned char) * mAdditionalDataSize);
@@ -296,7 +243,6 @@ unsigned char* Image::Create(const TinyImageFormat fmt, const int w, const int h
 	uint holder = GetMipMappedSize(0, mMipMapCount);
 	pData = (unsigned char*)conf_malloc(sizeof(unsigned char) * holder * mArrayCount);
 	memset(pData, 0x00, holder * mArrayCount);
-	mLoadFileName = "Undefined";
 
 	return pData;
 }
@@ -313,7 +259,6 @@ unsigned char* Image::Create(const TinyImageFormat fmt, const int w, const int h
 	mMipsAfterSlices = false;
 
 	pData = (uint8_t*)rawData;
-	mLoadFileName = "Undefined";
 
 	return pData;
 }
@@ -374,7 +319,7 @@ void Image::Clear()
 
 unsigned char* Image::GetPixels(unsigned char* pDstData, const uint mipMapLevel, const uint dummy)
 {
-	UNREF_PARAM(dummy);
+//	UNREF_PARAM(dummy);
 	return (mipMapLevel < mMipMapCount) ? pDstData + GetMipMappedSize(0, mipMapLevel) : NULL;
 }
 
@@ -419,8 +364,8 @@ uint Image::GetDepth(const int mipMapLevel) const
 
 uint32_t Image::GetMipMapCountFromDimensions() const
 {
-	uint32_t m = max(mWidth, mHeight);
-	m = max(m, mDepth);
+	uint32_t m = eastl::max(mWidth, mHeight);
+	m = eastl::max(m, mDepth);
 
 	uint32_t i = 0;
 	while (m > 0)
@@ -553,10 +498,10 @@ bool Image::Uncompress()
 		break;
 	}
 
-	ubyte* newPixels = (ubyte*)conf_malloc(sizeof(ubyte) * GetMipMappedSize(0, mMipMapCount, destFormat));
+	uint8_t * newPixels = (uint8_t*)conf_malloc(sizeof(uint8_t) * GetMipMappedSize(0, mMipMapCount, destFormat));
 
 	int    level = 0;
-	ubyte *src, *dst = newPixels;
+	uint8_t *src, *dst = newPixels;
 	while ((src = GetPixels(level)) != NULL)
 	{
 		int w = GetWidth(level);
@@ -697,9 +642,9 @@ uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLe
 			totalSize += mipSize;
 			
 			unsigned int MinimumSize = 1;
-			sizeX = max(sizeX / 2, MinimumSize);
-			sizeY = max(sizeY / 2, MinimumSize);
-			sizeD = max(sizeD / 2, MinimumSize);
+			sizeX = eastl::max(sizeX / 2, MinimumSize);
+			sizeY = eastl::max(sizeY / 2, MinimumSize);
+			sizeD = eastl::max(sizeD / 2, MinimumSize);
 			level--;
 		}
 		
@@ -736,722 +681,6 @@ uint32_t Image::GetMipMappedSize(const uint firstMipMapLevel, uint32_t nMipMapLe
 	else return (mDepth == 0) ? 6 * size : size;
 }
 
-static void tinyktxddsCallbackError(void *user, char const *msg) {
-	LOGF(LogLevel::eERROR, "Tiny_ ERROR: %s", msg);
-}
-static void *tinyktxddsCallbackAlloc(void *user, size_t size) {
-	return conf_malloc(size);
-}
-static void tinyktxddsCallbackFree(void *user, void *data) {
-	conf_free(data);
-}
-static size_t tinyktxddsCallbackRead(void *user, void* data, size_t size) {
-	MemoryBuffer* file = (MemoryBuffer*) user;
-	return file->Read(data, (unsigned int)size);
-}
-static bool tinyktxddsCallbackSeek(void *user, int64_t offset) {
-	MemoryBuffer* file = (MemoryBuffer*) user;
-	return file->Seek((unsigned int)offset, SeekDir::SEEK_DIR_BEGIN);
-
-}
-static int64_t tinyktxddsCallbackTell(void *user) {
-	MemoryBuffer* file = (MemoryBuffer*) user;
-	return file->Tell();
-}
-
-static void tinyktxddsCallbackWrite(void* user, void const* data, size_t size) {
-	File* file = (File*)user;
-	file->Write(data, (unsigned int)size);
-}
-
-// Load Image Data form mData functions
-
-bool iLoadDDSFromMemory(Image* pImage,
-	const char* memory, uint32_t memSize, memoryAllocationFunc pAllocator, void* pUserData)
-{
-	if (memory == NULL || memSize == 0)
-		return false;
-
-	TinyDDS_Callbacks callbacks {
-			&tinyktxddsCallbackError,
-			&tinyktxddsCallbackAlloc,
-			&tinyktxddsCallbackFree,
-			tinyktxddsCallbackRead,
-			&tinyktxddsCallbackSeek,
-			&tinyktxddsCallbackTell
-	};
-
-	MemoryBuffer memoryBuffer(memory, memSize);
-
-	auto ctx = TinyDDS_CreateContext( &callbacks, (void*)&memoryBuffer);
-	bool headerOkay = TinyDDS_ReadHeader(ctx);
-	if(!headerOkay) {
-		TinyDDS_DestroyContext(ctx);
-		return false;
-	}
-
-	uint32_t w = TinyDDS_Width(ctx);
-	uint32_t h = TinyDDS_Height(ctx);
-	uint32_t d = TinyDDS_Depth(ctx);
-	uint32_t s = TinyDDS_ArraySlices(ctx);
-	uint32_t mm = TinyDDS_NumberOfMipmaps(ctx);
-	TinyImageFormat fmt = TinyImageFormat_FromTinyDDSFormat(TinyDDS_GetFormat(ctx));
-	if(fmt == TinyImageFormat_UNDEFINED)
-	{
-		TinyDDS_DestroyContext(ctx);
-		return false;
-	}
-
-	// TheForge Image uses d = 0 as cubemap marker
-	if(TinyDDS_IsCubemap(ctx))
-		d = 0;
-	else
-		d = d ? d : 1;
-	s = s ? s : 1;
-
-	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
-	pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
-
-	int size = pImage->GetMipMappedSize();
-
-	if (pAllocator)
-		pImage->SetPixels((unsigned char*)pAllocator(pImage, size, pUserData));
-	else
-		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * size), true);
-
-	for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
-	{
-		size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-		size_t const fileSize = TinyDDS_ImageSize(ctx, mipMapLevel);
-		if (expectedSize != fileSize)
-		{
-			LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(), mipMapLevel, expectedSize, fileSize);
-			return false;
-		}
-		unsigned char *dst = pImage->GetPixels(mipMapLevel, 0);
-		memcpy(dst, TinyDDS_ImageRawData(ctx, mipMapLevel), fileSize);
-	}
-
-	TinyDDS_DestroyContext(ctx);
-	return true;
-}
-
-bool iLoadPVRFromMemory(Image* pImage, const char* memory, uint32_t size, memoryAllocationFunc pAllocator, void* pUserData)
-{
-#ifndef TARGET_IOS
-	LOGF(LogLevel::eERROR, "Load PVR failed: Only supported on iOS targets.");
-	return false;
-#else
-	
-	// TODO: Image
-	// - no support for PVRTC2 at the moment since it isn't supported on iOS devices.
-	// - only new PVR header V3 is supported at the moment.  Should we add legacy for V2 and V1?
-	// - metadata is ignored for now.  Might be useful to implement it if the need for metadata arises (eg. padding, atlas coordinates, orientations, border data, etc...).
-	// - flags are also ignored for now.  Currently a flag of 0x02 means that the color have been pre-multiplied byt the alpha values.
-	
-	// Assumptions:
-	// - it's assumed that the texture is already twiddled (ie. Morton).  This should always be the case for PVRTC V3.
-	
-	PVR_Texture_Header* psPVRHeader = (PVR_Texture_Header*)memory;
-
-	if (psPVRHeader->mVersion != gPvrtexV3HeaderVersion)
-	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Not a valid PVR V3 header.");
-		return 0;
-	}
-	
-	if (psPVRHeader->mPixelFormat > 3)
-	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Not a supported PVR pixel format.  Only PVRTC is supported at the moment.");
-		return 0;
-	}
-	
-	if (psPVRHeader->mNumSurfaces > 1 && psPVRHeader->mNumFaces > 1)
-	{
-		LOGF(LogLevel::eERROR, "Load PVR failed: Loading arrays of cubemaps isn't supported.");
-		return 0;
-	}
-
-	uint32_t width = psPVRHeader->mWidth;
-	uint32_t height = psPVRHeader->mHeight;
-	uint32_t depth = (psPVRHeader->mNumFaces > 1) ? 0 : psPVRHeader->mDepth;
-	uint32_t mipMapCount = psPVRHeader->mNumMipMaps;
-	uint32_t arrayCount = psPVRHeader->mNumSurfaces;
-	bool const srgb = (psPVRHeader->mColorSpace == 1);
-	TinyImageFormat imageFormat = TinyImageFormat_UNDEFINED;
-
-	switch (psPVRHeader->mPixelFormat)
-	{
-	case 0:
-    case 1:
-            imageFormat = srgb ? TinyImageFormat_PVRTC1_2BPP_SRGB : TinyImageFormat_PVRTC1_2BPP_UNORM;
-		break;
-	case 2:
-    case 3:
-            imageFormat = srgb ? TinyImageFormat_PVRTC1_4BPP_SRGB : TinyImageFormat_PVRTC1_4BPP_UNORM;
-		break;
-	default:    // NOT SUPPORTED
-		LOGF(LogLevel::eERROR, "Load PVR failed: pixel type not supported. ");
-		ASSERT(0);
-		return false;
-	}
-
-	if (depth != 0)
-		arrayCount *= psPVRHeader->mNumFaces;
-
-	pImage->RedefineDimensions(imageFormat, width, height, depth, mipMapCount, arrayCount);
-
-
-	// Extract the pixel data
-	size_t totalHeaderSizeWithMetadata = sizeof(PVR_Texture_Header) + psPVRHeader->mMetaDataSize;
-	size_t pixelDataSize = pImage->GetMipMappedSize();
-
-	if (pAllocator)
-	{
-		pImage->SetPixels((unsigned char*)pAllocator(pImage, sizeof(unsigned char) * pixelDataSize, pUserData));
-	}
-	else
-	{
-		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * pixelDataSize), true);
-	}
-
-	memcpy(pImage->GetPixels(), (unsigned char*)psPVRHeader + totalHeaderSizeWithMetadata, pixelDataSize);
-
-	return true;
-#endif
-}
-
-bool iLoadKTXFromMemory(Image* pImage, const char* memory, uint32_t memSize, memoryAllocationFunc pAllocator /*= NULL*/, void* pUserData /*= NULL*/)
-{
-	TinyKtx_Callbacks callbacks {
-			&tinyktxddsCallbackError,
-			&tinyktxddsCallbackAlloc,
-			&tinyktxddsCallbackFree,
-			&tinyktxddsCallbackRead,
-			&tinyktxddsCallbackSeek,
-			&tinyktxddsCallbackTell
-	};
-
-	MemoryBuffer memoryBuffer(memory, memSize);
-
-	auto ctx =  TinyKtx_CreateContext( &callbacks, (void*)&memoryBuffer);
-	bool headerOkay = TinyKtx_ReadHeader(ctx);
-	if(!headerOkay) {
-		TinyKtx_DestroyContext(ctx);
-		return false;
-	}
-
-	uint32_t w = TinyKtx_Width(ctx);
-	uint32_t h = TinyKtx_Height(ctx);
-	uint32_t d = TinyKtx_Depth(ctx);
-	uint32_t s = TinyKtx_ArraySlices(ctx);
-	uint32_t mm = TinyKtx_NumberOfMipmaps(ctx);
-	TinyImageFormat fmt = TinyImageFormat_FromTinyKtxFormat(TinyKtx_GetFormat(ctx));
-	if(fmt == TinyImageFormat_UNDEFINED) {
-		TinyKtx_DestroyContext(ctx);
-		return false;
-	}
-
-    // TheForge Image uses d = 0 as cubemap marker
-    if(TinyKtx_IsCubemap(ctx)) d = 0;
-    else d = d ? d : 1;
-    s = s ? s : 1;
-
-	pImage->RedefineDimensions(fmt, w, h, d, mm, s);
-    pImage->SetMipsAfterSlices(true); // tinyDDS API is mips after slices even if DDS traditionally weren't
-
-	int size = pImage->GetMipMappedSize();
-
-	if (pAllocator)
-	{
-		pImage->SetPixels((uint8_t*)pAllocator(pImage, size, pUserData));
-	}
-	else
-	{
-		pImage->SetPixels((uint8_t*)conf_malloc(sizeof(uint8_t) * size), true);
-	}
-    
-    for (uint mipMapLevel = 0; mipMapLevel < pImage->GetMipMapCount(); mipMapLevel++)
-    {
-        uint8_t const* src = (uint8_t const*) TinyKtx_ImageRawData(ctx, mipMapLevel);
-        uint8_t *dst = pImage->GetPixels(mipMapLevel, 0);
-
-        if(TinyKtx_IsMipMapLevelUnpacked(ctx, mipMapLevel)) {
-            uint32_t const srcStride = TinyKtx_UnpackedRowStride(ctx, mipMapLevel);
-            uint32_t const dstStride = (pImage->GetWidth(mipMapLevel) * TinyImageFormat_BitSizeOfBlock(fmt)) /
-                                        (TinyImageFormat_PixelCountOfBlock(fmt) * 8);
-
-            for (uint32_t ww = 0u; ww < TinyKtx_ArraySlices(ctx); ++ww) {
-                for (uint32_t zz = 0; zz < TinyKtx_Depth(ctx); ++zz) {
-                    for (uint32_t yy = 0; yy < TinyKtx_Height(ctx); ++yy) {
-                        memcpy(dst, src, dstStride);
-                        src += srcStride;
-                        dst += dstStride;
-                    }
-                }
-            }
-        } else {
-            // fast path data is packed we can just copy
-            size_t const expectedSize = pImage->GetMipMappedSize(mipMapLevel, 1);
-            size_t const fileSize = TinyKtx_ImageSize(ctx, mipMapLevel);
-            if (expectedSize != fileSize) {
-                LOGF(LogLevel::eERROR, "DDS file %s mipmap %i size error %liu < %liu", pImage->GetName().c_str(),mipMapLevel, expectedSize, fileSize);
-                return false;
-            }
-            memcpy(dst, src, fileSize);
-        }
-	}
-
-	TinyKtx_DestroyContext(ctx);
-	return true;
-}
-
-#if defined(ORBIS)
-
-// loads GNF header from memory
-static GnfError iLoadGnfHeaderFromMemory(struct sce::Gnf::Header* outHeader, MemoryBuffer* mp)
-{
-	if (outHeader == NULL)    //  || gnfFile == NULL)
-	{
-		return kGnfErrorInvalidPointer;
-	}
-	outHeader->m_magicNumber = 0;
-	outHeader->m_contentsSize = 0;
-
-	mp->Read(outHeader, sizeof(sce::Gnf::Header));
-	//MemFopen::fread(outHeader, sizeof(sce::Gnf::Header), 1, mp);
-
-	//	fseek(gnfFile, 0, SEEK_SET);
-	//	fread(outHeader, sizeof(sce::Gnf::Header), 1, gnfFile);
-	if (outHeader->m_magicNumber != sce::Gnf::kMagic)
-	{
-		return kGnfErrorNotGnfFile;
-	}
-	return kGnfErrorNone;
-}
-
-// content size is sizeof(sce::Gnf::Contents)+gnfContents->m_numTextures*sizeof(sce::Gnm::Texture)+ paddings which is a variable of: gnfContents->alignment
-static uint32_t iComputeContentSize(const sce::Gnf::Contents* gnfContents)
-{
-	// compute the size of used bytes
-	uint32_t headerSize = sizeof(sce::Gnf::Header) + sizeof(sce::Gnf::Contents) + gnfContents->m_numTextures * sizeof(sce::Gnm::Texture);
-	// add the paddings
-	uint32_t align = 1 << gnfContents->m_alignment;    // actual alignment
-	size_t   mask = align - 1;
-	uint32_t missAligned = (headerSize & mask);    // number of bytes after the alignemnet point
-	if (missAligned)                               // if none zero we have to add paddings
-	{
-		headerSize += align - missAligned;
-	}
-	return headerSize - sizeof(sce::Gnf::Header);
-}
-
-// loads GNF content from memory
-static GnfError iReadGnfContentsFromMemory(sce::Gnf::Contents* outContents, uint32_t contentsSizeInBytes, MemoryBuffer* memstart)
-{
-	// now read the content data ...
-	memstart->Read(outContents, contentsSizeInBytes);
-	//MemFopen::fread(outContents, contentsSizeInBytes, 1, memstart);
-
-	if (outContents->m_alignment > 31)
-	{
-		return kGnfErrorAlignmentOutOfRange;
-	}
-
-	if (outContents->m_version == 1)
-	{
-		if ((outContents->m_numTextures * sizeof(sce::Gnm::Texture) + sizeof(sce::Gnf::Contents)) != contentsSizeInBytes)
-		{
-			return kGnfErrorContentsSizeMismatch;
-		}
-	}
-	else
-	{
-		if (outContents->m_version != sce::Gnf::kVersion)
-		{
-			return kGnfErrorVersionMismatch;
-		}
-		else
-		{
-			if (iComputeContentSize(outContents) != contentsSizeInBytes)
-				return kGnfErrorContentsSizeMismatch;
-		}
-	}
-
-	return kGnfErrorNone;
-}
-
-//------------------------------------------------------------------------------
-//  Loads a GNF file from memory.
-//
-bool Image::iLoadGNFFromMemory(const char* memory, size_t memSize, const bool useMipMaps)
-{
-	GnfError result = kGnfErrorNone;
-
-	MemoryBuffer m1(memory, memSize);
-
-	sce::Gnf::Header header;
-	result = iLoadGnfHeaderFromMemory(&header, m1);
-	if (result != 0)
-	{
-		return false;
-	}
-
-	char*               memoryArray = (char*)conf_calloc(header.m_contentsSize, sizeof(char));
-	sce::Gnf::Contents* gnfContents = NULL;
-	gnfContents = (sce::Gnf::Contents*)memoryArray;
-
-	// move the pointer behind the header
-	const char*  mp = memory + sizeof(sce::Gnf::Header);
-	MemoryBuffer m2(mp, memSize - sizeof(sce::Gnf::Header));
-
-	result = iReadGnfContentsFromMemory(gnfContents, header.m_contentsSize, m2);
-
-	mWidth = gnfContents->m_textures[0].getWidth();
-	mHeight = gnfContents->m_textures[0].getHeight();
-	mDepth = gnfContents->m_textures[0].getDepth();
-
-	mMipMapCount =
-		((!useMipMaps) || (gnfContents->m_textures[0].getLastMipLevel() == 0)) ? 1 : gnfContents->m_textures[0].getLastMipLevel();
-	mArrayCount = (gnfContents->m_textures[0].getLastArraySliceIndex() > 1) ? gnfContents->m_textures[0].getLastArraySliceIndex() : 1;
-
-	uint32 dataFormat = gnfContents->m_textures[0].getDataFormat().m_asInt;
-
-	if (dataFormat == sce::Gnm::kDataFormatBc1Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc1UnormSrgb.m_asInt)
-		mFormat = ImageFormat::GNF_BC1;
-	//	else if(dataFormat == sce::Gnm::kDataFormatBc2Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc2UnormSrgb.m_asInt)
-	//		format = ImageFormat::GNF_BC2;
-	else if (dataFormat == sce::Gnm::kDataFormatBc3Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc3UnormSrgb.m_asInt)
-		mFormat = ImageFormat::GNF_BC3;
-	//	else if(dataFormat == sce::Gnm::kDataFormatBc4Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc4UnormSrgb.m_asInt)
-	//		format = ImageFormat::GNF_BC4;
-	// it seems in the moment there is no kDataFormatBc5UnormSrgb .. so I just check for the SRGB flag
-	else if (
-		dataFormat == sce::Gnm::kDataFormatBc5Unorm.m_asInt ||
-		((dataFormat == sce::Gnm::kDataFormatBc5Unorm.m_asInt) &&
-		 (gnfContents->m_textures[0].getDataFormat().getTextureChannelType() == sce::Gnm::kTextureChannelTypeSrgb)))
-		mFormat = ImageFormat::GNF_BC5;
-	//	else if(dataFormat == sce::Gnm::kDataFormatBc6Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc6UnormSrgb.m_asInt)
-	//		format = ImageFormat::GNF_BC6;
-	else if (dataFormat == sce::Gnm::kDataFormatBc7Unorm.m_asInt || dataFormat == sce::Gnm::kDataFormatBc7UnormSrgb.m_asInt)
-		mFormat = ImageFormat::GNF_BC7;
-	else
-	{
-		LOGF(LogLevel::eERROR, "Couldn't find the data format of the texture");
-		return false;
-	}
-
-	//
-	// storing the GNF header in the extra data
-	//
-	// we do this because on the addTexture level, we would like to have all this data to allocate and load the data
-	//
-	pAdditionalData = (unsigned char*)conf_calloc(header.m_contentsSize, sizeof(unsigned char));
-	memcpy(pAdditionalData, gnfContents, header.m_contentsSize);
-
-	// storing all the pixel data in pixels
-	//
-	// unfortunately that means we have the data twice in pixels and then in VRAM ...
-	//
-	sce::Gnm::SizeAlign pixelsSa = getTexturePixelsSize(gnfContents, 0);
-
-	// move pointer forward
-	const char*  memPoint = mp + header.m_contentsSize + getTexturePixelsByteOffset(gnfContents, 0);
-	MemoryBuffer m3(memPoint, memSize - (sizeof(sce::Gnf::Header) + header.m_contentsSize + getTexturePixelsByteOffset(gnfContents, 0)));
-
-	// dealing with mip-map stuff ... ???
-	int size = pixelsSa.m_size;    //getMipMappedSize(0, nMipMaps);
-	pData = (unsigned char*)conf_malloc(sizeof(unsigned char) * size);
-
-	m3.Read(pData, size);
-	//MemFopen::fread(pData, 1, size, m3);
-
-	/*
-  if (isCube()){
-  for (int face = 0; face < 6; face++)
-  {
-  for (uint mipMapLevel = 0; mipMapLevel < nMipMaps; mipMapLevel++)
-  {
-  int faceSize = getMipMappedSize(mipMapLevel, 1) / 6;
-  unsigned char *src = getPixels(mipMapLevel) + face * faceSize;
-
-  memread(src, 1, faceSize, mp);
-  }
-  if ((useMipMaps ) && header.dwMipMapCount > 1)
-  {
-  memseek(mp, memory, getMipMappedSize(1, header.dwMipMapCount - 1) / 6, SEEK_CUR);
-  }
-  }
-  }
-  else
-  {
-  memread(pixels, 1, size, mpoint);
-  }
-  */
-	conf_free(gnfContents);
-
-	return !result;
-}
-#endif
-
-//------------------------------------------------------------------------------
-//  Loads a Basis data from memory.
-//
-bool iLoadBASISFromMemory(Image* pImage, const char* memory, uint32_t memSize, memoryAllocationFunc pAllocator /*= NULL*/, void* pUserData /*= NULL*/)
-{
-	if (memory == NULL || memSize == 0)
-		return false;
-
-	basist::etc1_global_selector_codebook sel_codebook(basist::g_global_selector_cb_size, basist::g_global_selector_cb);
-
-	eastl::vector<uint8_t> basis_data;
-	basis_data.resize(memSize);
-	memcpy(basis_data.data(), memory, memSize);
-
-	basist::basisu_transcoder decoder(&sel_codebook);
-
-	basist::basisu_file_info fileinfo;
-	if (!decoder.get_file_info(basis_data.data(), (uint32_t)basis_data.size(), fileinfo))
-	{
-		LOGF(LogLevel::eERROR, "Failed retrieving Basis file information!");
-		return false;
-	}
-
-	ASSERT(fileinfo.m_total_images == fileinfo.m_image_mipmap_levels.size());
-	ASSERT(fileinfo.m_total_images == decoder.get_total_images(&basis_data[0], (uint32_t)basis_data.size()));
-
-	basist::basisu_image_info imageinfo;
-	decoder.get_image_info(basis_data.data(), (uint32_t)basis_data.size(), imageinfo, 0);
-
-	uint32_t width = imageinfo.m_width;
-	uint32_t height = imageinfo.m_height;
-	uint32_t depth = 1;
-	uint32_t mipMapCount = max(1U, fileinfo.m_image_mipmap_levels[0]);
-	uint32_t arrayCount = fileinfo.m_total_images;
-
-	TinyImageFormat imageFormat = TinyImageFormat_UNDEFINED;
-
-	bool isNormalMap;
-
-	if (fileinfo.m_userdata0 == 1)
-		isNormalMap = true;
-	else
-		isNormalMap = false;
-
-	basist::transcoder_texture_format basisTextureFormat;
-
-	if (!isNormalMap)
-	{
-		if (!imageinfo.m_alpha_flag)
-		{
-			imageFormat = TinyImageFormat_DXBC1_RGBA_UNORM;
-			basisTextureFormat = basist::transcoder_texture_format::cTFBC1;
-		}
-		else
-		{
-			imageFormat = TinyImageFormat_DXBC3_UNORM;
-			basisTextureFormat = basist::transcoder_texture_format::cTFBC3;
-		}
-	}
-	else
-	{
-        imageFormat = TinyImageFormat_DXBC5_UNORM;
-        basisTextureFormat = basist::transcoder_texture_format::cTFBC5;
-	}
-
-	pImage->RedefineDimensions(imageFormat, width, height, depth, mipMapCount, arrayCount);
-
-	int size = pImage->GetMipMappedSize();
-
-	if (pAllocator)
-	{
-		pImage->SetPixels((unsigned char*)pAllocator(pImage, size, pUserData));
-	}
-	else
-	{
-		pImage->SetPixels((unsigned char*)conf_malloc(sizeof(unsigned char) * size), true);
-	}
-
-	decoder.start_transcoding(basis_data.data(), (uint32_t)basis_data.size());
-
-
-	for (uint32_t image_index = 0; image_index < fileinfo.m_total_images; image_index++)
-	{
-		for (uint32_t level_index = 0; level_index < fileinfo.m_image_mipmap_levels[image_index]; level_index++)
-		{
-			basist::basisu_image_level_info level_info;
-
-			if (!decoder.get_image_level_info(&basis_data[0], (uint32_t)basis_data.size(), level_info, image_index, level_index))
-			{
-				LOGF(LogLevel::eERROR, "Failed retrieving image level information (%u %u)!\n", image_index, level_index);
-				return false;
-			}
-
-			if (basisTextureFormat == basist::cTFPVRTC1_4_OPAQUE_ONLY)
-			{
-				if (!isPowerOf2(level_info.m_width) || !isPowerOf2(level_info.m_height))
-				{
-					LOGF(LogLevel::eWARNING, "Warning: Will not transcode image %u level %u res %ux%u to PVRTC1 (one or more dimension is not a power of 2)\n", image_index, level_index, level_info.m_width, level_info.m_height);
-
-					// Can't transcode this image level to PVRTC because it's not a pow2 (we're going to support transcoding non-pow2 to the next larger pow2 soon)
-					continue;
-				}
-			}
-
-			if (!decoder.transcode_image_level(&basis_data[0], (uint32_t)basis_data.size(), image_index, level_index, pImage->GetPixels(), (uint32_t)(imageinfo.m_num_blocks_x * imageinfo.m_num_blocks_y), basisTextureFormat, 0))
-			{
-				LOGF(LogLevel::eERROR, "Failed transcoding image level (%u %u)!\n", image_index, level_index);
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-// Image loading
-// struct of table for file format to loading function
-struct ImageLoaderDefinition
-{
-	char const* mExtension;
-	Image::ImageLoaderFunction pLoader;
-};
-
-#define MAX_IMAGE_LOADERS 10
-static ImageLoaderDefinition gImageLoaders[MAX_IMAGE_LOADERS];
-uint32_t gImageLoaderCount = 0;
-
-struct StaticImageLoader
-{
-	StaticImageLoader() {
-		gImageLoaders[gImageLoaderCount++] = {".dds", iLoadDDSFromMemory};
-		gImageLoaders[gImageLoaderCount++] = {".pvr", iLoadPVRFromMemory};
-		gImageLoaders[gImageLoaderCount++] = {".ktx", iLoadKTXFromMemory};
-
-#if defined(ORBIS)
-		gImageLoaders[gImageLoaderCount++] = { ".gnf", iLoadGNFFromMemory };
-#endif
-		gImageLoaders[gImageLoaderCount++] = {".basis", iLoadBASISFromMemory};
-	}
-} gImageLoaderInst;
-
-void Image::AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc) {
-	gImageLoaders[gImageLoaderCount++] = { pExtension, pFunc };
-}
-
-bool Image::LoadFromMemory(
-	void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator, void* pUserData)
-{
-	// try loading the format
-	bool loaded = false;
-	for (uint32_t i = 0; i < gImageLoaderCount; ++i)
-	{
-		ImageLoaderDefinition const& def = gImageLoaders[i];
-		if (stricmp(extension, def.mExtension) == 0)
-		{
-			loaded = def.pLoader(this, (char const*)mem, size, pAllocator, pUserData);
-			break;
-		}
-	}
-	return loaded;
-}
-
-bool Image::LoadFromFile(const char* origFileName, memoryAllocationFunc pAllocator, void* pUserData, FSRoot root)
-{
-	// clear current image
-	Clear();
-
-	eastl::string extension = FileSystem::GetExtension(origFileName);
-	uint32_t loaderIndex = -1;
-
-	if (extension.size())
-	{
-		for (int i = 0; i < (int)gImageLoaderCount; i++)
-		{
-			if (stricmp(extension.c_str(), gImageLoaders[i].mExtension) == 0)
-			{
-				loaderIndex = i;
-				break;
-			}
-		}
-
-		if (loaderIndex == -1)
-			extension = "";
-	}
-
-	char fileName[MAX_PATH] = {};
-	strcpy(fileName, origFileName);
-	// For loading basis file, it should have its extension
-	if (!extension.size())
-	{
-#if defined(__ANDROID__)
-		extension = ".ktx";
-#elif defined(TARGET_IOS)
-		extension = ".ktx";
-#elif defined(__linux__)
-		extension = ".dds";
-#elif defined(__APPLE__)
-		extension = ".dds";
-#else
-		extension = ".dds";
-#endif
-
-		strcpy(fileName + strlen(origFileName), extension.c_str());
-	}
-
-	// open file
-	File file = {};
-	file.Open(fileName, FM_ReadBinary, root);
-	if (!file.IsOpen())
-	{
-		LOGF(LogLevel::eERROR, "\"%s\": Image file not found.", fileName);
-		return false;
-	}
-
-	// load file into memory
-	uint32_t length = file.GetSize();
-	if (length == 0)
-	{
-		//char output[256];
-		//sprintf(output, "\"%s\": Image file is empty.", fileName);
-		LOGF(LogLevel::eERROR, "\"%s\": Image is an empty file.", fileName);
-		file.Close();
-		return false;
-	}
-
-	// read and close file.
-	char* data = (char*)conf_malloc(length * sizeof(char));
-	file.Read(data, (unsigned)length);
-	file.Close();
-
-	// try loading the format
-	bool loaded = false;
-	bool support = false;
-	for (int i = 0; i < (int)gImageLoaderCount; i++)
-	{
-		if (stricmp(extension.c_str(), gImageLoaders[i].mExtension) == 0)
-		{
-			support = true;
-			loaded = gImageLoaders[i].pLoader(this, data, length, pAllocator, pUserData);
-			if (loaded)
-			{
-				break;
-			}
-		}
-	}
-	if (!support)
-	{
-		LOGF(LogLevel::eERROR, "Can't load this file format for image  :  %s", fileName);
-	}
-	else
-	{
-		mLoadFileName = fileName;
-	}
-	// cleanup the compressed data
-	conf_free(data);
-
-	return loaded;
-}
 
 bool Image::Convert(const TinyImageFormat newFormat)
 {
@@ -1461,7 +690,7 @@ bool Image::Convert(const TinyImageFormat newFormat)
 
 	int pixelCount = GetNumberOfPixels(0, mMipMapCount);
 
-	ubyte* newPixels;
+	uint8_t * newPixels;
 	newPixels = (unsigned char*)conf_malloc(sizeof(unsigned char) * GetMipMappedSize(0, mMipMapCount));
 
 	TinyImageFormat_DecodeInput input{};
@@ -1525,7 +754,7 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 		int size = GetMipMappedSize(0, actualMipMaps);
 		if (mArrayCount > 1)
 		{
-			ubyte* newPixels = (ubyte*)conf_malloc(sizeof(ubyte) * size * mArrayCount);
+			uint8_t * newPixels = (uint8_t *)conf_malloc(sizeof(uint8_t ) * size * mArrayCount);
 
 			// Copy top mipmap of all array slices to new location
 			int firstMipSize = GetMipMappedSize(0, 1);
@@ -1541,7 +770,7 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 		}
 		else
 		{
-			pData = (ubyte*)conf_realloc(pData, size);
+			pData = (uint8_t *)conf_realloc(pData, size);
 		}
 		mMipMapCount = actualMipMaps;
 	}
@@ -1552,8 +781,8 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 
 	for (uint arraySlice = 0; arraySlice < mArrayCount; arraySlice++)
 	{
-		ubyte* src = GetPixels(0, arraySlice);
-		ubyte* dst = GetPixels(1, arraySlice);
+		uint8_t * src = GetPixels(0, arraySlice);
+		uint8_t * dst = GetPixels(1, arraySlice);
 
 		for (uint level = 1; level < mMipMapCount; level++)
 		{
@@ -1570,7 +799,7 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 				// TODO use decode/encode for the others
 				// TODO check these methods work for SNORM
 				if(TinyImageFormat_IsHomogenous(mFormat)) {
-					uint32 redChanWidth = TinyImageFormat_ChannelBitWidth(mFormat, TinyImageFormat_LC_Red);
+					uint32_t  redChanWidth = TinyImageFormat_ChannelBitWidth(mFormat, TinyImageFormat_LC_Red);
 					if (redChanWidth == 32 && TinyImageFormat_IsFloat(mFormat))
 					{
 						buildMipMap((float*)dst, (float*)src, w, h, d, nChannels);
@@ -1596,228 +825,4 @@ bool Image::GenerateMipMaps(const uint32_t mipMaps)
 	}
 
 	return true;
-}
-
-// -- IMAGE SAVING --
-static void tinyktxCallbackError(void* user, char const* msg) {
-	LOGF( LogLevel::eERROR, "Tiny_Ktx ERROR: %s", msg);
-}
-
-bool Image::iSaveDDS(const char* fileName) {
-	TinyDDS_WriteCallbacks callback{
-			&tinyktxddsCallbackError,
-			&tinyktxddsCallbackAlloc,
-			&tinyktxddsCallbackFree,
-			&tinyktxddsCallbackWrite,
-	};
-
-	TinyDDS_Format fmt = TinyImageFormat_ToTinyDDSFormat(mFormat);
-	if (fmt == TDDS_UNDEFINED)
-		return convertAndSaveImage(*this, &Image::iSaveKTX, fileName);
-
-	File file;
-	if (!file.Open(fileName, FileMode::FM_WriteBinary, FSR_Textures))
-		return false;
-
-	uint32_t mipmapsizes[TINYDDS_MAX_MIPMAPLEVELS];
-	void const* mipmaps[TINYDDS_MAX_MIPMAPLEVELS];
-	memset(mipmapsizes, 0, sizeof(uint32_t) * TINYDDS_MAX_MIPMAPLEVELS);
-	memset(mipmaps, 0, sizeof(void const*) * TINYDDS_MAX_MIPMAPLEVELS);
-
-	for (unsigned int i = 0; i < mMipMapCount; ++i) {
-		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
-		mipmaps[i] = GetPixels(i);
-	}
-
-	return TinyDDS_WriteImage(&callback,
-		&file,
-		mWidth,
-		mHeight,
-		mDepth,
-		mArrayCount,
-		mMipMapCount,
-		fmt,
-		mDepth == 0,
-		true,
-		mipmapsizes,
-		mipmaps);
-}
-
-bool Image::iSaveKTX(const char* fileName) {
-	TinyKtx_WriteCallbacks callback{
-			&tinyktxddsCallbackError,
-			&tinyktxddsCallbackAlloc,
-			&tinyktxddsCallbackFree,
-			&tinyktxddsCallbackWrite,
-	};
-
-	TinyKtx_Format fmt = TinyImageFormat_ToTinyKtxFormat(mFormat);
-	if (fmt == TKTX_UNDEFINED)
-		return convertAndSaveImage(*this, &Image::iSaveKTX, fileName);
-
-	File file;
-	if (!file.Open(fileName, FileMode::FM_WriteBinary, FSR_Textures))
-		return false;
-	
-	uint32_t mipmapsizes[TINYKTX_MAX_MIPMAPLEVELS];
-	void const* mipmaps[TINYKTX_MAX_MIPMAPLEVELS];
-	memset(mipmapsizes, 0, sizeof(uint32_t) * TINYKTX_MAX_MIPMAPLEVELS);
-	memset(mipmaps, 0, sizeof(void const*) * TINYKTX_MAX_MIPMAPLEVELS);
-
-	for (unsigned int i = 0; i < mMipMapCount; ++i) {
-		mipmapsizes[i] = (uint32_t)Image_GetMipMappedSize(mWidth, mHeight, mDepth, mMipMapCount, mFormat);
-		mipmaps[i] = GetPixels(i);
-	}
-
-	return TinyKtx_WriteImage(&callback,
-		&file,
-		mWidth,
-		mHeight,
-		mDepth,
-		mArrayCount,
-		mMipMapCount,
-		fmt,
-		mDepth == 0,
-		mipmapsizes,
-		mipmaps);
-}
-
-bool convertAndSaveImage(const Image& image, bool (Image::*saverFunction)(const char*), const char* fileName)
-{
-	bool  bSaveImageSuccess = false;
-	Image imgCopy(image);
-	imgCopy.Uncompress();
-	if (imgCopy.Convert(TinyImageFormat_R8G8B8A8_UNORM))
-	{
-		bSaveImageSuccess = (imgCopy.*saverFunction)(fileName);
-	}
-
-	imgCopy.Destroy();
-	return bSaveImageSuccess;
-}
-
-bool Image::iSaveTGA(const char* fileName)
-{
-	switch (mFormat)
-	{
-		case TinyImageFormat_R8_UNORM: return 0 != stbi_write_tga(fileName, mWidth, mHeight, 1, pData); break;
-		case TinyImageFormat_R8G8_UNORM: return 0 != stbi_write_tga(fileName, mWidth, mHeight, 2, pData); break;
-		case TinyImageFormat_R8G8B8_UNORM: return 0 != stbi_write_tga(fileName, mWidth, mHeight, 3, pData); break;
-		case TinyImageFormat_R8G8B8A8_UNORM: return 0 != stbi_write_tga(fileName, mWidth, mHeight, 4, pData); break;
-		default:
-		{
-			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveTGA, fileName);
-		}
-	}
-
-	//return false; //Unreachable
-}
-
-bool Image::iSaveBMP(const char* fileName)
-{
-	switch (mFormat)
-	{
-		case TinyImageFormat_R8_UNORM: stbi_write_bmp(fileName, mWidth, mHeight, 1, pData); break;
-		case TinyImageFormat_R8G8_UNORM: stbi_write_bmp(fileName, mWidth, mHeight, 2, pData); break;
-		case TinyImageFormat_R8G8B8_UNORM: stbi_write_bmp(fileName, mWidth, mHeight, 3, pData); break;
-		case TinyImageFormat_R8G8B8A8_UNORM: stbi_write_bmp(fileName, mWidth, mHeight, 4, pData); break;
-		default:
-		{
-			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveBMP, fileName);
-		}
-	}
-	return true;
-}
-
-bool Image::iSavePNG(const char* fileName)
-{
-	switch (mFormat)
-	{
-		case TinyImageFormat_R8_UNORM: stbi_write_png(fileName, mWidth, mHeight, 1, pData, 0); break;
-		case TinyImageFormat_R8G8_UNORM: stbi_write_png(fileName, mWidth, mHeight, 2, pData, 0); break;
-		case TinyImageFormat_R8G8B8_UNORM: stbi_write_png(fileName, mWidth, mHeight, 3, pData, 0); break;
-		case TinyImageFormat_R8G8B8A8_UNORM: stbi_write_png(fileName, mWidth, mHeight, 4, pData, 0); break;
-		default:
-		{
-			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSavePNG, fileName);
-		}
-	}
-
-	return true;
-}
-
-bool Image::iSaveHDR(const char* fileName)
-{
-	switch (mFormat)
-	{
-		case TinyImageFormat_R32_SFLOAT: stbi_write_hdr(fileName, mWidth, mHeight, 1, (float*)pData); break;
-		case TinyImageFormat_R32G32_SFLOAT: stbi_write_hdr(fileName, mWidth, mHeight, 2, (float*)pData); break;
-		case TinyImageFormat_R32G32B32_SFLOAT: stbi_write_hdr(fileName, mWidth, mHeight, 3, (float*)pData); break;
-		case TinyImageFormat_R32G32B32A32_SFLOAT: stbi_write_hdr(fileName, mWidth, mHeight, 4, (float*)pData); break;
-		default:
-		{
-			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveHDR, fileName);
-		}
-	}
-
-	return true;
-}
-
-bool Image::iSaveJPG(const char* fileName)
-{
-	switch (mFormat)
-	{
-		case TinyImageFormat_R8_UNORM: stbi_write_jpg(fileName, mWidth, mHeight, 1, pData, 0); break;
-		case TinyImageFormat_R8G8_UNORM: stbi_write_jpg(fileName, mWidth, mHeight, 2, pData, 0); break;
-		case TinyImageFormat_R8G8B8_UNORM: stbi_write_jpg(fileName, mWidth, mHeight, 3, pData, 0); break;
-		case TinyImageFormat_R8G8B8A8_UNORM: stbi_write_jpg(fileName, mWidth, mHeight, 4, pData, 0); break;
-		default:
-		{
-			// uncompress/convert and try again
-			return convertAndSaveImage(*this, &Image::iSaveJPG, fileName);
-		}
-	}
-
-	return true;
-}
-
-struct ImageSaverDefinition
-{
-	typedef bool (Image::*ImageSaverFunction)(const char*);
-	const char*        Extension;
-	ImageSaverFunction Loader;
-};
-
-static ImageSaverDefinition gImageSavers[] = {
-#if !defined(NO_STBI)
-	{ ".bmp", &Image::iSaveBMP }, { ".hdr", &Image::iSaveHDR }, { ".png", &Image::iSavePNG },
-	{ ".tga", &Image::iSaveTGA }, { ".jpg", &Image::iSaveJPG },
-#endif
-	{ ".dds", &Image::iSaveDDS },
-	{ ".ktx",& Image::iSaveKTX }
-};
-
-bool Image::Save(const char* fileName)
-{
-	const char* extension = strrchr(fileName, '.');
-	bool        support = false;
-	;
-	for (int i = 0; i < sizeof(gImageSavers) / sizeof(gImageSavers[0]); i++)
-	{
-		if (stricmp(extension, gImageSavers[i].Extension) == 0)
-		{
-			support = true;
-			return (this->*gImageSavers[i].Loader)(fileName);
-		}
-	}
-	if (!support)
-	{
-		LOGF(LogLevel::eERROR, "Can't save this file format for image  :  %s", fileName);
-	}
-
-	return false;
 }

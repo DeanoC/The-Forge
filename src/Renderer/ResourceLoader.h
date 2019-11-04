@@ -31,7 +31,6 @@
 
 #include "../Renderer/IRenderer.h"
 #include "../OS/Core/Atomics.h"
-#include "../OS/Interfaces/IFileSystem.h"
 #include "../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 
 typedef struct BufferLoadDesc
@@ -64,9 +63,6 @@ typedef struct TextureLoadDesc
 	
 	/// Load empty texture
 	TextureDesc* pDesc;
-	/// Load texture from disk
-	const char* pFilename;
-	FSRoot      mRoot;
 	uint32_t    mNodeIndex;
 	/// Load texture from raw data
 	RawImageData* pRawImageData = NULL;
@@ -120,21 +116,6 @@ typedef struct ResourceUpdateDesc
 	};
 } ResourceUpdateDesc;
 
-typedef struct ShaderStageLoadDesc
-{
-	eastl::string mFileName;
-	ShaderMacro*    pMacros;
-	uint32_t        mMacroCount;
-	FSRoot          mRoot;
-    const char*     mEntryPointName;
-} ShaderStageLoadDesc;
-
-typedef struct ShaderLoadDesc
-{
-	ShaderStageLoadDesc mStages[SHADER_STAGE_COUNT];
-	ShaderTarget        mTarget;
-} ShaderLoadDesc;
-
 typedef tfrg_atomic64_t SyncToken;
 
 typedef struct ResourceLoaderDesc
@@ -167,9 +148,6 @@ void waitTokenCompleted(SyncToken token);
 
 void removeResource(Buffer* pBuffer);
 void removeResource(Texture* pTexture);
-
-/// Either loads the cached shader bytecode or compiles the shader to create new bytecode depending on whether source is newer than binary
-void addShader(Renderer* pRenderer, const ShaderLoadDesc* pDesc, Shader** ppShader);
 
 void flushResourceUpdates();
 void finishResourceLoading();

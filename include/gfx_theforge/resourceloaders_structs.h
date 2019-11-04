@@ -39,9 +39,6 @@ typedef struct TheForge_TextureLoadDesc
 
 	/// Load empty texture
 	TheForge_TextureDesc* pDesc;
-	/// Load texture from disk
-	const char* pFilename;
-	TheForge_ResourceFolders      mRoot;
 	uint32_t    mNodeIndex;
 	/// Load texture from raw data
 	TheForge_RawImageData const* pRawImageData;
@@ -79,10 +76,7 @@ typedef struct TheForge_ResourceUpdateDesc
 
 typedef struct TheForge_ShaderStageLoadDesc
 {
-	const char* 							fileName;
-	TheForge_ShaderMacro*    pMacros;
 	uint32_t        					macroCount;
-	TheForge_ResourceFolders          					root;
 	const char*     					entryPointName;
 } TheForge_ShaderStageLoadDesc;
 
