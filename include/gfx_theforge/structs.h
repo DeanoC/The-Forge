@@ -90,22 +90,10 @@ typedef struct TheForge_RenderTargetDesc {
 
 } TheForge_RenderTargetDesc;
 
-typedef struct TheForge_ShaderMacro {
-	char const *definition;
-	char const *value;
-} TheForge_ShaderMacro;
-
-typedef struct TheForge_RendererShaderDefinesDesc {
-	TheForge_ShaderMacro *rendererShaderDefines;
-	uint32_t rendererShaderDefinesCnt;
-} TheForge_RendererShaderDefinesDesc;
-
 typedef struct TheForge_ShaderStageDesc {
 	char const *name;
 	char const *code;
 	char const *entryPoint;
-	TheForge_ShaderMacro *macros;
-	uint32_t macroCount;
 } TheForge_ShaderStageDesc;
 
 typedef struct TheForge_ShaderDesc {
@@ -292,6 +280,14 @@ typedef struct TheForge_DescriptorData {
 			uint64_t const *pOffsets;
 			uint64_t const *pSizes;
 		};
+		// Descriptor set buffer extraction options
+		struct
+		{
+			uint32_t    mDescriptorSetBufferIndex;
+			TheForge_ShaderHandle mDescriptorSetShader;
+			TheForge_ShaderStage mDescriptorSetShaderStage;
+		};
+
 		uint32_t UAVMipSlice;
 		bool bindStencilResource;
 	};
@@ -299,11 +295,16 @@ typedef struct TheForge_DescriptorData {
 		TheForge_TextureHandle const *pTextures;
 		TheForge_SamplerHandle const *pSamplers;
 		TheForge_BufferHandle const *pBuffers;
-		void const *pRootConstant;
+		/// Array of pipline descriptors
+		TheForge_PipelineHandle* pPipelines;
+		/// DescriptorSet buffer extraction
+		TheForge_DescriptorSetHandle* pDescriptorSet;
+		/// Custom binding (raytracing acceleration structure ...)
 		TheForge_AcclerationStructureHandle const *pAccelerationStructures;
 	};
 	uint32_t count;
 	uint32_t index;
+	bool extractBuffer;
 } TheForge_DescriptorData;
 
 typedef struct TheForge_BufferBarrier {
@@ -328,6 +329,12 @@ typedef struct TheForge_BufferDesc {
 	uint64_t mFirstElement;
 	uint64_t mElementCount;
 	uint64_t mStructStride;
+	/// ICB draw type
+	TheForge_IndirectArgumentType mICBDrawType;
+	/// ICB max vertex buffers slots count
+	uint32_t mICBMaxVertexBufferBind;
+	/// ICB max vertex buffers slots count
+	uint32_t mICBMaxFragmentBufferBind;
 	TheForge_BufferHandle counterBuffer;
 	TinyImageFormat mFormat;
 	TheForge_DescriptorType mDescriptors;
@@ -437,27 +444,9 @@ typedef struct TheForge_RectDesc {
 	int bottom;
 } TheForge_RectDesc;
 
-// I don't like the defines in the structure but for now will leave until
-// I tackle linux build
-typedef struct TheForge_WindowsDesc {
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-	Display* display;
-	Window   xlib_window;
-	Atom     xlib_wm_delete_window;
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-	Display*                 display;
-	xcb_connection_t*        connection;
-	xcb_screen_t*            screen;
-	xcb_window_t             xcb_window;
-	xcb_intern_atom_reply_t* atom_wm_delete_window;
-#else
-	TheForge_WindowHandle handle;    //hWnd
-#endif
-} TheForge_WindowsDesc;
-
 typedef struct TheForge_SwapChainDesc {
 	/// Window handle
-	TheForge_WindowsDesc *pWindow;
+	TheForge_WindowHandle window;
 	/// Queues which should be allowed to present
 	TheForge_QueueHandle *pPresentQueues;
 	/// Number of present queues

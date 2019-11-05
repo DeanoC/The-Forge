@@ -127,8 +127,8 @@ if (APPLE)
 		list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
 	endif()
 
-	list(APPEND Src OS/macOs/macOSThread.cpp)
-	list(APPEND Src OS/macOs/macOSTime.cpp)
+	list(APPEND Src OS/Darwin/DarwinThread.cpp)
+	list(APPEND Src OS/Darwin/DarwinTime.cpp)
 endif ()
 
 
