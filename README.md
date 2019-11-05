@@ -2,7 +2,7 @@
 
 This is a derivative of ConfettiFX The Forge, this version has a pure C interface and just the renderer portion and uses CMake and my own al2o3 framework for some parts (TODO reduce dependency).
 
-Latest version has all filesystem functionality stripped (for now) as provided by other Al2o3 models.
+Latest version has all filesystem functionality stripped (for now) as provided by other Al2o3 modules.
 
 ## This version is currently based on upstream Forge Release 1.37
 
@@ -13,7 +13,6 @@ The Forge is a cross-platform rendering framework supporting
      * with DirectX Ray Tracing API
      * DirectX 11 Fallback Layer for Windows 7 support (not extensively tested)
   * TODO Linux Ubuntu 18.04 LTS with Vulkan 1.1 and RTX Ray Tracing API
-- Android Pie with Vulkan 1.1
 - macOS / iOS / iPad OS with Metal 2.2
 
 Particularly, the graphics layer of The Forge supports cross-platform
