@@ -45,7 +45,7 @@ typedef void* (*memoryAllocationFunc)(class Image* pImage, uint64_t memoryRequir
 
 class Image
 {
-protected:
+public:
 	Image();
 	Image(const Image& img);
 	void Destroy();

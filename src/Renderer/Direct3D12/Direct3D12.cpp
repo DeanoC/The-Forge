@@ -32,18 +32,36 @@
 #define IID_ARGS IID_PPV_ARGS
 #endif
 
+// Pull in minimal Windows headers
+#if !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+#if !defined(WIN32_LEAN_AND_MEAN)
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+
+#include "../IRenderer.h"
+
 #include "../../ThirdParty/OpenSource/EASTL/sort.h"
 #include "../../ThirdParty/OpenSource/EASTL/string.h"
 #include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../OS/Interfaces/ILog.h"
-#include "../IRenderer.h"
-#include "../../OS/Core/RingBuffer.h"
+#include "../../ThirdParty/OpenSource/EASTL/string_hash_map.h"
+
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
+
 #include "../../ThirdParty/OpenSource/renderdoc/renderdoc_app.h"
+
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
+
+#include "../../OS/Interfaces/ILog.h"
+#include "../../OS/Core/RingBuffer.h"
+#include "../../OS/Core/GPUConfig.h"
+
 #include "Direct3D12CapBuilder.h"
 #include "Direct3D12Hooks.h"
+#include "Direct3D12MemoryAllocator.h"
 
 #if !defined(_WIN32)
 #error "Windows is needed!"
@@ -57,15 +75,6 @@
 #error "D3D12 requires C++! Sorry!"
 #endif
 
-// Pull in minimal Windows headers
-#if !defined(NOMINMAX)
-#define NOMINMAX
-#endif
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-
 
 #if !defined(_DURANGO)
 // Prefer Higher Performance GPU on switchable GPU systems
@@ -76,7 +85,6 @@ extern "C"
 }
 #endif
 
-#include "Direct3D12MemoryAllocator.h"
 #include "../../OS/Interfaces/IMemory.h"
 
 #define D3D12_GPU_VIRTUAL_ADDRESS_NULL ((D3D12_GPU_VIRTUAL_ADDRESS)0)
@@ -306,6 +314,11 @@ typedef struct DescriptorHeap
 	tfrg_atomic32_t                 mUsedDescriptors;
 } DescriptorHeap;
 
+typedef struct DescriptorIndexMap
+{
+	eastl::string_hash_map<uint32_t> mMap;
+} DescriptorIndexMap;
+
 typedef struct DescriptorSet
 {
 	uint64_t*                   pCbvSrvUavHandles;
@@ -330,8 +343,8 @@ static void add_descriptor_heap(ID3D12Device* pDevice, const D3D12_DESCRIPTOR_HE
 
 	DescriptorHeap* pHeap = (DescriptorHeap*)conf_calloc(1, sizeof(*pHeap));
 
-	// Need new since object allocates memory in constructor
-	pHeap->pMutex = conf_placement_new<Mutex>(conf_calloc(1, sizeof(Mutex)));
+	pHeap->pMutex = (Mutex*)conf_calloc(1, sizeof(Mutex));
+	pHeap->pMutex->Init();
 	pHeap->pDevice = pDevice;
 
 	// Keep 32 aligned for easy remove
@@ -366,7 +379,7 @@ static void remove_descriptor_heap(DescriptorHeap* pHeap)
 	SAFE_RELEASE(pHeap->pCurrentHeap);
 
 	// Need delete since object frees allocated memory in destructor
-	pHeap->pMutex->~Mutex();
+	pHeap->pMutex->Destroy();
 	conf_free(pHeap->pMutex);
 
 	pHeap->mFreeList.~vector();
@@ -464,8 +477,8 @@ using DescriptorNameToIndexMap = eastl::string_hash_map<uint32_t>;
 
 const DescriptorInfo* get_descriptor(const RootSignature* pRootSignature, const char* pResName)
 {
-	DescriptorNameToIndexMap::const_iterator it = pRootSignature->pDescriptorNameToIndexMap.find(pResName);
-	if (it != pRootSignature->pDescriptorNameToIndexMap.end())
+	DescriptorNameToIndexMap::const_iterator it = pRootSignature->pDescriptorNameToIndexMap->mMap.find(pResName);
+	if (it != pRootSignature->pDescriptorNameToIndexMap->mMap.end())
 	{
 		return &pRootSignature->pDescriptors[it->second];
 	}
@@ -1753,6 +1766,10 @@ void removeRenderer(Renderer* pRenderer)
 {
 	ASSERT(pRenderer);
 
+	for (uint32_t i = 0; i < pRenderer->mBuiltinShaderDefinesCount; ++i)
+		pRenderer->pBuiltinShaderDefines[i].~ShaderMacro();
+	SAFE_FREE(pRenderer->pBuiltinShaderDefines);
+
 #ifndef _DURANGO
 	if (gDxcDllHelper.IsEnabled())
 	{
@@ -2197,7 +2214,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	HRESULT hres = create_swap_chain(pRenderer, pSwapChain, &desc, &swapchain);
 	ASSERT(SUCCEEDED(hres));
 #else
-	HWND hwnd = (HWND)pSwapChain->mDesc.pWindow->handle;
+	HWND hwnd = (HWND)pSwapChain->mDesc.mWindowHandle.window;
 
 	HRESULT hres =
 		pRenderer->pDXGIFactory->CreateSwapChainForHwnd(pDesc->ppPresentQueues[0]->pDxQueue, hwnd, &desc, NULL, NULL, &swapchain);
@@ -3064,7 +3081,7 @@ static inline eastl::string convertBlobToString(BlobType* pBlob)
 }
 
 void compileShader(
-	Renderer* pRenderer, ShaderTarget shaderTarget, ShaderStage stage, const char* fileName, uint32_t codeSize, const char* code,
+	Renderer* pRenderer, ShaderTarget shaderTarget, ShaderStage stage, const Path* filePath, uint32_t codeSize, const char* code,
 	uint32_t macroCount, ShaderMacro* pMacros, void* (*allocator)(size_t a, const char *f, int l, const char *sf), uint32_t* pByteCodeSize, char** ppByteCode,
 	const char* pEntryPoint)
 {
@@ -3153,8 +3170,8 @@ void compileShader(
 		uint32_t namePoolSize = 0;
 		for (uint32_t i = 0; i < macroCount; ++i)
 		{
-			namePoolSize += (uint32_t)pMacros[i].definition.size() + 1;
-			namePoolSize += (uint32_t)pMacros[i].value.size() + 1;
+			namePoolSize += (uint32_t)strlen(pMacros[i].definition) + 1;
+			namePoolSize += (uint32_t)strlen(pMacros[i].value) + 1;
 		}
 		WCHAR* namePool = NULL;
 		if (namePoolSize)
@@ -3167,14 +3184,14 @@ void compileShader(
 		WCHAR* pCurrent = namePool;
 		for (uint32_t j = 0; j < macroCount; ++j)
 		{
-			uint32_t len = (uint32_t)pMacros[j].definition.size();
-			mbstowcs(pCurrent, pMacros[j].definition.c_str(), len);
+			uint32_t len = (uint32_t)strlen(pMacros[j].definition);
+			mbstowcs(pCurrent, pMacros[j].definition, len);
 			pCurrent[len] = L'\0';
 			macros[j + 1].Name = pCurrent;
 			pCurrent += (len + 1);
 
-			len = (uint32_t)pMacros[j].value.size();
-			mbstowcs(pCurrent, pMacros[j].value.c_str(), len);
+			len = (uint32_t)strlen(pMacros[j].value);
+			mbstowcs(pCurrent, pMacros[j].value, len);
 			pCurrent[len] = L'\0';
 			macros[j + 1].Value = pCurrent;
 			pCurrent += (len + 1);
@@ -3197,7 +3214,8 @@ void compileShader(
 		d3d_call(pLibrary->CreateBlobWithEncodingFromPinned((LPBYTE)code, (UINT32)codeSize, 0, &pTextBlob));
 		IDxcOperationResult* pResult;
 		WCHAR                filename[MAX_PATH] = {};
-		mbstowcs(filename, fileName, strlen(fileName));
+		const char*			 pathStr = fsGetPathAsNativeString(filePath);
+		mbstowcs(filename, pathStr, min(strlen(pathStr), MAX_PATH));
 		IDxcIncludeHandler* pInclude = NULL;
 		pLibrary->CreateIncludeHandler(&pInclude);
 
@@ -3299,7 +3317,7 @@ void compileShader(
 		macros[0] = { "D3D12", "1" };
 		for (uint32_t j = 0; j < macroCount; ++j)
 		{
-			macros[j + 1] = { pMacros[j].definition.c_str(), pMacros[j].value.c_str() };
+			macros[j + 1] = { pMacros[j].definition, pMacros[j].value };
 		}
 		macros[macroCount + 1] = { NULL, NULL };
 
@@ -3310,14 +3328,14 @@ void compileShader(
 		ID3DBlob*     compiled_code = NULL;
 		ID3DBlob*     error_msgs = NULL;
 		HRESULT       hres = D3DCompile2(
-            code, (size_t)codeSize, fileName, macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), target.c_str(), compile_flags,
+            code, (size_t)codeSize, fsGetPathAsNativeString(filePath), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), target.c_str(), compile_flags,
             0, 0, NULL, 0, &compiled_code, &error_msgs);
 		if (FAILED(hres))
 		{
 			char* msg = (char*)conf_calloc(error_msgs->GetBufferSize() + 1, sizeof(*msg));
 			ASSERT(msg);
 			memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
-			eastl::string error = eastl::string(fileName) + " " + msg;
+			eastl::string error = eastl::string(fsGetPathAsNativeString(filePath)) + " " + msg;
 			LOGF( LogLevel::eERROR, error.c_str());
 			SAFE_FREE(msg);
 		}
@@ -3330,25 +3348,6 @@ void compileShader(
 		*ppByteCode = pByteCode;
 		SAFE_RELEASE(compiled_code);
 	}
-}
-
-// renderer shader macros allocated on stack
-const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer)
-{
-	UNREF_PARAM(pRenderer);
-
-	// Set shader macro based on runtime information
-	static ShaderMacro rendererShaderDefines[] =
-	{
-		// Descriptor set indices
-		{ "UPDATE_FREQ_NONE",      "space0" },
-		{ "UPDATE_FREQ_PER_FRAME", "space1" },
-		{ "UPDATE_FREQ_PER_BATCH", "space2" },
-		{ "UPDATE_FREQ_PER_DRAW",  "space3" },
-	};
-
-	RendererShaderDefinesDesc defineDesc = { rendererShaderDefines, sizeof(rendererShaderDefines) / sizeof(rendererShaderDefines[0]) };
-	return defineDesc;
 }
 
 void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram)
@@ -3405,8 +3404,8 @@ void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader*
 				(uint8_t*)(blobs[reflectionCount]->GetBufferPointer()), (uint32_t)blobs[reflectionCount]->GetBufferSize(), stage_mask,
 				&pShaderProgram->mReflection.mStageReflections[reflectionCount]);
 
-			WCHAR* entryPointName = (WCHAR*)conf_calloc(pStage->mEntryPoint.size() + 1, sizeof(WCHAR));
-			mbstowcs((WCHAR*)entryPointName, pStage->mEntryPoint.c_str(), pStage->mEntryPoint.size());
+			WCHAR* entryPointName = (WCHAR*)conf_calloc(strlen(pStage->pEntryPoint) + 1, sizeof(WCHAR));
+			mbstowcs((WCHAR*)entryPointName, pStage->pEntryPoint, strlen(pStage->pEntryPoint));
 			entriesNames[reflectionCount] = entryPointName;
 
 			reflectionCount++;
@@ -3453,6 +3452,9 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 
 	RootSignature* pRootSignature = (RootSignature*)conf_calloc(1, sizeof(*pRootSignature));
 	ASSERT(pRootSignature);
+
+	pRootSignature->pDescriptorNameToIndexMap = conf_new(DescriptorIndexMap);
+	ASSERT(pRootSignature->pDescriptorNameToIndexMap);
 
 	eastl::vector<UpdateFrequencyLayoutInfo>               layouts(DESCRIPTOR_UPDATE_FREQ_COUNT);
 	eastl::vector<ShaderResource>                          shaderResources;
@@ -3508,11 +3510,11 @@ void addRootSignature(Renderer* pRenderer, const RootSignatureDesc* pRootSignatu
 				setIndex = 0;
 
 			// Find all unique resources
-			decltype(pRootSignature->pDescriptorNameToIndexMap)::iterator it =
-				pRootSignature->pDescriptorNameToIndexMap.find(pRes->name);
-			if (it == pRootSignature->pDescriptorNameToIndexMap.end())
+			decltype(pRootSignature->pDescriptorNameToIndexMap->mMap)::iterator it =
+				pRootSignature->pDescriptorNameToIndexMap->mMap.find(pRes->name);
+			if (it == pRootSignature->pDescriptorNameToIndexMap->mMap.end())
 			{
-				pRootSignature->pDescriptorNameToIndexMap.insert(pRes->name, (uint32_t)shaderResources.size());
+				pRootSignature->pDescriptorNameToIndexMap->mMap.insert(pRes->name, (uint32_t)shaderResources.size());
 				shaderResources.push_back(*pRes);
 
 				uint32_t constantSize = 0;
@@ -3975,7 +3977,7 @@ void removeRootSignature(Renderer* pRenderer, RootSignature* pRootSignature)
 		SAFE_FREE((void*)pRootSignature->pDescriptors[i].mDesc.name);
 	}
 
-	pRootSignature->pDescriptorNameToIndexMap.~string_hash_map();
+	conf_delete(pRootSignature->pDescriptorNameToIndexMap);
 
 	SAFE_FREE(pRootSignature->pDescriptors);
 	SAFE_FREE(pRootSignature->pDxRootConstantRootIndices);
@@ -5779,37 +5781,42 @@ void addIndirectCommandSignature(Renderer* pRenderer, const CommandSignatureDesc
 		}
 
 		argumentDescs[i].Type = util_to_dx_indirect_argument_type(pDesc->pArgDescs[i].mType);
+		uint32_t rootParameterIndex = 0;
+		rootParameterIndex = (pDesc->pArgDescs[i].pName) ?
+			get_descriptor(pDesc->pRootSignature, pDesc->pArgDescs[i].pName)->mIndexInParent :
+			pDesc->pArgDescs[i].mIndex;
+
 		switch (argumentDescs[i].Type)
 		{
 			case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT:
-				argumentDescs[i].Constant.RootParameterIndex = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].Constant.RootParameterIndex = rootParameterIndex;
 				argumentDescs[i].Constant.DestOffsetIn32BitValues = 0;
 				argumentDescs[i].Constant.Num32BitValuesToSet = pDesc->pArgDescs[i].mCount;
 				commandStride += sizeof(UINT) * argumentDescs[i].Constant.Num32BitValuesToSet;
 				change = true;
 				break;
 			case D3D12_INDIRECT_ARGUMENT_TYPE_UNORDERED_ACCESS_VIEW:
-				argumentDescs[i].UnorderedAccessView.RootParameterIndex = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].UnorderedAccessView.RootParameterIndex = rootParameterIndex;
 				commandStride += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 				change = true;
 				break;
 			case D3D12_INDIRECT_ARGUMENT_TYPE_SHADER_RESOURCE_VIEW:
-				argumentDescs[i].ShaderResourceView.RootParameterIndex = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].ShaderResourceView.RootParameterIndex = rootParameterIndex;
 				commandStride += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 				change = true;
 				break;
 			case D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT_BUFFER_VIEW:
-				argumentDescs[i].ConstantBufferView.RootParameterIndex = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].ConstantBufferView.RootParameterIndex = rootParameterIndex;
 				commandStride += sizeof(D3D12_GPU_VIRTUAL_ADDRESS);
 				change = true;
 				break;
 			case D3D12_INDIRECT_ARGUMENT_TYPE_VERTEX_BUFFER_VIEW:
-				argumentDescs[i].VertexBuffer.Slot = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].VertexBuffer.Slot = rootParameterIndex;
 				commandStride += sizeof(D3D12_VERTEX_BUFFER_VIEW);
 				change = true;
 				break;
 			case D3D12_INDIRECT_ARGUMENT_TYPE_INDEX_BUFFER_VIEW:
-				argumentDescs[i].VertexBuffer.Slot = pDesc->pArgDescs[i].mRootParameterIndex;
+				argumentDescs[i].VertexBuffer.Slot = rootParameterIndex;
 				commandStride += sizeof(D3D12_INDEX_BUFFER_VIEW);
 				change = true;
 				break;

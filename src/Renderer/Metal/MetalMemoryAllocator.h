@@ -25,6 +25,7 @@
 #ifndef RESOURCE_RESOURCE_H
 #define RESOURCE_RESOURCE_H
 
+#include "../../ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Interfaces/IMemory.h"
 
@@ -2724,6 +2725,11 @@ ResourceAllocator::ResourceAllocator(const AllocatorCreateInfo* pCreateInfo):
 	m_PreferredSmallHeapBlockSize(0),
 	m_UnmapPersistentlyMappedMemoryCounter(0)
 {
+#if RESOURCE_DEBUG_GLOBAL_MUTEX
+	if (!gDebugGlobalMutex.Init())
+		return;
+#endif
+	
 	ASSERT(pCreateInfo->device);
 
 	memset(&m_pBlockVectors, 0, sizeof(m_pBlockVectors));
@@ -2739,6 +2745,11 @@ ResourceAllocator::ResourceAllocator(const AllocatorCreateInfo* pCreateInfo):
 
 	for (size_t i = 0; i < GetMemoryTypeCount(); ++i)
 	{
+		if (!m_BlocksMutex[i].Init())
+			return;
+		if (!m_OwnAllocationsMutex[i].Init())
+			return;
+		
 		for (size_t j = 0; j < RESOURCE_BLOCK_VECTOR_TYPE_COUNT; ++j)
 		{
 			m_pBlockVectors[i][j] = conf_placement_new<AllocatorBlockVector>(AllocatorAllocate<AllocatorBlockVector>(), this);
@@ -2756,7 +2767,14 @@ ResourceAllocator::~ResourceAllocator()
 			resourceAlloc_delete(m_pOwnAllocations[i][j]);
 			resourceAlloc_delete(m_pBlockVectors[i][j]);
 		}
+		
+		m_BlocksMutex[i].Destroy();
+		m_OwnAllocationsMutex[i].Destroy();
 	}
+	
+#if RESOURCE_DEBUG_GLOBAL_MUTEX
+	gDebugGlobalMutex.Destroy();
+#endif
 }
 
 bool ResourceAllocator::AllocateMemoryOfType(
@@ -3489,22 +3507,31 @@ long createBuffer(
 	// For GPU buffers, use special memory type
 	// For CPU mapped UAV / SRV buffers, just use suballocation strategy
 	if (((pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_RW_BUFFER) || (pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_BUFFER)) &&
-		pMemoryRequirements->usage == RESOURCE_MEMORY_USAGE_GPU_ONLY)
+		pMemoryRequirements->usage == RESOURCE_MEMORY_USAGE_GPU_ONLY
+        )
+    {
 		suballocType = RESOURCE_SUBALLOCATION_TYPE_BUFFER_SRV_UAV;
-
+    }
+        
 	// Get the proper resource options for the buffer usage.
 	MTLResourceOptions mtlResourceOptions = 0;
 	switch (pMemoryRequirements->usage)
 	{
-		case RESOURCE_MEMORY_USAGE_GPU_ONLY: mtlResourceOptions = MTLResourceStorageModePrivate; break;
-		case RESOURCE_MEMORY_USAGE_CPU_ONLY: mtlResourceOptions = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModeShared; break;
+		case RESOURCE_MEMORY_USAGE_GPU_ONLY:
+            mtlResourceOptions = MTLResourceStorageModePrivate;
+            break;
+		case RESOURCE_MEMORY_USAGE_CPU_ONLY:
+            mtlResourceOptions = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModeShared;
+            break;
 		case RESOURCE_MEMORY_USAGE_CPU_TO_GPU:
 			mtlResourceOptions = MTLResourceCPUCacheModeWriteCombined | MTLResourceStorageModeShared;
 			break;
 		case RESOURCE_MEMORY_USAGE_GPU_TO_CPU:
 			mtlResourceOptions = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModeShared;
 			break;
-		default: assert(!"Unknown buffer usage type"); break;
+		default:
+            assert(!"Unknown buffer usage type");
+            break;
 	}
 
 	// Get the proper size and alignment for the buffer's resource options.
@@ -3517,7 +3544,37 @@ long createBuffer(
 	bool res = allocator->AllocateMemory(info, *pMemoryRequirements, suballocType, &pBuffer->pMtlAllocation);
 	if (res)
 	{
-		if (pBuffer->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK)
+	    if (pBuffer->mDesc.mDescriptors & DESCRIPTOR_TYPE_INDIRECT_COMMAND_BUFFER)
+        {
+            MTLIndirectCommandBufferDescriptor* icbDescriptor = [MTLIndirectCommandBufferDescriptor alloc];
+            
+            switch (pBuffer->mDesc.mICBDrawType)
+            {
+                case INDIRECT_DRAW:
+                    icbDescriptor.commandTypes = MTLIndirectCommandTypeDraw;
+                    break;
+                case INDIRECT_DRAW_INDEX:
+                    icbDescriptor.commandTypes = MTLIndirectCommandTypeDrawIndexed;
+                    break;
+                default:
+                    assert(0); // unsupported command type
+            }
+            
+            icbDescriptor.inheritBuffers = (pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_ICB_INHERIT_BUFFERS);
+            icbDescriptor.inheritPipelineState = (pBuffer->mDesc.mFlags & BUFFER_CREATION_FLAG_ICB_INHERIT_PIPELINE);
+            
+            icbDescriptor.maxVertexBufferBindCount = pBuffer->mDesc.mICBMaxVertexBufferBind + 1;
+            icbDescriptor.maxFragmentBufferBindCount = pBuffer->mDesc.mICBMaxFragmentBufferBind + 1;
+            
+            pBuffer->mtlIndirectCommandBuffer = [allocator->m_Device newIndirectCommandBufferWithDescriptor:icbDescriptor maxCommandCount:pBuffer->mDesc.mElementCount options:0];
+            
+            
+//            if (pCreateInfo->pDebugName)
+//            {
+//                pBuffer->mtlIndirectCommandBuffer.label = [[NSString alloc] initWithBytesNoCopy:(void*)pCreateInfo->pDebugName length: wcslen(pCreateInfo->pDebugName)*4 encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO];
+//            }
+        }
+		else if (pBuffer->pMtlAllocation->GetType() == ResourceAllocation::ALLOCATION_TYPE_BLOCK)
 		{
 			pBuffer->mtlBuffer = [pBuffer->pMtlAllocation->GetMemory() newBufferWithLength:pCreateInfo->mSize options:mtlResourceOptions];
 			assert(pBuffer->mtlBuffer);
@@ -3645,7 +3702,6 @@ long createTexture(
 		if (pCreateInfo->pDebugName)
 		{
 			pTexture->mtlTexture.label = [[[NSString alloc] initWithBytesNoCopy:(void*)pCreateInfo->pDebugName length: wcslen(pCreateInfo->pDebugName)*4 encoding:NSUTF32LittleEndianStringEncoding freeWhenDone:NO]  stringByAppendingFormat:@" %p", pTexture->mtlTexture];
-            //[pTexture->mtlTexture.label ];
 		}
 		
 		// Bind texture with memory.

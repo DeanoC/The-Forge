@@ -59,7 +59,6 @@ extern void addTexture(Renderer* pRenderer, const TextureDesc* pDesc, Texture** 
 extern void removeTexture(Renderer* pRenderer, Texture* p_texture);
 extern void cmdUpdateBuffer(Cmd* pCmd, Buffer* pBuffer, uint64_t dstOffset, Buffer* pSrcBuffer, uint64_t srcOffset, uint64_t size);
 extern void cmdUpdateSubresource(Cmd* pCmd, Texture* pTexture, Buffer* pSrcBuffer, SubresourceDataDesc* pSubresourceDesc);
-extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer* pRenderer);
 /************************************************************************/
 /************************************************************************/
 
@@ -330,10 +329,6 @@ typedef struct UpdateState
 	uint64_t      mSize;
 } UpdateState;
 
-struct LocalImage : public Image {
-	LocalImage() {}
-};
-
 class ResourceLoader
 {
 public:
@@ -356,8 +351,7 @@ public:
 
 	static Image* AllocImage()
 	{
-		Image* img = (Image*) MEMORY_MALLOC(sizeof(Image));
-		return (Image*) conf_placement_new<LocalImage>(img);
+		return conf_new(Image);
 	}
 
 	static Image* CreateImage(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize, const unsigned char* rawData)
@@ -370,8 +364,7 @@ public:
 	static void DestroyImage(Image* pImage)
 	{
 		pImage->Destroy();
-		pImage->~Image();
-		MEMORY_FREE(pImage);
+		conf_delete(pImage);
 	}
 };
 
@@ -887,6 +880,11 @@ static void addResourceLoader(Renderer* pRenderer, ResourceLoaderDesc* pDesc, Re
 	pLoader->mRun = true;
 	pLoader->mDesc = pDesc ? *pDesc : ResourceLoaderDesc{ DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_COUNT, DEFAULT_TIMESLICE_MS };
 
+	pLoader->mQueueMutex.Init();
+	pLoader->mTokenMutex.Init();
+	pLoader->mQueueCond.Init();
+	pLoader->mTokenCond.Init();
+	
 	pLoader->mThreadDesc.pFunc = streamerThreadFunc;
 	pLoader->mThreadDesc.pData = pLoader;
 
@@ -900,7 +898,10 @@ static void removeResourceLoader(ResourceLoader* pLoader)
 	pLoader->mRun = false;
 	pLoader->mQueueCond.WakeOne();
 	destroy_thread(pLoader->mThread);
-
+	pLoader->mQueueCond.Destroy();
+	pLoader->mTokenCond.Destroy();
+	pLoader->mQueueMutex.Destroy();
+	pLoader->mTokenMutex.Destroy();
 	conf_delete(pLoader);
 }
 
@@ -1009,6 +1010,7 @@ static ResourceLoader* pResourceLoader = NULL;
 void initResourceLoaderInterface(Renderer* pRenderer, ResourceLoaderDesc* pDesc)
 {
 	addResourceLoader(pRenderer, pDesc, &pResourceLoader);
+
 }
 
 void removeResourceLoaderInterface(Renderer* pRenderer)
@@ -1110,8 +1112,7 @@ void addResource(TextureLoadDesc* pTextureDesc, SyncToken* token)
 	}
 
 	wchar_t         debugName[256] = {};
-	eastl::string filename = "TODO";
-	mbstowcs(debugName, filename.c_str(), min((size_t)256, filename.size()));
+	mbstowcs(debugName, "TODO", 4);
 	desc.pDebugName = debugName;
 
 	addTexture(pResourceLoader->pRenderer, &desc, pTextureDesc->ppTexture);

@@ -24,7 +24,6 @@ extern void cmdUpdateSubresource(Cmd *pCmd,
 																 Texture *pTexture,
 																 Buffer *pSrcBuffer,
 																 SubresourceDataDesc *pSubresourceDesc);
-extern const RendererShaderDefinesDesc get_renderer_shaderdefines(Renderer *pRenderer);
 
 static void LogFunc(LogType type, const char *m0, const char *m1) {
 	switch (type) {
@@ -88,14 +87,9 @@ static ShaderStage TheForge_ShaderStageFlagsToShaderStage(uint32_t flags) {
 
 #ifdef METAL
 static void TheForge_ShaderStageToShaderStage(TheForge_ShaderStageDesc const *src, ShaderStageDesc *dst) {
-	dst->mName = src->name;
-	dst->mCode = src->code;
-	dst->mEntryPoint = src->entryPoint;
-	dst->mMacros.resize(src->macroCount);
-	for (uint32_t i = 0u; i < src->macroCount; ++i) {
-		dst->mMacros[i].definition = src->macros[i].definition;
-		dst->mMacros[i].value = src->macros[i].value;
-	}
+	dst->pName = src->name;
+	dst->pCode = src->code;
+	dst->pEntryPoint = src->entryPoint;
 }
 #endif
 
@@ -103,9 +97,9 @@ static void TheForge_BinaryShaderStageToBinaryShaderStage(TheForge_BinaryShaderS
 																													BinaryShaderStageDesc *dst) {
 	dst->pByteCode = src->byteCode;
 	dst->mByteCodeSize = src->byteCodeSize;
-	dst->mEntryPoint = src->entryPoint;
+	dst->pEntryPoint = src->entryPoint;
 #ifdef METAL
-	dst->mSource = src->source;
+	dst->pSource = src->source;
 #endif
 }
 
@@ -806,15 +800,8 @@ AL2O3_EXTERN_C void TheForge_AddSwapChain(TheForge_RendererHandle handle,
 	if (!renderer) {
 		return;
 	}
-
-	// we don't use virtually any of the the forges windows desc as we just want
-	// the swap chain to attached (WindowsDesc is if you used TheForges OS to
-	// allocate teh window)
-	WindowsDesc windowsDesc;
-	windowsDesc.handle = (WindowHandle) pDesc->pWindow->handle;
 	SwapChainDesc scDesc;
 	memcpy(&scDesc, pDesc, sizeof(TheForge_SwapChainDesc));
-	scDesc.pWindow = &windowsDesc;
 
 	addSwapChain(renderer, &scDesc, (SwapChain **) pSwapChain);
 }
@@ -1227,15 +1214,21 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_DescriptorData, pName) == offsetof(DescriptorData, pName));
 	API_CHK(offsetof(TheForge_DescriptorData, pOffsets) == offsetof(DescriptorData, pOffsets));
 	API_CHK(offsetof(TheForge_DescriptorData, pSizes) == offsetof(DescriptorData, pSizes));
+	API_CHK(offsetof(TheForge_DescriptorData, mDescriptorSetBufferIndex) == offsetof(DescriptorData, mDescriptorSetBufferIndex));
+	API_CHK(offsetof(TheForge_DescriptorData, mDescriptorSetShader) == offsetof(DescriptorData, mDescriptorSetShader));
+	API_CHK(offsetof(TheForge_DescriptorData, mDescriptorSetShaderStage) == offsetof(DescriptorData, mDescriptorSetShaderStage));
 	API_CHK(offsetof(TheForge_DescriptorData, UAVMipSlice) == offsetof(DescriptorData, mUAVMipSlice));
 	API_CHK(offsetof(TheForge_DescriptorData, bindStencilResource) == offsetof(DescriptorData, mBindStencilResource));
 	API_CHK(offsetof(TheForge_DescriptorData, pTextures) == offsetof(DescriptorData, ppTextures));
 	API_CHK(offsetof(TheForge_DescriptorData, pSamplers) == offsetof(DescriptorData, ppSamplers));
 	API_CHK(offsetof(TheForge_DescriptorData, pBuffers) == offsetof(DescriptorData, ppBuffers));
+	API_CHK(offsetof(TheForge_DescriptorData, pPipelines) == offsetof(DescriptorData, ppPipelines));
+	API_CHK(offsetof(TheForge_DescriptorData, pDescriptorSet) == offsetof(DescriptorData, ppDescriptorSet));
 	API_CHK(
 			offsetof(TheForge_DescriptorData, pAccelerationStructures) == offsetof(DescriptorData, ppAccelerationStructures));
 	API_CHK(offsetof(TheForge_DescriptorData, count) == offsetof(DescriptorData, mCount));
-
+	API_CHK(offsetof(TheForge_DescriptorData, index) == offsetof(DescriptorData, mIndex));
+	API_CHK(offsetof(TheForge_DescriptorData, extractBuffer) == offsetof(DescriptorData, mExtractBuffer));
 
 	API_CHK(sizeof(TheForge_BufferBarrier) == sizeof(BufferBarrier));
 	API_CHK(offsetof(TheForge_BufferBarrier, buffer) == offsetof(BufferBarrier, pBuffer));
@@ -1272,7 +1265,7 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_RectDesc, bottom) == offsetof(RectDesc, bottom));
 
 	API_CHK(sizeof(TheForge_SwapChainDesc) == sizeof(SwapChainDesc));
-	API_CHK(offsetof(TheForge_SwapChainDesc, pWindow) == offsetof(SwapChainDesc, pWindow));
+	API_CHK(offsetof(TheForge_SwapChainDesc, window) == offsetof(SwapChainDesc, mWindowHandle));
 	API_CHK(offsetof(TheForge_SwapChainDesc, pPresentQueues) == offsetof(SwapChainDesc, ppPresentQueues));
 	API_CHK(offsetof(TheForge_SwapChainDesc, presentQueueCount) == offsetof(SwapChainDesc, mPresentQueueCount));
 	API_CHK(offsetof(TheForge_SwapChainDesc, imageCount) == offsetof(SwapChainDesc, mImageCount));
@@ -1315,6 +1308,26 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_PipelineReflection, pVariables) == offsetof(PipelineReflection, pVariables));
 	API_CHK(offsetof(TheForge_PipelineReflection, mVariableCount) == offsetof(PipelineReflection, mVariableCount));
 
+	API_CHK(sizeof(TheForge_BufferDesc) == sizeof(BufferDesc));
+	API_CHK(offsetof(TheForge_BufferDesc, mSize) == offsetof(BufferDesc, mSize));
+	API_CHK(offsetof(TheForge_BufferDesc, mMemoryUsage) == offsetof(BufferDesc, mMemoryUsage));
+	API_CHK(offsetof(TheForge_BufferDesc, mFlags) == offsetof(BufferDesc, mFlags));
+	API_CHK(offsetof(TheForge_BufferDesc, mStartState) == offsetof(BufferDesc, mStartState));
+	API_CHK(offsetof(TheForge_BufferDesc, mIndexType) == offsetof(BufferDesc, mIndexType));
+	API_CHK(offsetof(TheForge_BufferDesc, mVertexStride) == offsetof(BufferDesc, mVertexStride));
+	API_CHK(offsetof(TheForge_BufferDesc, mFirstElement) == offsetof(BufferDesc, mFirstElement));
+	API_CHK(offsetof(TheForge_BufferDesc, mElementCount) == offsetof(BufferDesc, mElementCount));
+	API_CHK(offsetof(TheForge_BufferDesc, mStructStride) == offsetof(BufferDesc, mStructStride));
+	API_CHK(offsetof(TheForge_BufferDesc, mICBDrawType) == offsetof(BufferDesc, mICBDrawType));
+	API_CHK(offsetof(TheForge_BufferDesc, mICBMaxVertexBufferBind) == offsetof(BufferDesc, mICBMaxVertexBufferBind));
+	API_CHK(offsetof(TheForge_BufferDesc, mICBMaxFragmentBufferBind) == offsetof(BufferDesc, mICBMaxFragmentBufferBind));
+	API_CHK(offsetof(TheForge_BufferDesc, counterBuffer) == offsetof(BufferDesc, pCounterBuffer));
+	API_CHK(offsetof(TheForge_BufferDesc, mFormat) == offsetof(BufferDesc, mFormat));
+	API_CHK(offsetof(TheForge_BufferDesc, mDescriptors) == offsetof(BufferDesc, mDescriptors));
+	API_CHK(offsetof(TheForge_BufferDesc, pDebugName) == offsetof(BufferDesc, pDebugName));
+	API_CHK(offsetof(TheForge_BufferDesc, pSharedNodeIndices) == offsetof(BufferDesc, pSharedNodeIndices));
+	API_CHK(offsetof(TheForge_BufferDesc, mNodeIndex) == offsetof(BufferDesc, mNodeIndex));
+	API_CHK(offsetof(TheForge_BufferDesc, mSharedNodeIndexCount) == offsetof(BufferDesc, mSharedNodeIndexCount));
 
 	API_CHK(sizeof(TheForge_TextureLoadDesc) == sizeof(TextureLoadDesc));
 	API_CHK(offsetof(TheForge_TextureLoadDesc, pTexture) == offsetof(TextureLoadDesc, ppTexture));
@@ -1344,5 +1357,6 @@ static void API_CHECK() {
 	API_CHK(offsetof(TheForge_TextureDesc, mNodeIndex) == offsetof(TextureDesc, mNodeIndex));
 	API_CHK(offsetof(TheForge_TextureDesc, mHostVisible) == offsetof(TextureDesc, mHostVisible));
 
+	API_CHK(sizeof(TheForge_SwapChainDesc) == sizeof(SwapChainDesc));
 }
 #undef API_CHK

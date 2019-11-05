@@ -27,6 +27,8 @@
 #include "../../OS/Interfaces/ILog.h"
 
 #include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../ThirdParty/OpenSource/EASTL/string.h"
 #include "../IRenderer.h"
 #include <string.h>
 #include "../../OS/Interfaces/IMemory.h"
