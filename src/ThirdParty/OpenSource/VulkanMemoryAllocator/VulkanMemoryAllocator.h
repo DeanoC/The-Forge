@@ -26,10 +26,6 @@
 //EASTL Include [Do not removed from here]
 #include "../EASTL/list.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** \mainpage Vulkan Memory Allocator
 
 <b>Version 2.3.0-development</b> (2019-03-05)
@@ -3112,9 +3108,6 @@ void vmaDestroyImage(
     VkImage image,
     VmaAllocation allocation);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif // AMD_VULKAN_MEMORY_ALLOCATOR_H
 

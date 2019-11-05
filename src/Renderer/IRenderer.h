@@ -59,7 +59,7 @@
 //#define USE_RENDER_DOC
 
 // Raytracing
-#if defined(VK_NV_RAY_TRACING_SPEC_VERSION && !defined(ENABLE_RAYTRACING)
+#if defined(VK_NV_RAY_TRACING_SPEC_VERSION) && !defined(ENABLE_RAYTRACING)
 #define ENABLE_RAYTRACING
 #endif
 

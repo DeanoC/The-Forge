@@ -116,6 +116,9 @@ if(USE_VULKAN)
 	list(APPEND Src Renderer/Vulkan/VulkanRaytracing.cpp)
 	list(APPEND Src Renderer/Vulkan/VulkanShaderReflection.cpp)
 	list(APPEND Src Renderer/Vulkan/VulkanCapsBuilder.h)
+
+	list(APPEND Src Tools/SpirvTools/SpirvTools.cpp)
+	list(APPEND Src Tools/SpirvTools/SpirvTools.h)
 endif()
 
 if (APPLE)
