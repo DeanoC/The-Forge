@@ -74,18 +74,6 @@ typedef struct TheForge_ResourceUpdateDesc
 	};
 } TheForge_ResourceUpdateDesc;
 
-typedef struct TheForge_ShaderStageLoadDesc
-{
-	uint32_t        					macroCount;
-	const char*     					entryPointName;
-} TheForge_ShaderStageLoadDesc;
-
-typedef struct TheForge_ShaderLoadDesc
-{
-	TheForge_ShaderStageLoadDesc stages[TheForge_SS_COUNT];
-	TheForge_ShaderTarget        target;
-} TheForge_ShaderLoadDesc;
-
 // access atomically!
 typedef uint64_t TheForge_SyncToken;
 

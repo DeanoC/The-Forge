@@ -6,7 +6,6 @@
 
 AL2O3_EXTERN_C void TheForge_InitResourceLoaderInterface(TheForge_RendererHandle handle, TheForge_ResourceLoaderDesc* pDesc);
 AL2O3_EXTERN_C void TheForge_RemoveResourceLoaderInterface(TheForge_RendererHandle handle);
-AL2O3_EXTERN_C void TheForge_LoadShader(TheForge_RendererHandle handle, const TheForge_ShaderLoadDesc* pDesc, TheForge_ShaderHandle* pShader);
 
 AL2O3_EXTERN_C void TheForge_LoadBuffer(TheForge_BufferLoadDesc const* pBuffer, bool batch);
 AL2O3_EXTERN_C void TheForge_LoadTexture(TheForge_TextureLoadDesc const* pTexture, bool batch);
