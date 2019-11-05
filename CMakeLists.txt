@@ -59,26 +59,19 @@ set(Src
 		OS/Core/Atomics.h
 		OS/Core/Compiler.h
 		OS/Core/DLL.h
-		OS/Core/FileSystem.cpp
-		OS/Core/GPUConfig.h
 		OS/Core/RingBuffer.h
 		OS/Core/ThreadSystem.cpp
 		OS/Core/ThreadSystem.h
 		OS/Core/Timer.cpp
 		OS/Image/Image.cpp
 		OS/Image/Image.h
-		OS/Interfaces/IApp.h
-		OS/Interfaces/IFileSystem.h
 		OS/Interfaces/ILog.h
 		OS/Interfaces/IMemory.h
-		OS/Interfaces/IMiddleware.h
 		OS/Interfaces/IOperatingSystem.h
 		OS/Interfaces/IProfiler.h
 		OS/Interfaces/IThread.h
 		OS/Interfaces/ITime.h
 		OS/Math/MathTypes.h
-		OS/MemoryTracking/MemoryTracking.cpp
-		OS/MemoryTracking/NoMemoryDefines.h
 		Renderer/CommonShaderReflection.cpp
 		Renderer/GpuProfiler.cpp
 		Renderer/GpuProfiler.h
@@ -96,16 +89,6 @@ set(Src
 		ThirdParty/OpenSource/EASTL/string.cpp
 		ThirdParty/OpenSource/EASTL/thread_support.cpp
 		ThirdParty/OpenSource/EASTL/EAStdC/EASprintf.cpp
-
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_file_headers.h
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_global_selector_cb.h
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_global_selector_palette.h
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.h
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_internal.h
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_bc7_m6.inc
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_dxt1_5.inc
-		ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder_tables_dxt1_6.inc
 		)
 if (WIN32)
 	if(USE_D3D11)
@@ -124,7 +107,6 @@ if (WIN32)
 		list(APPEND Src Renderer/Direct3D12/Direct3D12ShaderReflection.cpp)
 	endif()
 
-	list(APPEND Src OS/Windows/WindowsFileSystem.cpp)
 	list(APPEND Src OS/Windows/WindowsThread.cpp)
 	list(APPEND Src OS/Windows/WindowsTime.cpp)
 endif ()
@@ -134,10 +116,6 @@ if(USE_VULKAN)
 	list(APPEND Src Renderer/Vulkan/VulkanRaytracing.cpp)
 	list(APPEND Src Renderer/Vulkan/VulkanShaderReflection.cpp)
 	list(APPEND Src Renderer/Vulkan/VulkanCapsBuilder.h)
-	list(APPEND Src Tools/SpirvTools/SpirvTools.cpp)
-
-	list(APPEND Deps gfx_spirvtools)
-	list(APPEND Deps gfx_spirvcross)
 endif()
 
 if (APPLE)
@@ -149,7 +127,6 @@ if (APPLE)
 		list(APPEND Src Renderer/Metal/MetalShaderReflection.mm)
 	endif()
 
-	list(APPEND Src OS/macOs/macOSFileSystem.mm)
 	list(APPEND Src OS/macOs/macOSThread.cpp)
 	list(APPEND Src OS/macOs/macOSTime.cpp)
 endif ()

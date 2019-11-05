@@ -31,11 +31,7 @@ static_assert(false, "Image.h can only be included by ResourceLoader.cpp and Ima
 
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
-#include "../Interfaces/IFileSystem.h"
-#include "../../ThirdParty/OpenSource/EASTL/string.h"
 
-//Google basis Transcoder
-#include "../../ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.h"
 #define ALL_MIPLEVELS 127
 
 /************************************************************************************/
@@ -64,45 +60,36 @@ private:
 
 	void Clear();
 
-    //load image
-    bool LoadFromFile(
-                      const char* fileName, memoryAllocationFunc pAllocator = NULL, void* pUserData = NULL, FSRoot root = FSR_Textures);
-    bool LoadFromMemory(
-                        void const* mem, uint32_t size, char const* extension, memoryAllocationFunc pAllocator = NULL,
-                        void* pUserData = NULL);
-
 public:
 
     void RedefineDimensions(const TinyImageFormat fmt, const int w, const int h, const int d, const int mipMapCount, const int arraySize = 1);
 
 	unsigned char* GetPixels() const { return pData; }
-	unsigned char* GetPixels(const uint mipMapLevel) const;
-	unsigned char* GetPixels(unsigned char* pDstData, const uint mipMapLevel, const uint dummy);
-	unsigned char* GetPixels(const uint mipMapLevel, const uint arraySlice) const;
+	unsigned char* GetPixels(const uint32_t mipMapLevel) const;
+	unsigned char* GetPixels(unsigned char* pDstData, const uint32_t mipMapLevel, const uint32_t dummy);
+	unsigned char* GetPixels(const uint32_t mipMapLevel, const uint32_t arraySlice) const;
 
 	void SetPixels(unsigned char* pixelData, bool own = false)
 	{
 		mOwnsMemory = own;
 		pData = pixelData;
 	}
-	void SetName(const eastl::string& name) { mLoadFileName = name; }
 
-	uint                 GetWidth() const { return mWidth; }
-	uint                 GetHeight() const { return mHeight; }
-	uint                 GetDepth() const { return mDepth; }
-	uint                 GetWidth(const int mipMapLevel) const;
-	uint                 GetHeight(const int mipMapLevel) const;
-	uint                 GetDepth(const int mipMapLevel) const;
-	uint                 GetMipMapCount() const { return mMipMapCount; }
-	const eastl::string& GetName() const { return mLoadFileName; }
-	uint                 GetMipMapCountFromDimensions() const;
-	uint                 GetArraySliceSize(const uint mipMapLevel = 0, TinyImageFormat srcFormat = TinyImageFormat_UNDEFINED) const;
-	uint                 GetNumberOfPixels(const uint firstMipLevel = 0, uint numMipLevels = ALL_MIPLEVELS) const;
+	uint32_t                 GetWidth() const { return mWidth; }
+	uint32_t                 GetHeight() const { return mHeight; }
+	uint32_t                 GetDepth() const { return mDepth; }
+	uint32_t                 GetWidth(const int mipMapLevel) const;
+	uint32_t                 GetHeight(const int mipMapLevel) const;
+	uint32_t                 GetDepth(const int mipMapLevel) const;
+	uint32_t                 GetMipMapCount() const { return mMipMapCount; }
+	uint32_t                 GetMipMapCountFromDimensions() const;
+	uint32_t                 GetArraySliceSize(const uint32_t mipMapLevel = 0, TinyImageFormat srcFormat = TinyImageFormat_UNDEFINED) const;
+	uint32_t                 GetNumberOfPixels(const uint32_t firstMipLevel = 0, uint32_t numMipLevels = ALL_MIPLEVELS) const;
 	bool                 GetColorRange(float& min, float& max);
 	TinyImageFormat    	 GetFormat() const { return mFormat; }
-	uint                 GetArrayCount() const { return mArrayCount; }
-	uint                 GetMipMappedSize(
-		const uint firstMipLevel = 0, uint numMipLevels = ALL_MIPLEVELS, TinyImageFormat srcFormat = TinyImageFormat_UNDEFINED) const;
+	uint32_t                 GetArrayCount() const { return mArrayCount; }
+	uint32_t                 GetMipMappedSize(
+		const uint32_t firstMipLevel = 0, uint32_t numMipLevels = ALL_MIPLEVELS, TinyImageFormat srcFormat = TinyImageFormat_UNDEFINED) const;
 
 	bool                 Is1D() const { return (mDepth == 1 && mHeight == 1); }
 	bool                 Is2D() const { return (mDepth == 1 && mHeight > 1); }
@@ -124,22 +111,11 @@ public:
 
 	bool                 iSwap(const int c0, const int c1);
 
-	// Image Format Saving
-	bool                 iSaveDDS(const char* fileName);
-	bool                 iSaveKTX(const char* fileName);
-	bool                 iSaveTGA(const char* fileName);
-	bool                 iSaveBMP(const char* fileName);
-	bool                 iSavePNG(const char* fileName);
-	bool                 iSaveHDR(const char* fileName);
-	bool                 iSaveJPG(const char* fileName);
-	bool                 Save(const char* fileName);
-
 protected:
 	unsigned char*       pData;
-	eastl::string        mLoadFileName;
-	uint                 mWidth, mHeight, mDepth;
-	uint                 mMipMapCount;
-	uint                 mArrayCount;
+	uint32_t             mWidth, mHeight, mDepth;
+	uint32_t             mMipMapCount;
+	uint32_t             mArrayCount;
 	TinyImageFormat    	 mFormat;
 	int                  mAdditionalDataSize;
 	unsigned char*       pAdditionalData;
@@ -150,9 +126,6 @@ protected:
 	bool				 mMipsAfterSlices;
 
 public:
-	typedef bool (*ImageLoaderFunction)(
-		Image* pImage, const char* memory, uint32_t memSize, memoryAllocationFunc pAllocator, void* pUserData);
-	static void AddImageLoader(const char* pExtension, ImageLoaderFunction pFunc);
 };
 
 static inline uint32_t calculateMipMapLevels(uint32_t width, uint32_t height)

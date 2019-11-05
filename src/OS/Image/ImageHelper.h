@@ -41,9 +41,9 @@ static inline uint32_t Image_GetMipMappedSize(uint32_t w, uint32_t h, uint32_t d
 			totalSize += mipSize;
 
 			unsigned int MinimumSize = 1;
-			sizeX = max(sizeX / 2, MinimumSize);
-			sizeY = max(sizeY / 2, MinimumSize);
-			sizeD = max(sizeD / 2, MinimumSize);
+			sizeX = (sizeX / 2 > MinimumSize) ? sizeX/2 : MinimumSize;
+			sizeY = (sizeY / 2 > MinimumSize) ? sizeY/2 : MinimumSize;
+			sizeD = (sizeD / 2 > MinimumSize) ? sizeD/2 : MinimumSize;
 			level--;
 		}
 

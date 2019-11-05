@@ -40,7 +40,6 @@
 #include "../../OS/Core/RingBuffer.h"
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
 #include "../../ThirdParty/OpenSource/renderdoc/renderdoc_app.h"
-#include "../../OS/Core/GPUConfig.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_base.h"
 #include "../../ThirdParty/OpenSource/tinyimageformat/tinyimageformat_query.h"
 #include "Direct3D12CapBuilder.h"
@@ -1380,7 +1379,6 @@ static void AddDevice(Renderer* pRenderer)
 		char                              mDeviceId[MAX_GPU_VENDOR_STRING_LENGTH];
 		char                              mRevisionId[MAX_GPU_VENDOR_STRING_LENGTH];
 		char                              mName[MAX_GPU_VENDOR_STRING_LENGTH];
-		GPUPresetLevel                    mPreset;
 	} GpuDesc;
 
 	GpuDesc gpuDesc[MAX_GPUS] = {};
@@ -1427,11 +1425,6 @@ static void AddDevice(Renderer* pRenderer)
 						//convert Revision Id
 						sprintf(gpuDesc[pRenderer->mNumOfGPUs].mRevisionId, "%#x\0", desc.Revision);
 
-						//get preset for current gpu description
-						gpuDesc[pRenderer->mNumOfGPUs].mPreset = getGPUPresetLevel(
-							gpuDesc[pRenderer->mNumOfGPUs].mVendorId, gpuDesc[pRenderer->mNumOfGPUs].mDeviceId,
-							gpuDesc[pRenderer->mNumOfGPUs].mRevisionId);
-
 						//save gpu name (Some situtations this can show description instead of name)
 						//char sName[MAX_PATH];
 						wcstombs(gpuDesc[pRenderer->mNumOfGPUs].mName, desc.Description, MAX_PATH);
@@ -1461,12 +1454,6 @@ static void AddDevice(Renderer* pRenderer)
 		{
 			if (gpu1.mFeatureDataOptions1.WaveOps != gpu2.mFeatureDataOptions1.WaveOps)
 				return gpu1.mFeatureDataOptions1.WaveOps;
-		}
-
-		// Check feature level first, sort the greatest feature level gpu to the front
-		if ((int)gpu1.mPreset != (int)gpu2.mPreset)
-		{
-			return gpu1.mPreset > gpu2.mPreset;
 		}
 
 		if ((int)gpu1.mMaxSupportedFeatureLevel != (int)gpu2.mMaxSupportedFeatureLevel)
@@ -1501,8 +1488,6 @@ static void AddDevice(Renderer* pRenderer)
 		strncpy(pRenderer->mGpuSettings[i].mGpuVendorPreset.mRevisionId, gpuDesc[i].mRevisionId, MAX_GPU_VENDOR_STRING_LENGTH);
 		//get name from api
 		strncpy(pRenderer->mGpuSettings[i].mGpuVendorPreset.mGpuName, gpuDesc[i].mName, MAX_GPU_VENDOR_STRING_LENGTH);
-		//get preset
-		pRenderer->mGpuSettings[i].mGpuVendorPreset.mPresetLevel = gpuDesc[i].mPreset;
 		//get wave lane count
 		pRenderer->mGpuSettings[i].mWaveLaneCount = gpuDesc[i].mFeatureDataOptions1.WaveLaneCountMin;
 		pRenderer->mGpuSettings[i].mROVsSupported = gpuDesc[i].mFeatureDataOptions.ROVsSupported ? true : false;
@@ -1648,28 +1633,6 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
 		AddDevice(pRenderer);
 
 #ifndef _DURANGO
-		//anything below LOW preset is not supported and we will exit
-		if (pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel < GPU_PRESET_LOW)
-		{
-			//have the condition in the assert as well so its cleared when the assert message box appears
-
-			ASSERT(pRenderer->pActiveGpuSettings->mGpuVendorPreset.mPresetLevel >= GPU_PRESET_LOW);
-
-			SAFE_FREE(pRenderer->pName);
-
-			//remove device and any memory we allocated in just above as this is the first function called
-			//when initializing the forge
-			RemoveDevice(pRenderer);
-			SAFE_FREE(pRenderer);
-			LOGF(LogLevel::eERROR, "Selected GPU has an Office Preset in gpu.cfg.");
-			LOGF(LogLevel::eERROR, "Office preset is not supported by The Forge.");
-
-			//return NULL pRenderer so that client can gracefully handle exit
-			//This is better than exiting from here in case client has allocated memory or has fallbacks
-			ppRenderer = NULL;
-			return;
-		}
-
 		utils_caps_builder(pRenderer);
 
 		if (pRenderer->mSettings.mShaderTarget >= shader_target_6_0)
