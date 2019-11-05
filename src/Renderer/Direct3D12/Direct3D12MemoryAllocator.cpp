@@ -33,6 +33,8 @@
 #define IID_ARGS IID_PPV_ARGS
 #endif
 
+#include "../../ThirdParty/OpenSource/EASTL/vector.h"
+
 #include "Direct3D12Hooks.h"
 #include "Direct3D12MemoryAllocator.h"
 

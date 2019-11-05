@@ -10,6 +10,7 @@
 #include "../../ThirdParty/OpenSource/EASTL/hash_set.h"
 #include "../../ThirdParty/OpenSource/EASTL/hash_map.h"
 #include "../../ThirdParty/OpenSource/EASTL/sort.h"
+#include "../../ThirdParty/OpenSource/EASTL/vector.h"
 
 // Renderer
 #include "../IRenderer.h"

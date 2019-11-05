@@ -47,6 +47,7 @@
 #include "../../ThirdParty/OpenSource/EASTL/string.h"
 #include "../../ThirdParty/OpenSource/EASTL/unordered_map.h"
 #include "../../ThirdParty/OpenSource/EASTL/string_hash_map.h"
+#include "../../ThirdParty/OpenSource/EASTL/vector.h"
 
 #include "../../ThirdParty/OpenSource/winpixeventruntime/Include/WinPixEventRuntime/pix3.h"
 
@@ -57,7 +58,6 @@
 
 #include "../../OS/Interfaces/ILog.h"
 #include "../../OS/Core/RingBuffer.h"
-#include "../../OS/Core/GPUConfig.h"
 
 #include "Direct3D12CapBuilder.h"
 #include "Direct3D12Hooks.h"
@@ -1766,10 +1766,6 @@ void removeRenderer(Renderer* pRenderer)
 {
 	ASSERT(pRenderer);
 
-	for (uint32_t i = 0; i < pRenderer->mBuiltinShaderDefinesCount; ++i)
-		pRenderer->pBuiltinShaderDefines[i].~ShaderMacro();
-	SAFE_FREE(pRenderer->pBuiltinShaderDefines);
-
 #ifndef _DURANGO
 	if (gDxcDllHelper.IsEnabled())
 	{
@@ -2214,7 +2210,7 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
 	HRESULT hres = create_swap_chain(pRenderer, pSwapChain, &desc, &swapchain);
 	ASSERT(SUCCEEDED(hres));
 #else
-	HWND hwnd = (HWND)pSwapChain->mDesc.mWindowHandle.window;
+	HWND hwnd = (HWND)pSwapChain->mDesc.mWindowHandle;
 
 	HRESULT hres =
 		pRenderer->pDXGIFactory->CreateSwapChainForHwnd(pDesc->ppPresentQueues[0]->pDxQueue, hwnd, &desc, NULL, NULL, &swapchain);
@@ -3078,276 +3074,6 @@ static inline eastl::string convertBlobToString(BlobType* pBlob)
 	memcpy(infoLog.data(), pBlob->GetBufferPointer(), pBlob->GetBufferSize());
 	infoLog[pBlob->GetBufferSize()] = 0;
 	return eastl::string(infoLog.data());
-}
-
-void compileShader(
-	Renderer* pRenderer, ShaderTarget shaderTarget, ShaderStage stage, const Path* filePath, uint32_t codeSize, const char* code,
-	uint32_t macroCount, ShaderMacro* pMacros, void* (*allocator)(size_t a, const char *f, int l, const char *sf), uint32_t* pByteCodeSize, char** ppByteCode,
-	const char* pEntryPoint)
-{
-	if (shaderTarget > pRenderer->mSettings.mShaderTarget)
-	{
-		LOGF( LogLevel::eERROR,
-			"Requested shader target (%u) is higher than the shader target that the renderer supports (%u). Shader wont be compiled",
-			(uint32_t)shaderTarget, (uint32_t)pRenderer->mSettings.mShaderTarget);
-		return;
-	}
-#ifndef _DURANGO
-	if (shaderTarget >= shader_target_6_0)
-	{
-#define d3d_call(x)      \
-	if (!SUCCEEDED((x))) \
-	{                    \
-		ASSERT(false);   \
-		return;          \
-	}
-
-		IDxcCompiler* pCompiler;
-		IDxcLibrary*  pLibrary;
-		d3d_call(gDxcDllHelper.CreateInstance(CLSID_DxcCompiler, &pCompiler));
-		d3d_call(gDxcDllHelper.CreateInstance(CLSID_DxcLibrary, &pLibrary));
-
-		/************************************************************************/
-		// Determine shader target
-		/************************************************************************/
-		int major;
-		int minor;
-		switch (shaderTarget)
-		{
-			default:
-			case shader_target_6_0:
-			{
-				major = 6;
-				minor = 0;
-				break;
-			}
-			case shader_target_6_1:
-			{
-				major = 6;
-				minor = 1;
-				break;
-			}
-			case shader_target_6_2:
-			{
-				major = 6;
-				minor = 2;
-				break;
-			}
-			case shader_target_6_3:
-			{
-				major = 6;
-				minor = 3;
-				break;
-			}
-		}
-		eastl::string target;
-		switch (stage)
-		{
-			case SHADER_STAGE_VERT: target.sprintf("vs_%d_%d", major, minor); break;
-			case SHADER_STAGE_TESC: target.sprintf("hs_%d_%d", major, minor); break;
-			case SHADER_STAGE_TESE: target.sprintf("ds_%d_%d", major, minor); break;
-			case SHADER_STAGE_GEOM: target.sprintf("gs_%d_%d", major, minor); break;
-			case SHADER_STAGE_FRAG: target.sprintf("ps_%d_%d", major, minor); break;
-			case SHADER_STAGE_COMP: target.sprintf("cs_%d_%d", major, minor); break;
-#ifdef ENABLE_RAYTRACING
-			case SHADER_STAGE_RAYTRACING:
-			{
-				target.sprintf("lib_%d_%d", major, minor);
-				ASSERT(shaderTarget >= shader_target_6_3);
-				break;
-			}
-#else
-			return;
-#endif
-			default: break;
-		}
-		WCHAR* wTarget = (WCHAR*)alloca((target.size() + 1) * sizeof(WCHAR));
-		mbstowcs(wTarget, target.c_str(), target.size());
-		wTarget[target.size()] = L'\0';
-		/************************************************************************/
-		// Collect macros
-		/************************************************************************/
-		uint32_t namePoolSize = 0;
-		for (uint32_t i = 0; i < macroCount; ++i)
-		{
-			namePoolSize += (uint32_t)strlen(pMacros[i].definition) + 1;
-			namePoolSize += (uint32_t)strlen(pMacros[i].value) + 1;
-		}
-		WCHAR* namePool = NULL;
-		if (namePoolSize)
-			namePool = (WCHAR*)alloca(namePoolSize * sizeof(WCHAR));
-
-		// Extract shader macro definitions into D3D_SHADER_MACRO scruct
-		// Allocate Size+2 structs: one for D3D12 1 definition and one for null termination
-		DxcDefine* macros = (DxcDefine*)alloca((macroCount + 1) * sizeof(DxcDefine));
-		macros[0] = { L"D3D12", L"1" };
-		WCHAR* pCurrent = namePool;
-		for (uint32_t j = 0; j < macroCount; ++j)
-		{
-			uint32_t len = (uint32_t)strlen(pMacros[j].definition);
-			mbstowcs(pCurrent, pMacros[j].definition, len);
-			pCurrent[len] = L'\0';
-			macros[j + 1].Name = pCurrent;
-			pCurrent += (len + 1);
-
-			len = (uint32_t)strlen(pMacros[j].value);
-			mbstowcs(pCurrent, pMacros[j].value, len);
-			pCurrent[len] = L'\0';
-			macros[j + 1].Value = pCurrent;
-			pCurrent += (len + 1);
-		}
-		/************************************************************************/
-		// Compiler args
-		/************************************************************************/
-		eastl::vector<const WCHAR*> compilerArgs;
-		compilerArgs.push_back(L"-Zi");
-		compilerArgs.push_back(L"-all_resources_bound");
-#if defined(_DEBUG)
-		compilerArgs.push_back(L"-Od");
-#else
-		compilerArgs.push_back(L"-O3");
-#endif
-		/************************************************************************/
-		// Create blob from the string
-		/************************************************************************/
-		IDxcBlobEncoding* pTextBlob;
-		d3d_call(pLibrary->CreateBlobWithEncodingFromPinned((LPBYTE)code, (UINT32)codeSize, 0, &pTextBlob));
-		IDxcOperationResult* pResult;
-		WCHAR                filename[MAX_PATH] = {};
-		const char*			 pathStr = fsGetPathAsNativeString(filePath);
-		mbstowcs(filename, pathStr, min(strlen(pathStr), MAX_PATH));
-		IDxcIncludeHandler* pInclude = NULL;
-		pLibrary->CreateIncludeHandler(&pInclude);
-
-		WCHAR* entryName = L"main";
-		if (pEntryPoint != NULL)
-		{
-			entryName = (WCHAR*)conf_calloc(strlen(pEntryPoint) + 1, sizeof(WCHAR));
-			mbstowcs(entryName, pEntryPoint, strlen(pEntryPoint));
-		}
-
-		d3d_call(pCompiler->Compile(
-			pTextBlob, filename, entryName, wTarget, compilerArgs.data(), (UINT32)compilerArgs.size(), macros, macroCount + 1, pInclude,
-			&pResult));
-
-		if (pEntryPoint != NULL)
-		{
-			conf_free(entryName);
-			entryName = NULL;
-		}
-
-		pInclude->Release();
-		pLibrary->Release();
-		pCompiler->Release();
-		/************************************************************************/
-		// Verify the result
-		/************************************************************************/
-		HRESULT resultCode;
-		d3d_call(pResult->GetStatus(&resultCode));
-		if (FAILED(resultCode))
-		{
-			IDxcBlobEncoding* pError;
-			d3d_call(pResult->GetErrorBuffer(&pError));
-			eastl::string log = convertBlobToString(pError);
-			LOGF( LogLevel::eERROR, log.c_str());
-			pError->Release();
-			return;
-		}
-		/************************************************************************/
-		// Collect blob
-		/************************************************************************/
-		IDxcBlob* pBlob;
-		d3d_call(pResult->GetResult(&pBlob));
-
-		char* pByteCode = (char*)allocator(pBlob->GetBufferSize(), __FILE__, __LINE__, __FUNCTION__);
-		memcpy(pByteCode, pBlob->GetBufferPointer(), pBlob->GetBufferSize());
-		*pByteCodeSize = (uint32_t)pBlob->GetBufferSize();
-		*ppByteCode = pByteCode;
-
-		pBlob->Release();
-		/************************************************************************/
-		/************************************************************************/
-	}
-	else
-#endif
-	{
-#if defined(_DEBUG)
-		// Enable better shader debugging with the graphics debugging tools.
-		UINT compile_flags = D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-		UINT compile_flags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
-		compile_flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_ALL_RESOURCES_BOUND | D3DCOMPILE_ENABLE_UNBOUNDED_DESCRIPTOR_TABLES);
-
-		int major;
-		int minor;
-		switch (shaderTarget)
-		{
-			default:
-			case shader_target_5_1:
-			{
-				major = 5;
-				minor = 1;
-			}
-			break;
-			case shader_target_6_0:
-			{
-				major = 6;
-				minor = 0;
-			}
-			break;
-		}
-
-		eastl::string target;
-		switch (stage)
-		{
-			case SHADER_STAGE_VERT: target.sprintf("vs_%d_%d", major, minor); break;
-			case SHADER_STAGE_TESC: target.sprintf("hs_%d_%d", major, minor); break;
-			case SHADER_STAGE_TESE: target.sprintf("ds_%d_%d", major, minor); break;
-			case SHADER_STAGE_GEOM: target.sprintf("gs_%d_%d", major, minor); break;
-			case SHADER_STAGE_FRAG: target.sprintf("ps_%d_%d", major, minor); break;
-			case SHADER_STAGE_COMP: target.sprintf("cs_%d_%d", major, minor); break;
-			default: break;
-		}
-
-		// Extract shader macro definitions into D3D_SHADER_MACRO scruct
-		// Allocate Size+2 structs: one for D3D12 1 definition and one for null termination
-		D3D_SHADER_MACRO* macros = (D3D_SHADER_MACRO*)alloca((macroCount + 2) * sizeof(D3D_SHADER_MACRO));
-		macros[0] = { "D3D12", "1" };
-		for (uint32_t j = 0; j < macroCount; ++j)
-		{
-			macros[j + 1] = { pMacros[j].definition, pMacros[j].value };
-		}
-		macros[macroCount + 1] = { NULL, NULL };
-
-		if (fnHookShaderCompileFlags != NULL)
-			fnHookShaderCompileFlags(compile_flags);
-
-		eastl::string entryPoint = "main";
-		ID3DBlob*     compiled_code = NULL;
-		ID3DBlob*     error_msgs = NULL;
-		HRESULT       hres = D3DCompile2(
-            code, (size_t)codeSize, fsGetPathAsNativeString(filePath), macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), target.c_str(), compile_flags,
-            0, 0, NULL, 0, &compiled_code, &error_msgs);
-		if (FAILED(hres))
-		{
-			char* msg = (char*)conf_calloc(error_msgs->GetBufferSize() + 1, sizeof(*msg));
-			ASSERT(msg);
-			memcpy(msg, error_msgs->GetBufferPointer(), error_msgs->GetBufferSize());
-			eastl::string error = eastl::string(fsGetPathAsNativeString(filePath)) + " " + msg;
-			LOGF( LogLevel::eERROR, error.c_str());
-			SAFE_FREE(msg);
-		}
-		ASSERT(SUCCEEDED(hres));
-
-		char* pByteCode = (char*)allocator(compiled_code->GetBufferSize(), __FILE__, __LINE__, __FUNCTION__);
-		memcpy(pByteCode, compiled_code->GetBufferPointer(), compiled_code->GetBufferSize());
-
-		*pByteCodeSize = (uint32_t)compiled_code->GetBufferSize();
-		*ppByteCode = pByteCode;
-		SAFE_RELEASE(compiled_code);
-	}
 }
 
 void addShaderBinary(Renderer* pRenderer, const BinaryShaderDesc* pDesc, Shader** ppShaderProgram)
