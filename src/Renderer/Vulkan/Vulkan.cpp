@@ -6336,6 +6336,13 @@ void setTextureName(Renderer* pRenderer, Texture* pTexture, const char* pName)
 #endif
 	}
 }
+
+void captureTraceStart(Renderer* pRenderer, const char* pFileName) {
+}
+
+void captureTraceEnd(Renderer* pRenderer) {
+}
+
 #endif
 #include "../../ThirdParty/OpenSource/volk/volk.c"
 #if defined(VK_USE_DISPATCH_TABLES)
